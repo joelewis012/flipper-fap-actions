@@ -32,40 +32,56 @@ jobs:
           if [ -z "$FAM" ]; then echo "No application.fam found"; exit 1; fi
           echo "APP_DIR=$(dirname $FAM)" >> $GITHUB_ENV
 
-      - name: Clone firmware
-        run: |
-          case "${{ inputs.firmware }}" in
-            official)  URL="https://github.com/flipperdevices/flipperzero-firmware.git" ;;
-            momentum)  URL="https://github.com/Next-Flip/Momentum-Firmware.git" ;;
-            unleashed) URL="https://github.com/DarkFlippers/unleashed-firmware.git" ;;
-            xtreme)    URL="https://github.com/Flipper-XFW/Xtreme-Firmware.git" ;;
-          esac
-          git clone --depth 1 $URL /tmp/firmware
-          echo "FW_DIR=/tmp/firmware" >> $GITHUB_ENV
+      - name: Install ufbt
+        run: pip install ufbt
 
-      - name: Compile
+      - name: Set up ufbt SDK (Official)
+        if: inputs.firmware == 'official'
+        run: ufbt update --channel=${{ inputs.channel }}
+
+      - name: Set up ufbt SDK (Momentum)
+        if: inputs.firmware == 'momentum'
         run: |
-          cd $FW_DIR
-          pip install pyserial heatshrink2 Pillow 2>/dev/null || true
-          # Pass absolute path directly — no copying needed
-          ./fbt fap_dist APPSRC="$APP_DIR" 2>&1 || \
-          ./fbt fap APPSRC="$APP_DIR" 2>&1 || \
-          ./fbt APPSRC="$APP_DIR" 2>&1
+          ufbt update --channel=${{ inputs.channel }} \
+            --index-url=https://up.momentum-fw.dev/firmware/directory.json || \
+          ufbt update --channel=release \
+            --index-url=https://up.momentum-fw.dev/firmware/directory.json
+
+      - name: Set up ufbt SDK (Unleashed)
+        if: inputs.firmware == 'unleashed'
+        run: |
+          ufbt update --channel=${{ inputs.channel }} \
+            --index-url=https://up.unleashedflip.com/directory.json || \
+          ufbt update --channel=release \
+            --index-url=https://up.unleashedflip.com/directory.json
+
+      - name: Set up ufbt SDK (Xtreme)
+        if: inputs.firmware == 'xtreme'
+        run: |
+          ufbt update --channel=release \
+            --index-url=https://flipper.xfw.ws/directory.json || \
+          ufbt update --index-url=https://flipper.xfw.ws/directory.json
+
+      - name: Compile with ufbt
+        run: |
+          cd "$APP_DIR"
+          ufbt
 
       - name: Collect fap
         run: |
           mkdir -p /tmp/output
-          FAP=$(find $FW_DIR/dist -name "*.fap" 2>/dev/null | head -1)
+          FAP=$(find "$APP_DIR/dist" -name "*.fap" 2>/dev/null | head -1)
           if [ -z "$FAP" ]; then
-            FAP=$(find $FW_DIR -name "*.fap" 2>/dev/null | head -1)
+            FAP=$(find /tmp/app -name "*.fap" 2>/dev/null | head -1)
           fi
           if [ -z "$FAP" ]; then echo "No .fap produced"; exit 1; fi
           echo "Found: $FAP"
-          cp "$FAP" "/tmp/output/app.fap"
+          REPO_NAME=$(basename "${{ inputs.repo_url }}" .git)
+          cp "$FAP" "/tmp/output/${REPO_NAME}.fap"
 
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: fap-output
-          path: /tmp/output/app.fap
+          path: /tmp/output/*.fap
           retention-days: 30
