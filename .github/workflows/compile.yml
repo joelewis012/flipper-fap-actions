@@ -1,0 +1,67 @@
+name: Compile FAP
+on:
+  workflow_dispatch:
+    inputs:
+      repo_url:
+        description: "Repo URL"
+        required: true
+        type: string
+      firmware:
+        description: "Firmware"
+        required: true
+        type: choice
+        options: [official, momentum, unleashed, xtreme]
+        default: official
+      channel:
+        description: "Channel"
+        required: true
+        type: choice
+        options: [release, dev]
+        default: release
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Clone app
+        run: git clone --depth 1 --recurse-submodules "${{ inputs.repo_url }}" /tmp/app
+
+      - name: Find application.fam
+        run: |
+          FAM=$(find /tmp/app -name "application.fam" | head -1)
+          if [ -z "$FAM" ]; then echo "No application.fam found"; exit 1; fi
+          echo "APP_DIR=$(dirname $FAM)" >> $GITHUB_ENV
+
+      - name: Clone firmware
+        run: |
+          case "${{ inputs.firmware }}" in
+            official)  URL="https://github.com/flipperdevices/flipperzero-firmware.git" ;;
+            momentum)  URL="https://github.com/Next-Flip/Momentum-Firmware.git" ;;
+            unleashed) URL="https://github.com/DarkFlippers/unleashed-firmware.git" ;;
+            xtreme)    URL="https://github.com/Flipper-XFW/Xtreme-Firmware.git" ;;
+          esac
+          git clone --depth 1 $URL /tmp/firmware
+          echo "FW_DIR=/tmp/firmware" >> $GITHUB_ENV
+
+      - name: Compile
+        run: |
+          mkdir -p $FW_DIR/applications_user/fap_app
+          cp -r "$APP_DIR"/. $FW_DIR/applications_user/fap_app/
+          cd $FW_DIR
+          pip install pyserial heatshrink2 Pillow 2>/dev/null || true
+          ./fbt fap APPSRC=applications_user/fap_app 2>&1 || \
+          ./fbt APPSRC=applications_user/fap_app 2>&1
+
+      - name: Collect fap
+        run: |
+          mkdir -p /tmp/output
+          FAP=$(find $FW_DIR -name "*.fap" | head -1)
+          if [ -z "$FAP" ]; then echo "No .fap produced"; exit 1; fi
+          cp "$FAP" "/tmp/output/app.fap"
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: fap-output
+          path: /tmp/output/app.fap
+          retention-days: 30
