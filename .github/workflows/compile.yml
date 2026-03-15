@@ -45,18 +45,22 @@ jobs:
 
       - name: Compile
         run: |
-          mkdir -p $FW_DIR/applications_user/fap_app
-          cp -r "$APP_DIR"/. $FW_DIR/applications_user/fap_app/
           cd $FW_DIR
           pip install pyserial heatshrink2 Pillow 2>/dev/null || true
-          ./fbt fap APPSRC=applications_user/fap_app 2>&1 || \
-          ./fbt APPSRC=applications_user/fap_app 2>&1
+          # Pass absolute path directly — no copying needed
+          ./fbt fap_dist APPSRC="$APP_DIR" 2>&1 || \
+          ./fbt fap APPSRC="$APP_DIR" 2>&1 || \
+          ./fbt APPSRC="$APP_DIR" 2>&1
 
       - name: Collect fap
         run: |
           mkdir -p /tmp/output
-          FAP=$(find $FW_DIR -name "*.fap" | head -1)
+          FAP=$(find $FW_DIR/dist -name "*.fap" 2>/dev/null | head -1)
+          if [ -z "$FAP" ]; then
+            FAP=$(find $FW_DIR -name "*.fap" 2>/dev/null | head -1)
+          fi
           if [ -z "$FAP" ]; then echo "No .fap produced"; exit 1; fi
+          echo "Found: $FAP"
           cp "$FAP" "/tmp/output/app.fap"
 
       - name: Upload
