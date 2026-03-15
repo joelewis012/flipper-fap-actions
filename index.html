@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+
+  <!-- ── iOS Home Screen / PWA ─────────────────────────────────────────── -->
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="FlipperFAP"/>
+  <meta name="theme-color" content="#0a0a0b"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+
+  <!-- Home screen icon (generated inline as SVG→PNG via canvas on load) -->
+  <link rel="apple-touch-icon" id="touch-icon" href="icon.png"/>
+  <link rel="manifest" href="manifest.json"/>
+
+  <!-- Splash screen background colour -->
+  <style>
+    /* Full screen when launched from home screen */
+    @media (display-mode: standalone) {
+      body { padding-top: env(safe-area-inset-top); }
+      .container { padding-top: 16px; }
+    }
+  </style>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FlipperFAP — Online Compiler</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;700;900&display=swap" rel="stylesheet"/>
+<!-- ═══════════════════════════════════════════════════════════════════
+     GOOGLE ADSENSE — replace ca-pub-XXXXXXXXXXXXXXXX with your
+     Publisher ID from https://adsense.google.com/start
+     ═══════════════════════════════════════════════════════════════ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
+<style>
+  :root {
+    --orange: #FF6B00;
+    --orange-dim: #cc5500;
+    --orange-glow: #ff8c3380;
+    --bg: #0a0a0b;
+    --bg2: #111114;
+    --bg3: #18181d;
+    --border: #2a2a35;
+    --text: #e8e8f0;
+    --muted: #5a5a6e;
+    --green: #39ff14;
+    --red: #ff3939;
+    --yellow: #ffd600;
+    --cyan: #00e5ff;
+    --mono: 'Share Tech Mono', monospace;
+    --sans: 'Exo 2', sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; overflow-x: hidden; }
+  body::before { content: ''; position: fixed; inset: 0; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px); pointer-events: none; z-index: 1000; }
+  body::after { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(255,107,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,107,0,0.03) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; }
+  .container { max-width: 900px; margin: 0 auto; padding: 0 20px 80px; position: relative; z-index: 1; }
+
+  /* ── Header ── */
+  header { padding: 48px 0 36px; text-align: center; }
+  .logo-wrap { display: inline-flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+  h1 { font-family: var(--sans); font-size: clamp(1.8rem,4vw,2.6rem); font-weight: 900; letter-spacing: -0.02em; line-height: 1; }
+  h1 span.accent { color: var(--orange); }
+  .tagline { font-family: var(--mono); font-size: 0.78rem; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 8px; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.3} }
+  .live-dot { width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);display:inline-block;animation:pulse 1.5s ease-in-out infinite;vertical-align:middle;margin-right:4px; }
+
+  .divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border), var(--orange-dim), var(--border), transparent); margin: 32px 0; }
+
+  /* ── Setup Banner ── */
+  .setup-banner { background: rgba(255,107,0,0.07); border: 1px solid rgba(255,107,0,0.3); border-radius: 8px; padding: 20px 24px; margin-bottom: 24px; }
+  .setup-banner h3 { font-size: 0.85rem; font-weight: 700; color: var(--orange); margin-bottom: 12px; letter-spacing: 0.05em; text-transform: uppercase; }
+  .setup-steps { display: flex; flex-direction: column; gap: 8px; }
+  .setup-step { display: flex; gap: 12px; align-items: flex-start; font-family: var(--mono); font-size: 0.75rem; color: var(--muted); line-height: 1.5; }
+  .step-num { background: var(--orange); color: #000; font-weight: 900; width: 20px; height: 20px; border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 0.7rem; margin-top: 1px; }
+  .setup-step a { color: var(--orange); text-decoration: none; }
+  .setup-step a:hover { text-decoration: underline; }
+  .setup-step code { background: var(--bg3); padding: 1px 6px; border-radius: 3px; color: var(--text); font-size: 0.72rem; }
+
+  /* ── Token input section ── */
+  .token-section { margin-bottom: 20px; }
+  .token-row { display: flex; gap: 8px; }
+  .token-row input { flex: 1; }
+  .token-status { font-family: var(--mono); font-size: 0.7rem; margin-top: 6px; min-height: 16px; }
+  .token-ok { color: var(--green); }
+  .token-err { color: var(--red); }
+
+  /* ── Card ── */
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 28px; position: relative; overflow: hidden; }
+  .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--orange), transparent); }
+  .card-title { font-family: var(--mono); font-size: 0.72rem; color: var(--orange); text-transform: uppercase; letter-spacing: 0.18em; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+  .card-title::before { content: '//'; color: var(--muted); }
+
+  /* ── Form ── */
+  .form-group { margin-bottom: 20px; }
+  label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+  .input-wrap { position: relative; }
+  .input-wrap .prefix { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-family: var(--mono); font-size: 0.85rem; color: var(--orange); pointer-events: none; }
+  input[type="text"], input[type="password"] { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: var(--mono); font-size: 0.9rem; padding: 12px 14px 12px 36px; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
+  input[type="text"]:focus, input[type="password"]:focus { border-color: var(--orange); box-shadow: 0 0 0 2px var(--orange-glow); }
+  input::placeholder { color: var(--muted); }
+  input.error { border-color: var(--red) !important; }
+
+  /* ── Firmware grid ── */
+  .firmware-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 560px) { .firmware-grid { grid-template-columns: 1fr; } }
+  .fw-options { display: flex; flex-direction: column; gap: 8px; }
+  .fw-card { position: relative; }
+  .fw-card input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+  .fw-card label { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; transition: all 0.15s; margin: 0; text-transform: none; letter-spacing: 0; font-size: 0.9rem; font-weight: 400; color: var(--text); }
+  .fw-card input:checked + label { border-color: var(--orange); background: rgba(255,107,0,0.06); }
+  .fw-card label:hover { border-color: var(--orange-dim); }
+  .fw-dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--muted); flex-shrink: 0; transition: all 0.15s; }
+  .fw-card input:checked + label .fw-dot { border-color: var(--orange); background: var(--orange); box-shadow: 0 0 6px var(--orange); }
+  .fw-name { font-weight: 600; flex: 1; }
+  .fw-ver { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); background: rgba(255,255,255,0.04); padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+  .fw-card input:checked + label .fw-ver { color: var(--orange); background: rgba(255,107,0,0.12); }
+  .fw-badge { font-size: 0.62rem; padding: 2px 6px; border-radius: 3px; font-weight: 700; text-transform: uppercase; }
+  .badge-new { background: rgba(57,255,20,0.15); color: var(--green); }
+  .badge-pop { background: rgba(255,107,0,0.15); color: var(--orange); }
+  .version-note { font-family: var(--mono); font-size: 0.68rem; color: var(--muted); margin-top: 6px; min-height: 16px; }
+
+  /* ── Channel toggle ── */
+  .channel-toggle { display: flex; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .channel-toggle input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+  .channel-toggle label { flex: 1; text-align: center; padding: 11px 16px; cursor: pointer; font-size: 0.85rem; font-weight: 600; margin: 0; text-transform: none; letter-spacing: 0; color: var(--muted); transition: all 0.15s; }
+  .channel-toggle input:checked + label { color: var(--bg); background: var(--orange); box-shadow: 0 0 12px var(--orange-glow); }
+  .channel-desc { font-family: var(--mono); font-size: 0.68rem; color: var(--muted); margin-top: 8px; }
+
+  .out-box { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px; font-family: var(--mono); font-size: 0.78rem; color: var(--muted); line-height: 1.7; margin-top: 16px; }
+  .out-box .k { color: var(--orange); }
+  .out-box .g { color: var(--green); }
+
+  /* ── Button ── */
+  .btn-compile { width: 100%; padding: 15px 24px; background: var(--orange); border: none; border-radius: 6px; color: #000; font-family: var(--sans); font-size: 1rem; font-weight: 900; letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; margin-top: 24px; }
+  .btn-compile::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%); pointer-events: none; }
+  .btn-compile:hover:not(:disabled) { background: #ff8533; box-shadow: 0 0 24px rgba(255,107,0,0.5); transform: translateY(-1px); }
+  .btn-compile:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .btn-inner { display: flex; align-items: center; justify-content: center; gap: 10px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner { width: 18px; height: 18px; border: 2px solid rgba(0,0,0,0.3); border-top-color: #000; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
+
+  /* ── Jobs ── */
+  .jobs-section { margin-top: 36px; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .section-title { font-family: var(--mono); font-size: 0.72rem; color: var(--orange); text-transform: uppercase; letter-spacing: 0.18em; display: flex; align-items: center; gap: 8px; }
+  .section-title::before { content: '//'; color: var(--muted); }
+  .clear-btn { font-family: var(--mono); font-size: 0.7rem; color: var(--muted); background: none; border: 1px solid var(--border); border-radius: 4px; padding: 4px 10px; cursor: pointer; transition: all 0.15s; }
+  .clear-btn:hover { color: var(--red); border-color: var(--red); }
+
+  .jobs-list { display: flex; flex-direction: column; gap: 10px; }
+  @keyframes slideIn { from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)} }
+  .job-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto auto; gap: 4px 16px; animation: slideIn 0.3s ease; position: relative; overflow: hidden; }
+  .job-card.status-queued    { border-left: 3px solid var(--yellow); }
+  .job-card.status-running   { border-left: 3px solid var(--cyan); }
+  .job-card.status-success   { border-left: 3px solid var(--green); }
+  .job-card.status-failure,
+  .job-card.status-error     { border-left: 3px solid var(--red); }
+  .job-card.status-running::before { content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);animation:scanJob 1.5s linear infinite; }
+  @keyframes scanJob{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+  .job-repo { font-family: var(--mono); font-size: 0.8rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; grid-column: 1; grid-row: 1; }
+  .job-meta { font-size: 0.7rem; color: var(--muted); grid-column: 1; grid-row: 2; display: flex; gap: 12px; flex-wrap: wrap; }
+  .job-msg  { font-family: var(--mono); font-size: 0.68rem; color: var(--muted); grid-column: 1; grid-row: 3; margin-top: 2px; }
+  .job-card.status-failure .job-msg,
+  .job-card.status-error .job-msg { color: #ff7070; }
+  .job-status { grid-column: 2; grid-row: 1/4; align-self: center; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .status-badge { font-family: var(--mono); font-size: 0.68rem; padding: 3px 10px; border-radius: 4px; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
+  .badge-queued  { background: rgba(255,214,0,0.12); color: var(--yellow); }
+  .badge-running { background: rgba(0,229,255,0.12); color: var(--cyan); }
+  .badge-success { background: rgba(57,255,20,0.12); color: var(--green); }
+  .badge-failure,
+  .badge-error   { background: rgba(255,57,57,0.12); color: var(--red); }
+  .download-btn { font-family: var(--mono); font-size: 0.7rem; color: var(--green); background: rgba(57,255,20,0.08); border: 1px solid rgba(57,255,20,0.25); border-radius: 4px; padding: 4px 10px; cursor: pointer; text-decoration: none; transition: all 0.15s; white-space: nowrap; }
+  .download-btn:hover { background: rgba(57,255,20,0.15); border-color: var(--green); }
+  .gh-link { font-family: var(--mono); font-size: 0.7rem; color: var(--muted); background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 4px; padding: 4px 10px; text-decoration: none; white-space: nowrap; transition: all 0.15s; }
+  .gh-link:hover { color: var(--text); border-color: var(--muted); }
+
+  .legend { margin-top: 20px; padding: 14px 16px; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; display: flex; flex-wrap: wrap; gap: 12px 24px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.72rem; color: var(--muted); font-family: var(--mono); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+  .notice { padding: 10px 14px; background: rgba(255,107,0,0.06); border: 1px solid rgba(255,107,0,0.2); border-radius: 6px; font-family: var(--mono); font-size: 0.72rem; color: var(--muted); display: flex; gap: 8px; line-height: 1.5; }
+  .notice .ico { color: var(--orange); flex-shrink: 0; }
+  .mt { margin-top: 10px; }
+
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); font-family: var(--mono); font-size: 0.82rem; border: 1px dashed var(--border); border-radius: 6px; }
+  .empty-state .big { font-size: 2rem; margin-bottom: 8px; opacity: 0.3; }
+
+  footer { text-align: center; padding: 32px 0; font-family: var(--mono); font-size: 0.7rem; color: var(--muted); position: relative; z-index: 1; }
+  footer a { color: var(--orange); text-decoration: none; }
+
+  /* ── Ads & Support ── */
+  .ad-slot {
+    position: relative;
+    z-index: 1;
+    margin: 28px 0;
+    text-align: center;
+  }
+  .ad-label {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 6px;
+    opacity: 0.5;
+  }
+  .ad-slot ins {
+    display: block;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  /* Fallback placeholder shown only when AdSense hasn't loaded */
+  .ad-placeholder {
+    background: var(--bg2);
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    opacity: 0.4;
+  }
+
+  .support-bar {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 16px 20px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin: 28px 0;
+    flex-wrap: wrap;
+  }
+  .support-bar-text {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+  .coffee-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 16px;
+    background: #FFDD00;
+    border: none;
+    border-radius: 6px;
+    color: #000;
+    font-family: var(--sans);
+    font-size: 0.82rem;
+    font-weight: 800;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .coffee-btn:hover {
+    background: #ffe733;
+    box-shadow: 0 0 16px rgba(255,221,0,0.35);
+    transform: translateY(-1px);
+  }
+  .kofi-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 16px;
+    background: #29ABE0;
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+    font-family: var(--sans);
+    font-size: 0.82rem;
+    font-weight: 800;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .kofi-btn:hover {
+    background: #3dbcf1;
+    box-shadow: 0 0 16px rgba(41,171,224,0.35);
+    transform: translateY(-1px);
+  }
+
+  /* ── Token modal ── */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px); }
+  .modal { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 28px; max-width: 480px; width: 100%; position: relative; }
+  .modal::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--orange), transparent); border-radius: 10px 10px 0 0; }
+  .modal h2 { font-size: 1.1rem; font-weight: 800; margin-bottom: 8px; }
+  .modal h2 span { color: var(--orange); }
+  .modal p { font-size: 0.82rem; color: var(--muted); line-height: 1.6; margin-bottom: 16px; font-family: var(--mono); }
+  .modal-steps { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+  .modal-step { display: flex; gap: 10px; font-family: var(--mono); font-size: 0.75rem; color: var(--muted); line-height: 1.5; align-items: flex-start; }
+  .modal-step .n { background: var(--orange); color: #000; font-weight: 900; width: 18px; height: 18px; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; flex-shrink: 0; margin-top: 2px; }
+  .modal-step a { color: var(--orange); }
+  .modal-step code { background: var(--bg3); padding: 0 5px; border-radius: 3px; font-size: 0.7rem; color: var(--text); }
+  .modal-input-wrap { position: relative; margin-bottom: 12px; }
+  .modal-input-wrap input { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: var(--mono); font-size: 0.88rem; padding: 12px 14px; outline: none; transition: border-color 0.2s; }
+  .modal-input-wrap input:focus { border-color: var(--orange); }
+  .modal-btn { width: 100%; padding: 13px; background: var(--orange); border: none; border-radius: 6px; color: #000; font-family: var(--sans); font-size: 0.95rem; font-weight: 900; cursor: pointer; transition: all 0.2s; }
+  .modal-btn:hover { background: #ff8533; }
+  .modal-err { font-family: var(--mono); font-size: 0.72rem; color: var(--red); margin-bottom: 10px; min-height: 16px; }
+
+  .repo-field-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .repo-field-label label { margin: 0; }
+  .change-token-btn { font-family: var(--mono); font-size: 0.65rem; color: var(--muted); background: none; border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px; cursor: pointer; transition: all 0.15s; }
+  .change-token-btn:hover { color: var(--orange); border-color: var(--orange); }
+</style>
+</head>
+<body>
+
+<!-- Token Setup Modal -->
+<div class="modal-overlay" id="token-modal" style="display:none!important">
+  <div class="modal">
+    <h2>Connect Your <span>GitHub</span></h2>
+    <p>FlipperFAP uses GitHub Actions to compile your .fap files for free. You need a GitHub Personal Access Token to trigger compilations.</p>
+    <div class="modal-steps">
+      <div class="modal-step"><span class="n">1</span><span>Fork the <a href="https://github.com/your-username/flipper-fap-actions" target="_blank" id="fork-link">flipper-fap-actions</a> repo to your GitHub account</span></div>
+      <div class="modal-step"><span class="n">2</span><span>Go to <a href="https://github.com/settings/tokens/new?scopes=repo,workflow&description=FlipperFAP" target="_blank">github.com/settings/tokens</a> → Generate new token (classic)</span></div>
+      <div class="modal-step"><span class="n">3</span><span>Enable scopes: <code>repo</code> and <code>workflow</code> → click Generate</span></div>
+      <div class="modal-step"><span class="n">4</span><span>Paste the token below. It's saved only in your browser (never sent to any server).</span></div>
+    </div>
+    <div class="modal-input-wrap">
+      <input type="password" id="modal-token-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="off" spellcheck="false"/>
+    </div>
+    <div class="modal-err" id="modal-err"></div>
+    <button class="modal-btn" onclick="saveToken()">Save Token & Continue</button>
+  </div>
+</div>
+
+<div class="container">
+  <header>
+    <div class="logo-wrap">
+      <svg width="52" height="52" viewBox="0 0 52 52" fill="none">
+        <rect x="4" y="12" width="44" height="28" rx="6" stroke="#FF6B00" stroke-width="2.5" fill="none"/>
+        <circle cx="38" cy="18" r="4" fill="#FF6B00" opacity="0.9"/>
+        <circle cx="38" cy="18" r="2" fill="#FF6B00"/>
+        <rect x="10" y="20" width="18" height="12" rx="2" fill="#FF6B00" opacity="0.15" stroke="#FF6B00" stroke-width="1.5"/>
+        <rect x="12" y="22" width="14" height="8" rx="1" fill="#FF6B00" opacity="0.3"/>
+        <rect x="14" y="24" width="2" height="2" fill="#FF6B00" opacity="0.8"/>
+        <rect x="17" y="24" width="2" height="2" fill="#FF6B00" opacity="0.8"/>
+        <rect x="20" y="24" width="2" height="2" fill="#FF6B00" opacity="0.4"/>
+        <rect x="14" y="27" width="2" height="1" fill="#FF6B00" opacity="0.5"/>
+        <rect x="17" y="27" width="4" height="1" fill="#FF6B00" opacity="0.5"/>
+        <circle cx="32" cy="28" r="2.5" stroke="#FF6B00" stroke-width="1.5" fill="none" opacity="0.6"/>
+        <circle cx="38" cy="28" r="2.5" stroke="#FF6B00" stroke-width="1.5" fill="none" opacity="0.6"/>
+        <circle cx="35" cy="24" r="2.5" stroke="#FF6B00" stroke-width="1.5" fill="none" opacity="0.6"/>
+        <circle cx="35" cy="32" r="2.5" stroke="#FF6B00" stroke-width="1.5" fill="none" opacity="0.6"/>
+        <circle cx="35" cy="28" r="1.5" fill="#FF6B00" opacity="0.8"/>
+        <line x1="44" y1="12" x2="48" y2="6" stroke="#FF6B00" stroke-width="1.5" opacity="0.5" stroke-linecap="round"/>
+        <circle cx="48" cy="5" r="1.5" fill="#FF6B00" opacity="0.6"/>
+      </svg>
+      <div><h1>Flipper<span class="accent">FAP</span></h1></div>
+    </div>
+    <div class="tagline"><span class="live-dot"></span> Online Application Compiler — Powered by GitHub Actions</div>
+  </header>
+
+  <div class="divider"></div>
+
+  <!-- ── Ad: top banner (responsive) ─────────────────────────────────────
+       Replace ca-pub-XXXXXXXXXXXXXXXX with your AdSense Publisher ID
+       Replace 1111111111 with your ad-slot ID from AdSense dashboard -->
+  <div class="ad-slot">
+    <div class="ad-label">Advertisement</div>
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+         data-ad-slot="1111111111"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Compile Application</div>
+
+    <!-- Debug info bar -->
+    <div id="debug-bar" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px 14px;margin-bottom:18px;font-family:var(--mono);font-size:0.72rem;line-height:1.8;">
+      <div style="color:var(--orange);margin-bottom:4px;font-size:0.68rem;letter-spacing:0.1em;">⚙ CONNECTED AS</div>
+      <div>token: <span id="dbg-token" style="color:var(--text);">loading...</span></div>
+      <div>owner: <span id="dbg-owner" style="color:var(--text);">loading...</span></div>
+      <div>repo:&nbsp; <span id="dbg-repo"  style="color:var(--text);">loading...</span></div>
+      <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;">
+        
+        <button onclick="testConnection()" style="font-family:var(--mono);font-size:0.68rem;background:none;border:1px solid var(--border);border-radius:4px;padding:3px 10px;cursor:pointer;color:var(--cyan);">⚡ Test Connection</button>
+      </div>
+      <div id="dbg-test-result" style="margin-top:6px;font-size:0.68rem;min-height:14px;color:var(--muted);"></div>
+    </div>
+
+    <div class="form-group">
+      <div class="repo-field-label">
+        <label>Git Repository URL</label>
+      </div>
+      <div class="input-wrap">
+        <span class="prefix">$</span>
+        <input type="text" id="repo-url" placeholder="https://github.com/user/app  or  https://your-gitea.com/user/app" autocomplete="off" spellcheck="false"/>
+      </div>
+      <div class="notice mt">
+        <span class="ico">ⓘ</span>
+        <span>Supports any <strong>GitHub</strong> or <strong>Gitea</strong> repo URL. Must contain an <code>application.fam</code> file.</span>
+      </div>
+    </div>
+
+    <div class="firmware-grid">
+      <div class="form-group">
+        <label>Target Firmware</label>
+        <div class="fw-options">
+          <div class="fw-card">
+            <input type="radio" name="firmware" id="fw-official" value="official" checked/>
+            <label for="fw-official"><span class="fw-dot"></span><span class="fw-name">Official</span><span class="fw-ver">v1.4.3</span></label>
+          </div>
+          <div class="fw-card">
+            <input type="radio" name="firmware" id="fw-momentum" value="momentum"/>
+            <label for="fw-momentum"><span class="fw-dot"></span><span class="fw-name">Momentum</span><span class="fw-ver">mntm-012</span><span class="fw-badge badge-pop">Popular</span></label>
+          </div>
+          <div class="fw-card">
+            <input type="radio" name="firmware" id="fw-unleashed" value="unleashed"/>
+            <label for="fw-unleashed"><span class="fw-dot"></span><span class="fw-name">Unleashed</span><span class="fw-ver">unlshd-086</span></label>
+          </div>
+          <div class="fw-card">
+            <input type="radio" name="firmware" id="fw-xtreme" value="xtreme"/>
+            <label for="fw-xtreme"><span class="fw-dot"></span><span class="fw-name">Xtreme</span><span class="fw-ver">xFW-0066</span><span class="fw-badge badge-new">New</span></label>
+          </div>
+        </div>
+        <div class="version-note" id="fw-note">Stable official Flipper Zero firmware.</div>
+      </div>
+
+      <div class="form-group">
+        <label>Build Channel</label>
+        <div class="channel-toggle">
+          <input type="radio" name="channel" id="ch-release" value="release" checked/>
+          <label for="ch-release">Release</label>
+          <input type="radio" name="channel" id="ch-dev" value="dev"/>
+          <label for="ch-dev">Dev</label>
+        </div>
+        <div class="channel-desc" id="channel-desc">Stable release — recommended for most users.</div>
+
+        <div class="out-box">
+          <div><span class="k">firmware:</span> <span id="out-fw">Official v1.4.3</span></div>
+          <div><span class="k">channel: </span> <span id="out-ch">release</span></div>
+          <div><span class="k">runner:  </span> GitHub Actions (free)</div>
+          <div><span class="k">output:  </span> <span class="g">app.fap</span></div>
+          <div><span class="k">expires: </span> 30 days</div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-compile" id="compile-btn" onclick="submitCompile()">
+      <div class="btn-inner">
+        <div class="spinner" id="btn-spinner"></div>
+        <span id="btn-text">⚙ Compile .FAP</span>
+      </div>
+    </button>
+  </div>
+
+
+  <!-- ── Support bar ── -->
+  <div class="support-bar">
+    <span class="support-bar-text">☕ FlipperFAP is free — if it helped you, consider supporting:</span>
+    <!-- Replace YOUR_BMC_USERNAME with your Buy Me a Coffee username -->
+    <a class="coffee-btn" href="https://www.buymeacoffee.com/YOUR_BMC_USERNAME" target="_blank">
+      ☕ Buy Me a Coffee
+    </a>
+    <!-- Replace YOUR_KOFI_USERNAME with your Ko-fi username -->
+    <a class="kofi-btn" href="https://ko-fi.com/YOUR_KOFI_USERNAME" target="_blank">
+      ❤ Ko-fi
+    </a>
+  </div>
+
+  <!-- ── Ad: mid-page (rectangle, shown between form and results) ──────────
+       Replace ca-pub-XXXXXXXXXXXXXXXX and 2222222222 with your real values -->
+  <div class="ad-slot">
+    <div class="ad-label">Advertisement</div>
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+         data-ad-slot="2222222222"
+         data-ad-format="rectangle"
+         data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  </div>
+
+  <div class="jobs-section">
+    <div class="section-header">
+      <div class="section-title">Compiled Applications</div>
+      <button class="clear-btn" onclick="clearJobs()">Clear list</button>
+    </div>
+    <div class="jobs-list" id="jobs-list">
+      <div class="empty-state" id="empty-state">
+        <div class="big">📦</div>
+        No compilations yet. Submit a repo above to get started.
+      </div>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--yellow)"></div>queued</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--cyan)"></div>running</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>success — ready to download</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>failed</div>
+    </div>
+  </div>
+</div>
+
+
+  <!-- ── Ad: bottom banner ───────────────────────────────────────────────
+       Replace ca-pub-XXXXXXXXXXXXXXXX and 3333333333 with your real values -->
+  <div class="ad-slot" style="margin-bottom:0">
+    <div class="ad-label">Advertisement</div>
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+         data-ad-slot="3333333333"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  </div>
+
+<footer>
+  FlipperFAP &nbsp;·&nbsp; Powered by GitHub Actions &nbsp;·&nbsp;
+  <a href="https://github.com/flipperdevices/flipperzero-firmware" target="_blank">Flipper Firmware</a>
+  &nbsp;·&nbsp; Token stored locally in your browser only
+</footer>
+
+<script>
+// ── Config ───────────────────────────────────────────────────────────────────
+// Point this to your Cloudflare Worker URL after deploying
+// e.g. 'https://flipperfap-worker.YOUR-SUBDOMAIN.workers.dev'
+const WORKER_URL = 'https://flipperfap-worker.YOUR-SUBDOMAIN.workers.dev';
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let jobs  = JSON.parse(localStorage.getItem('fap_jobs_v3') || '[]');
+const polls = {};
+
+// Helper: call our worker (no token needed — worker holds it)
+const api = (path, options = {}) =>
+  fetch(WORKER_URL + path, {
+    ...options,
+    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+  });
+
+const fwNotes = {
+  official:  'Stable official Flipper Zero firmware.',
+  momentum:  'Feature-rich fork focused on hackability & customization.',
+  unleashed: 'Removes region locks, adds extra protocols & plugins.',
+  xtreme:    'Bleeding-edge features, experimental — use with caution.',
+};
+const fwLabels = {
+  official:  'Official v1.4.3',
+  momentum:  'Momentum mntm-012',
+  unleashed: 'Unleashed unlshd-086',
+  xtreme:    'Xtreme xFW-0066',
+};
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.querySelectorAll('input[name="firmware"]').forEach(r => {
+  r.addEventListener('change', () => {
+    document.getElementById('fw-note').textContent = fwNotes[r.value];
+    document.getElementById('out-fw').textContent  = fwLabels[r.value];
+  });
+});
+document.querySelectorAll('input[name="channel"]').forEach(r => {
+  r.addEventListener('change', () => {
+    document.getElementById('channel-desc').textContent = r.value === 'release'
+      ? 'Stable release — recommended for most users.'
+      : 'Dev build — latest commits, may contain bugs.';
+    document.getElementById('out-ch').textContent = r.value;
+  });
+});
+document.getElementById('repo-url').addEventListener('keydown', e => {
+  if (e.key === 'Enter') submitCompile();
+});
+document.getElementById('modal-token-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') saveToken();
+});
+
+// ── Debug bar ────────────────────────────────────────────────────────────────
+function updateDebugBar() {
+  const workerSet = WORKER_URL && !WORKER_URL.includes('YOUR-SUBDOMAIN');
+  document.getElementById('dbg-token').textContent = workerSet ? '✅ Using secure worker' : '❌ Worker URL not set';
+  document.getElementById('dbg-token').style.color = workerSet ? 'var(--green)' : 'var(--red)';
+  document.getElementById('dbg-owner').textContent = 'joelewis012';
+  document.getElementById('dbg-owner').style.color = 'var(--green)';
+  document.getElementById('dbg-repo').textContent  = 'flipper-fap-actions';
+  document.getElementById('dbg-repo').style.color  = 'var(--green)';
+}
+
+async function testConnection() {
+  const el = document.getElementById('dbg-test-result');
+  el.style.color = 'var(--cyan)';
+  el.textContent = 'Testing…';
+  try {
+    // Test worker is reachable
+    const repoRes = await api('/api/repo-info');
+    if (!repoRes.ok) {
+      el.style.color = 'var(--red)';
+      el.textContent = '❌ Worker error (HTTP ' + repoRes.status + '). Check worker is deployed and GH_TOKEN is set.';
+      return;
+    }
+
+    // Test workflow file exists
+    const wfRes = await api('/api/check-workflow');
+    if (!wfRes.ok) {
+      el.style.color = 'var(--red)';
+      el.textContent = '❌ compile.yml not found in repo. Make sure .github/workflows/compile.yml exists.';
+      return;
+    }
+
+    el.style.color = 'var(--green)';
+    el.textContent = '✅ All good! Worker connected, repo found, workflow ready.';
+  } catch(e) {
+    el.style.color = 'var(--red)';
+    el.textContent = '❌ Cannot reach worker: ' + (e.message || String(e)) + '. Check WORKER_URL is correct.';
+  }
+}
+
+// No token needed — worker handles auth
+document.getElementById('token-modal').style.display = 'none';
+updateDebugBar();
+restoreJobs();
+fetchStats();
+
+// ── Token modal ───────────────────────────────────────────────────────────────
+function showTokenModal() {
+  document.getElementById('modal-err').textContent = '';
+  document.getElementById('modal-token-input').value = '';
+  // modal disabled — using worker
+}
+
+async function saveToken() {
+  // No longer needed — worker handles auth
+  document.getElementById('token-modal').style.display = 'none';
+  updateDebugBar();
+  restoreJobs();
+}
+  errEl.textContent = 'Verifying token…';
+
+  // Verify token and get username
+  try {
+    const res = await ghFetch('https://api.github.com/user', raw);
+    if (!res.ok) { errEl.textContent = 'Token invalid or expired. Please try again.'; return; }
+    const user = await res.json();
+
+    // Check the forked repo exists
+    const repoRes = await ghFetch(`https://api.github.com/repos/${user.login}/flipper-fap-actions`, raw);
+    if (!repoRes.ok) {
+      errEl.textContent = `Repo "${user.login}/flipper-fap-actions" not found. Please fork it first (step 1).`;
+      return;
+    }
+
+    document.getElementById('token-modal').style.display = 'none';
+    updateDebugBar();
+    restoreJobs();
+  } catch (e) {
+    errEl.textContent = 'Network error. Check your connection and try again.';
+  }
+}
+
+// ghFetch removed — using worker API instead
+
+// ── Submit ────────────────────────────────────────────────────────────────────
+async function submitCompile() {
+  const urlInput = document.getElementById('repo-url');
+  const url = urlInput.value.trim();
+  if (!url || !/^https?:\/\/.+\/.+/.test(url)) {
+    urlInput.classList.add('error');
+    setTimeout(() => urlInput.classList.remove('error'), 1500);
+    return;
+  }
+
+  const btn     = document.getElementById('compile-btn');
+  const spinner = document.getElementById('btn-spinner');
+  const btnText = document.getElementById('btn-text');
+  btn.disabled = true;
+  spinner.style.display = 'block';
+  btnText.textContent = 'Triggering workflow…';
+
+  const firmware = document.querySelector('input[name="firmware"]:checked').value;
+  const channel  = document.querySelector('input[name="channel"]:checked').value;
+
+  try {
+    // Trigger via worker (token stays secret on the server)
+    btnText.textContent = 'Triggering workflow…';
+    const triggerRes = await api('/api/trigger', {
+      method: 'POST',
+      body: JSON.stringify({ repo_url: url, firmware, channel }),
+    });
+
+    const triggerData = await triggerRes.json();
+    if (!triggerRes.ok) {
+      throw new Error(triggerData.error || `Worker error ${triggerRes.status}`);
+    }
+
+    // Wait then find the run
+    btnText.textContent = 'Finding run…';
+    await sleep(4000);
+    const runId = await findLatestRunId();
+
+    const job = {
+      runId,
+      repoUrl: url,
+      firmware,
+      fwLabel: fwLabels[firmware],
+      channel,
+      status: 'queued',
+      message: 'Workflow triggered — waiting for runner…',
+      artifactUrl: null,
+      ghUrl: `https://github.com/joelewis012/flipper-fap-actions/actions/runs/${runId}`,
+      createdAt: new Date().toISOString(),
+    };
+
+    jobs.unshift(job);
+    saveJobsLocal();
+    renderJobs();
+    startPolling(job);
+    urlInput.value = '';
+
+  } catch (e) {
+    // Show the full error — e could be an Error object or a plain string
+    const msg = (e && e.message) ? e.message : String(e);
+    alert('❌ ' + msg);
+  } finally {
+    btn.disabled = false;
+    spinner.style.display = 'none';
+    btnText.textContent = '⚙ Compile .FAP';
+  }
+}
+
+async function findLatestRunId() {
+  for (let i = 0; i < 10; i++) {
+    await sleep(2000);
+    try {
+      const res  = await api('/api/runs');
+      if (!res.ok) continue;
+      const data = await res.json();
+      const runs = data.workflow_runs || [];
+      if (runs.length > 0) return runs[0].id;
+    } catch (_) {}
+  }
+  throw new Error('Workflow triggered but run not found after 20s. Check GitHub Actions tab.');
+}
+
+// ── Polling ───────────────────────────────────────────────────────────────────
+function startPolling(job) {
+  if (!job.runId || polls[job.runId]) return;
+  polls[job.runId] = setInterval(() => pollJob(job), 5000);
+}
+
+async function pollJob(job) {
+  try {
+    const res = await api(`/api/run/${job.runId}`);
+    if (!res.ok) return;
+    const run = await res.json();
+
+    job.status  = run.status === 'completed' ? run.conclusion : run.status;
+    job.ghUrl   = run.html_url;
+    job.message = statusMessage(run);
+
+    if (run.status === 'completed' && run.conclusion === 'success') {
+      // Get artifact ID so we can download via API with token
+      const artRes = await api(`/api/artifacts/${job.runId}`);
+      if (artRes.ok) {
+        const artData = await artRes.json();
+        const art = artData.artifacts?.[0];
+        if (art) {
+          job.artifactId   = art.id;
+          job.artifactName = art.name + '.zip';
+        }
+      }
+      clearInterval(polls[job.runId]);
+      delete polls[job.runId];
+    } else if (run.status === 'completed') {
+      clearInterval(polls[job.runId]);
+      delete polls[job.runId];
+    }
+
+    saveJobsLocal();
+    renderJobs();
+  } catch {}
+}
+
+// Download artifact zip, extract the .fap, open in new tab (iOS Safari compatible)
+async function downloadArtifact(artifactId, artifactName, btnEl) {
+  const origText = btnEl ? btnEl.textContent : '↓ Download .fap';
+  if (btnEl) { btnEl.textContent = '⏳ Downloading…'; btnEl.disabled = true; }
+
+  try {
+    // Fetch the artifact zip with auth token
+    const res = await api(`/api/download/${artifactId}`);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `Worker returned HTTP ${res.status}`);
+    }
+
+    if (btnEl) btnEl.textContent = '⏳ Extracting…';
+
+    // Unzip in browser using JSZip
+    const arrayBuffer = await res.arrayBuffer();
+    const zip = await JSZip.loadAsync(arrayBuffer);
+
+    // Find the .fap file inside
+    const fapEntry = Object.values(zip.files).find(f => f.name.endsWith('.fap') && !f.dir);
+    if (!fapEntry) throw new Error('No .fap file found inside the downloaded zip.');
+
+    const fapFilename = fapEntry.name.split('/').pop();
+    const fapBlob = await fapEntry.async('blob');
+
+    // Create an object URL for the raw .fap bytes
+    const blobUrl = URL.createObjectURL(new Blob([fapBlob], { type: 'application/octet-stream' }));
+
+    // iOS Safari: open blob in new tab — user taps Share → Save to Files
+    // Desktop: falls back to <a download> click
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    if (isIOS) {
+      // Open in new tab — Safari shows the file and lets you save via Share sheet
+      const newTab = window.open(blobUrl, '_blank');
+      if (!newTab) {
+        // Popup blocked — show inline link instead
+        showInlineDownload(blobUrl, fapFilename, btnEl);
+        return;
+      }
+      if (btnEl) { btnEl.textContent = '✅ Opened! Tap Share → Save to Files'; btnEl.disabled = false; }
+      setTimeout(() => { if (btnEl) btnEl.textContent = origText; }, 5000);
+    } else {
+      // Desktop: standard anchor download
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = fapFilename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      if (btnEl) { btnEl.textContent = '✅ Downloaded!'; btnEl.disabled = false; }
+      setTimeout(() => { if (btnEl) btnEl.textContent = origText; }, 3000);
+    }
+
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+
+  } catch(e) {
+    if (btnEl) { btnEl.textContent = '❌ Error'; btnEl.disabled = false; }
+    setTimeout(() => { if (btnEl) btnEl.textContent = origText; }, 3000);
+    alert('❌ ' + (e.message || String(e)));
+  }
+}
+
+function showInlineDownload(blobUrl, filename, btnEl) {
+  // Fallback: replace button with a direct tap link
+  if (!btnEl) return;
+  const a = document.createElement('a');
+  a.href = blobUrl;
+  a.target = '_blank';
+  a.textContent = '↓ Tap here to open .fap';
+  a.style.cssText = 'font-family:var(--mono);font-size:0.7rem;color:var(--green);background:rgba(57,255,20,0.08);border:1px solid rgba(57,255,20,0.25);border-radius:4px;padding:4px 10px;text-decoration:none;white-space:nowrap;';
+  btnEl.replaceWith(a);
+}
+
+function statusMessage(run) {
+  if (run.status === 'queued')     return 'Waiting for a GitHub Actions runner…';
+  if (run.status === 'in_progress')return 'Compiling your .fap — this usually takes 1–3 minutes…';
+  if (run.conclusion === 'success')return 'Compilation successful! Download your .fap below.';
+  if (run.conclusion === 'failure')return 'Compilation failed. Click "View on GitHub" for the error log.';
+  return run.status;
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function renderJobs() {
+  const list = document.getElementById('jobs-list');
+
+  if (jobs.length === 0) {
+    list.innerHTML = '<div class="empty-state" id="empty-state"><div class="big">📦</div>No compilations yet. Submit a repo above to get started.</div>';
+    return;
+  }
+
+  list.innerHTML = jobs.map(job => {
+    const shortUrl = job.repoUrl.replace(/^https?:\/\//, '').replace(/\.git$/, '');
+    const ts = new Date(job.createdAt).toLocaleTimeString();
+    const displayStatus = mapStatus(job.status);
+
+    const downloadBtn = job.artifactId
+      ? `<button class="download-btn" onclick="downloadArtifact('${job.artifactId}', '${esc(job.artifactName || 'app')}', this)">↓ Download .fap</button>`
+      : '';
+    const ghBtn = job.ghUrl
+      ? `<a class="gh-link" href="${job.ghUrl}" target="_blank">View on GitHub</a>`
+      : '';
+
+    return `<div class="job-card status-${displayStatus}">
+      <div class="job-repo" title="${esc(job.repoUrl)}">${esc(shortUrl)}</div>
+      <div class="job-meta">
+        <span>🕐 ${ts}</span>
+        <span>⚡ ${esc(job.fwLabel)}</span>
+        <span>📦 ${esc(job.channel)}</span>
+      </div>
+      <div class="job-msg">${esc(job.message || '')}</div>
+      <div class="job-status">
+        <span class="status-badge badge-${displayStatus}">${displayStatus}</span>
+        ${downloadBtn}
+        ${ghBtn}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function mapStatus(s) {
+  if (s === 'in_progress') return 'running';
+  if (s === 'queued' || s === 'waiting' || s === 'pending') return 'queued';
+  if (s === 'success') return 'success';
+  if (s === 'failure' || s === 'cancelled' || s === 'timed_out') return 'failure';
+  return s || 'queued';
+}
+
+function restoreJobs() {
+  if (!jobs.length) { renderJobs(); return; }
+  renderJobs();
+  jobs.forEach(job => {
+    if (['queued','in_progress','running'].includes(job.status)) startPolling(job);
+  });
+}
+
+function clearJobs() {
+  Object.values(polls).forEach(clearInterval);
+  Object.keys(polls).forEach(k => delete polls[k]);
+  jobs = [];
+  saveJobsLocal();
+  renderJobs();
+}
+
+function saveJobsLocal() {
+  localStorage.setItem('fap_jobs_v3', JSON.stringify(jobs.slice(0, 50)));
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function fetchStats() {
+  try {
+    const res = await api('/api/stats');
+    if (!res.ok) return;
+    const s = await res.json();
+    const el1 = document.getElementById('stat-total');
+    const el2 = document.getElementById('stat-success');
+    const el3 = document.getElementById('stat-fw');
+    if (el1) el1.textContent = s.total ?? '—';
+    if (el2) el2.textContent = s.total ?? '—';
+    if (el3) el3.textContent = s.top_firmware ?? '—';
+  } catch {}
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
+</body>
+</html>
