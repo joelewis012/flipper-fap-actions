@@ -1364,7 +1364,8 @@ async function pollJob(job) {
     saveJobsLocal();
     fetchStats();
     // Small delay to let KV propagate, then refresh the list
-    await sleep(1500);
+    await sleep(2000);
+    publicJobsPage = 1;
     fetchPublicJobs(1);
   } catch(_){}
 }
@@ -1825,6 +1826,7 @@ setInterval(fetchOnlineCount, 60000);
 fetchPopularApps();
 setInterval(fetchStats,      300000);
 setInterval(fetchPopularApps, 600000); // refresh popular apps every 2 min
+setInterval(() => fetchPublicJobs(1),   30000);  // refresh compiled apps every 30s
 // feed removed
 </script>
 
