@@ -1372,25 +1372,31 @@ async function pollJob(job) {
 
 async function notifyJobComplete(job) {
   try {
+    const payload = {
+      repoUrl:    job.repoUrl,
+      firmware:   job.firmware,
+      fwLabel:    job.fwLabel,
+      channel:    job.channel,
+      status:     job.status,
+      createdAt:  job.createdAt,
+      runId:      job.runId ? String(job.runId) : null,
+      artifactId: job.artifactId ? String(job.artifactId) : null,
+    };
+    console.log('notifyJobComplete sending:', payload);
     const res = await api('/api/jobs/complete', {
       method:'POST',
-      body:JSON.stringify({
-        repoUrl:    job.repoUrl,
-        firmware:   job.firmware,
-        fwLabel:    job.fwLabel,
-        channel:    job.channel,
-        status:     job.status,
-        createdAt:  job.createdAt,
-        runId:      job.runId ? String(job.runId) : null,
-        artifactId: job.artifactId ? String(job.artifactId) : null,
-      }),
+      body:JSON.stringify(payload),
     });
+    const data = await res.json().catch(()=>({}));
+    console.log('notifyJobComplete response:', res.status, data);
     if (!res.ok) {
-      const err = await res.json().catch(()=>({}));
-      console.error('notifyJobComplete failed:', res.status, err);
+      showToast(`⚠️ Save failed: ${res.status} ${data.error||''}`);
+    } else {
+      console.log('✅ Job saved to KV successfully');
     }
   } catch(e) {
     console.error('notifyJobComplete error:', e);
+    showToast('⚠️ Could not save to history: ' + (e.message||e));
   }
 }
 
