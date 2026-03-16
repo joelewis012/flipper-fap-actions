@@ -1,0 +1,138 @@
+name: Compile FAP
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo_url:
+        description: "Git repository URL (GitHub or Gitea)"
+        required: true
+        type: string
+      firmware:
+        description: "Target firmware"
+        required: true
+        type: choice
+        options:
+          - official
+          - momentum
+          - unleashed
+          - xtreme
+        default: official
+      channel:
+        description: "Build channel"
+        required: true
+        type: choice
+        options:
+          - release
+          - dev
+        default: release
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Clone target app
+        run: |
+          git clone --depth 1 --recurse-submodules "${{ inputs.repo_url }}" /tmp/app
+          echo "✅ Cloned ${{ inputs.repo_url }}"
+
+      - name: Find application.fam
+        run: |
+          FAM=$(find /tmp/app -name "application.fam" | head -1)
+          if [ -z "$FAM" ]; then
+            echo "❌ No application.fam found — this doesn't look like a Flipper Zero app."
+            exit 1
+          fi
+          APP_DIR=$(dirname "$FAM")
+          echo "APP_DIR=$APP_DIR" >> $GITHUB_ENV
+          echo "✅ Found application.fam at $APP_DIR"
+
+      - name: Clone Official firmware
+        if: inputs.firmware == 'official'
+        run: |
+          BRANCH="release"
+          if [ "${{ inputs.channel }}" == "dev" ]; then BRANCH="dev"; fi
+          git clone --depth 1 -b $BRANCH https://github.com/flipperdevices/flipperzero-firmware.git /tmp/firmware
+          echo "FW_DIR=/tmp/firmware" >> $GITHUB_ENV
+
+      - name: Clone Momentum firmware
+        if: inputs.firmware == 'momentum'
+        run: |
+          BRANCH="release"
+          if [ "${{ inputs.channel }}" == "dev" ]; then BRANCH="dev"; fi
+          git clone --depth 1 -b $BRANCH https://github.com/Next-Flip/Momentum-Firmware.git /tmp/firmware || \
+          git clone --depth 1 https://github.com/Next-Flip/Momentum-Firmware.git /tmp/firmware
+          echo "FW_DIR=/tmp/firmware" >> $GITHUB_ENV
+
+      - name: Clone Unleashed firmware
+        if: inputs.firmware == 'unleashed'
+        run: |
+          BRANCH="dev"
+          if [ "${{ inputs.channel }}" == "release" ]; then BRANCH="$(curl -s https://api.github.com/repos/DarkFlippers/unleashed-firmware/releases/latest | jq -r .tag_name)"; fi
+          git clone --depth 1 -b $BRANCH https://github.com/DarkFlippers/unleashed-firmware.git /tmp/firmware || \
+          git clone --depth 1 https://github.com/DarkFlippers/unleashed-firmware.git /tmp/firmware
+          echo "FW_DIR=/tmp/firmware" >> $GITHUB_ENV
+
+      - name: Clone Xtreme firmware
+        if: inputs.firmware == 'xtreme'
+        run: |
+          git clone --depth 1 https://github.com/ClaraCrazy/Flipper-Xtreme.git /tmp/firmware || \
+          git clone --depth 1 https://github.com/Flipper-XFW/Xtreme-Firmware.git /tmp/firmware
+          echo "FW_DIR=/tmp/firmware" >> $GITHUB_ENV
+
+      - name: Install toolchain dependencies
+        run: |
+          cd $FW_DIR
+          # Install Python deps needed by fbt
+          pip install pyserial heatshrink2 Pillow 2>/dev/null || true
+          # Make fbt executable
+          chmod +x ./fbt 2>/dev/null || true
+
+      - name: Copy app into firmware tree
+        run: |
+          mkdir -p $FW_DIR/applications_user/fap_build_app
+          cp -r "$APP_DIR"/. $FW_DIR/applications_user/fap_build_app/
+          echo "APP_SLOT=applications_user/fap_build_app" >> $GITHUB_ENV
+
+      - name: Compile .fap with fbt
+        run: |
+          cd $FW_DIR
+          # Try to build — fbt handles toolchain download automatically
+          ./fbt fap_${{ inputs.firmware == 'official' && 'dist' || 'dist' }} APPSRC=$APP_SLOT 2>&1 || \
+          ./fbt fap APPSRC=$APP_SLOT 2>&1 || \
+          ./fbt APPSRC=$APP_SLOT 2>&1
+
+      - name: Find and collect .fap file
+        run: |
+          mkdir -p /tmp/output
+          FAP=$(find $FW_DIR -name "*.fap" | head -1)
+          if [ -z "$FAP" ]; then
+            echo "❌ No .fap file found after compilation"
+            exit 1
+          fi
+          echo "✅ Found .fap: $FAP"
+          # Name it after the repo
+          REPO_NAME=$(basename "${{ inputs.repo_url }}" .git)
+          cp "$FAP" "/tmp/output/${REPO_NAME}.fap"
+          echo "FAP_NAME=${REPO_NAME}.fap" >> $GITHUB_ENV
+
+      - name: Upload .fap artifact
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: "${{ env.FAP_NAME }}"
+          path: /tmp/output/*.fap
+          retention-days: 30
+
+      - name: Summary
+        run: |
+          echo "## ✅ Compilation Successful!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Repo | ${{ inputs.repo_url }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Firmware | ${{ inputs.firmware }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Channel | ${{ inputs.channel }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Output | ${{ env.FAP_NAME }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Download the artifact from the Actions tab above ⬆️" >> $GITHUB_STEP_SUMMARY
