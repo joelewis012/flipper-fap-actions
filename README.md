@@ -6,7 +6,7 @@
 
 **Compile Flipper Zero `.fap` apps from any GitHub or Gitea URL**
 
-Free · Works on iPhone · No server needed · Supports all major firmware
+Free · Works on Mobile · No server needed · Supports all major firmware
 
 [![Live Site](https://img.shields.io/badge/Live%20Site-joelewis012.github.io%2Fflipper--fap--actions-FF6B00?style=for-the-badge)](https://joelewis012.github.io/flipper-fap-actions/)
 [![GitHub Actions](https://img.shields.io/badge/Powered%20by-GitHub%20Actions-2088FF?style=for-the-badge&logo=github-actions)](https://github.com/features/actions)
