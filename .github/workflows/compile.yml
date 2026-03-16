@@ -96,14 +96,17 @@ jobs:
       - name: Compile .fap with fbt
         run: |
           cd $FW_DIR
-          ./fbt fap_${{ inputs.firmware == 'official' && 'dist' || 'dist' }} APPSRC=$APP_SLOT 2>&1 || \
-          ./fbt fap APPSRC=$APP_SLOT 2>&1 || \
-          ./fbt APPSRC=$APP_SLOT 2>&1
+          ./fbt fap APPSRC=$APP_SLOT 2>&1
 
       - name: Find and collect .fap file
         run: |
           mkdir -p /tmp/output
-          FAP=$(find $FW_DIR -name "*.fap" | head -1)
+          # Look only in the specific app's output location
+          FAP=$(find $FW_DIR/build -name "*.fap" -path "*fap_build_app*" 2>/dev/null | head -1)
+          # Fallback: newest .fap in extapps folder
+          if [ -z "$FAP" ]; then
+            FAP=$(find $FW_DIR/build -name "*.fap" -newer /tmp/app -not -path "*debug*" 2>/dev/null | head -1)
+          fi
           if [ -z "$FAP" ]; then
             echo "❌ No .fap file found after compilation"
             exit 1
