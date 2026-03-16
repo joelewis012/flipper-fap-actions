@@ -1477,66 +1477,101 @@ function renderJobs() {
   const list = document.getElementById('jobs-list');
   if (!list) return;
 
-  // Show any active local jobs (queued/compiling) at the top
-  const active = jobs.filter(j => ['queued','in_progress','compiling','running'].includes(mapStatus(j.status)));
   const clearBtn = document.getElementById('clear-local-btn');
-  if (clearBtn) clearBtn.style.display = active.length ? 'block' : 'none';
-  if (active.length) {
-    const activeHtml = active.map(job => {
-      const ds    = mapStatus(job.status);
-      const short = job.repoUrl.replace(/^https?:\/\//,'').replace(/\.git$/,'');
-      const name  = short.split('/').pop().replace(/-/g,' ').replace(/_/g,' ') || short;
+
+  // Show ALL local jobs — active AND completed
+  // This ensures your compile is always visible regardless of KV timing
+  if (jobs.length) {
+    if (clearBtn) clearBtn.style.display = 'block';
+
+    const localHtml = jobs.map(job => {
+      const ds      = mapStatus(job.status);
+      const short   = job.repoUrl.replace(/^https?:\/\//,'').replace(/\.git$/,'');
+      const name    = short.replace(/\/$/, '').split('/').pop().replace(/-/g,' ').replace(/_/g,' ') || short;
       const elapsed = job.startedAt ? Math.round((Date.now()-job.startedAt)/1000) : 0;
-      const logBtn  = job.runId ? `<button class="log-toggle" onclick="toggleLog('${job.runId}',this)">📋 Show build log</button>` : '';
-      const logWrap = job.runId ? `<div class="build-log-wrap" id="log-${job.runId}" style="display:none"><div class="build-log">Click "Show build log" to load…</div></div>` : '';
+      const fw      = esc(job.fwLabel||job.firmware||'?');
+      const ch      = esc(job.channel||'release');
+      const ts      = job.createdAt ? timeAgo(new Date(job.createdAt).getTime()) : '';
+      const dlBtn   = job.artifactId
+        ? `<button class="download-btn" onclick="downloadArtifact('${job.artifactId}','${esc(job.artifactName||name)}',this)">↓ Download .fap</button>`
+        : '';
+      const repoBtn = `<a class="gh-link" href="https://${esc(short)}" target="_blank">⧉ View Repo</a>`;
+      const logBtn  = job.runId && (ds==='compiling'||ds==='queued')
+        ? `<button class="log-toggle" onclick="toggleLog('${job.runId}',this)">📋 Show build log</button>` : '';
+      const logWrap = job.runId && (ds==='compiling'||ds==='queued')
+        ? `<div class="build-log-wrap" id="log-${job.runId}" style="display:none"><div class="build-log">Click "Show build log" to load…</div></div>` : '';
+      const copyBtn = ds==='success'||ds==='failure'
+        ? `<button class="job-action-btn" onclick="copyJobUrl('https://${esc(short)}',this)">📋 Copy URL</button>` : '';
+      const recompBtn = ds==='success'||ds==='failure'
+        ? `<button class="job-action-btn" onclick="recompileJob('https://${esc(short)}','${esc(job.firmware||'official')}','${esc(job.channel||'release')}')">↻ Recompile</button>` : '';
+      const metaTime = ds==='compiling'||ds==='queued'
+        ? `<span>🕐 ${elapsed}s elapsed</span>`
+        : `<span>🕐 ${ts}</span>`;
       return `<div class="job-card status-${ds}">
-        <div class="job-repo" style="font-weight:700;font-size:0.9rem;white-space:normal;">${esc(name)}</div>
-        <div class="job-meta"><span>⚡ ${esc(job.fwLabel||job.firmware)}</span><span>📦 ${esc(job.channel)}</span><span>🕐 ${elapsed}s elapsed</span></div>
+        <div class="job-repo" style="font-weight:700;font-size:0.9rem;white-space:normal;word-break:break-word;">${esc(name)}</div>
+        <div class="job-meta"><span>⚡ ${fw}</span><span>📦 ${ch}</span>${metaTime}</div>
         <div class="job-msg">${esc(job.message||'')}</div>
         ${logBtn}${logWrap}
-        <div class="job-status"><span class="status-badge badge-${ds}">${ds}</span></div>
+        <div class="job-status">
+          <span class="status-badge badge-${ds}">${ds}</span>
+          ${dlBtn}
+          ${ds==='success'||ds==='failure'?repoBtn:''}
+        </div>
+        ${copyBtn||recompBtn ? `<div style="grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;border-top:1px solid var(--border);padding-top:8px;">${copyBtn}${recompBtn}</div>` : ''}
       </div>`;
     }).join('');
-    list.innerHTML = activeHtml + '<div id="public-jobs-container"></div>';
-    // Load KV jobs into the container below
-    fetchPublicJobs(publicJobsPage);
+
+    list.innerHTML = localHtml
+      + '<div id="public-jobs-container" style="margin-top:8px;"></div>';
   } else {
+    if (clearBtn) clearBtn.style.display = 'none';
     list.innerHTML = '<div id="public-jobs-container"></div>';
-    fetchPublicJobs(publicJobsPage);
   }
+
+  fetchPublicJobs(publicJobsPage);
 }
 
 
 // ── Public jobs (persistent, from KV) ────────────────────────────────────────
 async function fetchPublicJobs(page=1) {
   try {
-    const res=await api(`/api/jobs?page=${page}`); if(!res.ok) return;
-    const data=await res.json();
-    publicJobsTotal      = data.total||0;
-    publicJobsTotalPages = data.pages||1;
-    publicJobsPage       = data.page||1;
-    // On first page, also render top 3
-    renderPublicJobs(data.jobs||[]);
+    const res  = await api(`/api/jobs?page=${page}`);
+    if (!res.ok) { console.error('fetchPublicJobs failed:', res.status); return; }
+    const data = await res.json();
+    publicJobsTotal      = data.total || 0;
+    publicJobsTotalPages = data.pages || 1;
+    publicJobsPage       = data.page  || 1;
+
+    // Update count
+    const countEl = document.getElementById('jobs-count');
+    if (countEl) countEl.textContent = publicJobsTotal ? `${publicJobsTotal} total` : '';
+
+    renderPublicJobs(data.jobs || []);
     renderJobsPagination();
-    const el=document.getElementById('jobs-count');
-    if(el) el.textContent=publicJobsTotal?`${publicJobsTotal} total`:'';
-  } catch(_){}
+  } catch(e) {
+    console.error('fetchPublicJobs error:', e);
+  }
 }
 
-
 function renderPublicJobs(pjobs) {
-  const container = document.getElementById('public-jobs-container');
-  const list      = document.getElementById('jobs-list');
-  const target    = container || list;
+  // Always write into #public-jobs-container if it exists, else jobs-list directly
+  const target = document.getElementById('public-jobs-container')
+               || document.getElementById('jobs-list');
   if (!target) return;
+
   if (!pjobs.length) {
-    target.innerHTML = '<div class="empty-state"><div class="big">📦</div>No compilations yet — be the first!</div>';
+    if (!jobs.length) {
+      // Only show empty state if no local jobs either
+      const list = document.getElementById('jobs-list');
+      if (list) list.innerHTML = '<div class="empty-state"><div class="big">📦</div>No compilations yet — be the first!</div>';
+    }
     return;
   }
-  const pubHtml = pjobs.map(job => {
+
+  target.innerHTML = pjobs.map(job => {
     const ds      = job.status==='success'?'success':job.status==='failure'?'failure':'queued';
-    const appName = (job.repoUrl||'').replace(/\/$/, '').replace(/\.git$/, '').split('/').pop().replace(/-/g,' ').replace(/_/g,' ') || 'Unknown';
-    const repoUrl = (job.repoUrl||'').replace(/\/$/, '');
+    const repoUrl = (job.repoUrl||'').replace(/\/$/, '').replace(/\.git$/, '');
+    const appName = repoUrl.split('/').pop().replace(/-/g,' ').replace(/_/g,' ') || 'Unknown';
     const ts      = job.createdAt ? timeAgo(new Date(job.createdAt).getTime()) : '';
     const fw      = esc(job.fwLabel||job.firmware||'?');
     const ch      = esc(job.channel||'release');
@@ -1544,7 +1579,7 @@ function renderPublicJobs(pjobs) {
     const dlBtn   = job.artifactId
       ? `<button class="download-btn" onclick="downloadArtifact('${esc(String(job.artifactId))}','${esc(repoUrl)}',this)">↓ Download .fap</button>`
       : '';
-    const ghBtn   = (ghUrl && debugMode) ? `<a class="gh-link" href="${ghUrl}" target="_blank">Actions</a>` : '';
+    const ghBtn = (ghUrl && debugMode) ? `<a class="gh-link" href="${ghUrl}" target="_blank">Actions</a>` : '';
     return `<div class="job-card status-${ds}">
       <div class="job-repo" style="font-weight:700;font-size:0.9rem;white-space:normal;word-break:break-word;">${esc(appName)}</div>
       <div class="job-meta">
@@ -1565,8 +1600,8 @@ function renderPublicJobs(pjobs) {
       </div>
     </div>`;
   }).join('');
-  target.innerHTML = pubHtml;
 }
+
 
 function renderJobsPagination() {
   const el=document.getElementById('jobs-pages'); if(!el) return;
@@ -1810,7 +1845,6 @@ applyLang();
 updateDebugBar();
 renderRecent();
 renderJobs();
-fetchPublicFeed();
 renderAppDir();
 fetchStats();
 loadFromParams();
@@ -1829,18 +1863,6 @@ setInterval(fetchPopularApps, 600000); // refresh popular apps every 2 min
 setInterval(() => fetchPublicJobs(1),   30000);  // refresh compiled apps every 30s
 // feed removed
 </script>
-
-<!-- Firmware Changelog Modal -->
-<div id="changelog-modal" style="display:none;" class="changelog-modal" onclick="if(event.target===this)closeChangelog()">
-  <div class="changelog-inner">
-    <button class="changelog-close" onclick="closeChangelog()">✕</button>
-    <div class="changelog-title">Firmware <span id="changelog-fw-name">Changelog</span></div>
-    <div id="changelog-body" class="changelog-loading">Loading releases…</div>
-  </div>
-</div>
-
-<div id="share-toast" class="ok-popup" style="display:none;">🔗 Link copied to clipboard!</div>
-<div id="err-popup" class="err-popup" style="display:none;"><span class="err-close" onclick="document.getElementById('err-popup').style.display='none'">✕</span><div class="err-title" id="err-title">Error</div><div id="err-body"></div></div>
 
 <div id="changelog-modal" class="cl-overlay" style="display:none;" onclick="if(event.target===this)closeChangelog()">
   <div class="cl-box">
