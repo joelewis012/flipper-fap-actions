@@ -26,6 +26,9 @@ on:
           - dev
         default: release
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   compile:
     runs-on: ubuntu-latest
@@ -84,9 +87,7 @@ jobs:
       - name: Install toolchain dependencies
         run: |
           cd $FW_DIR
-          # Install Python deps needed by fbt
           pip install pyserial heatshrink2 Pillow 2>/dev/null || true
-          # Make fbt executable
           chmod +x ./fbt 2>/dev/null || true
 
       - name: Copy app into firmware tree
@@ -98,7 +99,6 @@ jobs:
       - name: Compile .fap with fbt
         run: |
           cd $FW_DIR
-          # Try to build — fbt handles toolchain download automatically
           ./fbt fap_${{ inputs.firmware == 'official' && 'dist' || 'dist' }} APPSRC=$APP_SLOT 2>&1 || \
           ./fbt fap APPSRC=$APP_SLOT 2>&1 || \
           ./fbt APPSRC=$APP_SLOT 2>&1
@@ -106,19 +106,25 @@ jobs:
       - name: Find and collect .fap file
         run: |
           mkdir -p /tmp/output
-          FAP=$(find $FW_DIR -name "*.fap" | head -1)
+          # Only look in the extapps output directory for our specific app
+          FAP=$(find $FW_DIR/build -path "*/applications_user/fap_build_app*.fap" | head -1)
+          # Fallback: any fap in extapps that isn't a system app
+          if [ -z "$FAP" ]; then
+            FAP=$(find $FW_DIR/build -name "*.fap" -path "*extapps*" \
+              ! -name "crash_test.fap" ! -name "locale_test.fap" ! -name "rpc_debug.fap" \
+              | head -1)
+          fi
           if [ -z "$FAP" ]; then
             echo "❌ No .fap file found after compilation"
             exit 1
           fi
           echo "✅ Found .fap: $FAP"
-          # Name it after the repo
           REPO_NAME=$(basename "${{ inputs.repo_url }}" .git)
           cp "$FAP" "/tmp/output/${REPO_NAME}.fap"
           echo "FAP_NAME=${REPO_NAME}.fap" >> $GITHUB_ENV
 
       - name: Upload .fap artifact
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v4
         with:
           name: "${{ env.FAP_NAME }}"
           path: /tmp/output/*.fap
