@@ -89,6 +89,20 @@ jobs:
 
       - name: Copy app into firmware tree
         run: |
+          # Get the app ID from application.fam to detect conflicts
+          APP_ID=$(grep -oP "(?<=appid\s=\s')[^']+" "$APP_DIR/application.fam" 2>/dev/null || \
+                   grep -oP '(?<=appid = ")[^"]+' "$APP_DIR/application.fam" 2>/dev/null || echo "")
+          echo "App ID: $APP_ID"
+
+          # Remove any existing app with the same ID from the firmware to avoid duplicate declarations
+          if [ -n "$APP_ID" ]; then
+            find $FW_DIR/applications -name "application.fam" -exec grep -l "appid.*$APP_ID" {} \; | while read f; do
+              DIR=$(dirname "$f")
+              echo "Removing conflicting app at: $DIR"
+              rm -rf "$DIR"
+            done
+          fi
+
           mkdir -p $FW_DIR/applications_user/fap_build_app
           cp -r "$APP_DIR"/. $FW_DIR/applications_user/fap_build_app/
           echo "APP_SLOT=applications_user/fap_build_app" >> $GITHUB_ENV
