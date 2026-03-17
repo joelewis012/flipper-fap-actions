@@ -11,19 +11,13 @@ on:
         description: "Target firmware"
         required: true
         type: choice
-        options:
-          - official
-          - momentum
-          - unleashed
-          - xtreme
+        options: [official, momentum, unleashed, xtreme]
         default: official
       channel:
         description: "Build channel"
         required: true
         type: choice
-        options:
-          - release
-          - dev
+        options: [release, dev]
         default: release
 
 jobs:
@@ -41,7 +35,7 @@ jobs:
         run: |
           FAM=$(find /tmp/app -name "application.fam" | head -1)
           if [ -z "$FAM" ]; then
-            echo "❌ No application.fam found — this doesn't look like a Flipper Zero app."
+            echo "❌ No application.fam found"
             exit 1
           fi
           APP_DIR=$(dirname "$FAM")
@@ -69,7 +63,9 @@ jobs:
         if: inputs.firmware == 'unleashed'
         run: |
           BRANCH="dev"
-          if [ "${{ inputs.channel }}" == "release" ]; then BRANCH="$(curl -s https://api.github.com/repos/DarkFlippers/unleashed-firmware/releases/latest | jq -r .tag_name)"; fi
+          if [ "${{ inputs.channel }}" == "release" ]; then
+            BRANCH="$(curl -s https://api.github.com/repos/DarkFlippers/unleashed-firmware/releases/latest | jq -r .tag_name)"
+          fi
           git clone --depth 1 -b $BRANCH https://github.com/DarkFlippers/unleashed-firmware.git /tmp/firmware || \
           git clone --depth 1 https://github.com/DarkFlippers/unleashed-firmware.git /tmp/firmware
           echo "FW_DIR=/tmp/firmware" >> $GITHUB_ENV
@@ -87,19 +83,31 @@ jobs:
           pip install pyserial heatshrink2 Pillow 2>/dev/null || true
           chmod +x ./fbt 2>/dev/null || true
 
-      - name: Copy app into firmware tree
+      - name: Remove conflicting apps and copy app into firmware
         run: |
-          # Get the app ID from application.fam to detect conflicts
-          APP_ID=$(grep -oP "(?<=appid\s=\s')[^']+" "$APP_DIR/application.fam" 2>/dev/null || \
-                   grep -oP '(?<=appid = ")[^"]+' "$APP_DIR/application.fam" 2>/dev/null || echo "")
-          echo "App ID: $APP_ID"
+          # Get app ID to detect conflicts
+          APP_ID=$(python3 -c "
+          import re, sys
+          try:
+            text = open('$APP_DIR/application.fam').read()
+            m = re.search(r'appid\s*=\s*[\"\'](.*?)[\"\']', text)
+            print(m.group(1) if m else '')
+          except: print('')
+          " 2>/dev/null || echo "")
 
-          # Remove any existing app with the same ID from the firmware to avoid duplicate declarations
+          echo "App ID: '$APP_ID'"
+
+          # Remove any bundled app with the same ID (searches all .fam files in firmware)
           if [ -n "$APP_ID" ]; then
-            find $FW_DIR/applications -name "application.fam" -exec grep -l "appid.*$APP_ID" {} \; | while read f; do
-              DIR=$(dirname "$f")
-              echo "Removing conflicting app at: $DIR"
-              rm -rf "$DIR"
+            find $FW_DIR -name "application.fam" | while read fam; do
+              if grep -q "appid.*[\"']${APP_ID}[\"']" "$fam" 2>/dev/null; then
+                DIR=$(dirname "$fam")
+                # Don't remove from our target location
+                if [ "$DIR" != "$FW_DIR/applications_user/fap_build_app" ]; then
+                  echo "Removing conflicting app at: $DIR"
+                  rm -rf "$DIR"
+                fi
+              fi
             done
           fi
 
@@ -115,17 +123,16 @@ jobs:
       - name: Find and collect .fap file
         run: |
           mkdir -p /tmp/output
-          # Look only in the specific app's output location
-          FAP=$(find $FW_DIR/build -name "*.fap" -path "*fap_build_app*" 2>/dev/null | head -1)
-          # Fallback: newest .fap in extapps folder
+          # Find the compiled fap — look in build output, not the whole firmware tree
+          FAP=$(find $FW_DIR/build -name "*.fap" -newer /tmp/app 2>/dev/null | grep -v debug_elf | head -1)
           if [ -z "$FAP" ]; then
-            FAP=$(find $FW_DIR/build -name "*.fap" -newer /tmp/app -not -path "*debug*" 2>/dev/null | head -1)
+            FAP=$(find $FW_DIR/build -name "*.fap" 2>/dev/null | grep -v debug_elf | head -1)
           fi
           if [ -z "$FAP" ]; then
             echo "❌ No .fap file found after compilation"
             exit 1
           fi
-          echo "✅ Found .fap: $FAP"
+          echo "✅ Found: $FAP"
           REPO_NAME=$(basename "${{ inputs.repo_url }}" .git)
           cp "$FAP" "/tmp/output/${REPO_NAME}.fap"
           echo "FAP_NAME=${REPO_NAME}.fap" >> $GITHUB_ENV
@@ -140,12 +147,6 @@ jobs:
       - name: Summary
         run: |
           echo "## ✅ Compilation Successful!" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
           echo "| Repo | ${{ inputs.repo_url }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Firmware | ${{ inputs.firmware }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Channel | ${{ inputs.channel }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Firmware | ${{ inputs.firmware }} (${{ inputs.channel }}) |" >> $GITHUB_STEP_SUMMARY
           echo "| Output | ${{ env.FAP_NAME }} |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Download the artifact from the Actions tab above ⬆️" >> $GITHUB_STEP_SUMMARY
