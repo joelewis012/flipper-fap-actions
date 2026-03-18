@@ -563,7 +563,7 @@
       </span>
       <span style="font-family:var(--mono);font-size:0.72rem;color:var(--muted);display:flex;align-items:center;gap:7px;">
         <span class="status-dot dot-online"></span>
-        <span id="online-num">—</span> online
+        <span id="online-num" style="display:none;">0</span>
       </span>
     </div>
     <div class="status-bar">
@@ -1329,11 +1329,8 @@ fetchFirmwareVersions();
 updateETA();
 checkInstallBanner();
 registerSW();
-sendHeartbeat();
-fetchOnlineCount();
 checkWorkerStatus();
-setInterval(sendHeartbeat,     300000);
-setInterval(fetchOnlineCount,   60000);
+
 setInterval(fetchStats,        300000);
 setInterval(fetchPopularApps,  600000);
 setInterval(()=>loadCompiledApps(1), 30000);
