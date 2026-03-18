@@ -1463,8 +1463,6 @@ function renderCompiledPagination(){
   el.innerHTML=parts.join('');
 }
 
-// renderJobs kept for any legacy calls
-function renderJobs(){loadCompiledApps(compiledPage);}
 
 // ── Download ──────────────────────────────────────────────────────────────────
 async function downloadArtifact(artifactId,artifactName,btnEl){
@@ -1567,11 +1565,7 @@ async function testConnection(){
   catch(e){el.style.color='var(--red)';el.textContent='❌ '+e.message;}
 }
 
-// ── Online counter ────────────────────────────────────────────────────────────
-async function sendHeartbeat(){try{await api('/api/heartbeat',{method:'POST'});}catch(_){}}
-async function fetchOnlineCount(){
-  try{const res=await api('/api/online');if(!res.ok)return;const data=await res.json();const num=document.getElementById('online-num');if(num)num.textContent=data.count>0?data.count:'0';}catch(_){}
-}
+// Online counter removed — feature disabled to preserve KV quota
 
 // ── Worker status ─────────────────────────────────────────────────────────────
 async function checkWorkerStatus(){
