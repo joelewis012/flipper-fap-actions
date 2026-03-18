@@ -23,7 +23,7 @@ on:
 jobs:
   compile:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 15
 
     steps:
       - name: Clone target app
@@ -35,101 +35,62 @@ jobs:
         run: |
           FAM=$(find /tmp/app -name "application.fam" | head -1)
           if [ -z "$FAM" ]; then
-            echo "❌ No application.fam found"
+            echo "❌ No application.fam found — not a Flipper Zero app"
             exit 1
           fi
           APP_DIR=$(dirname "$FAM")
           echo "APP_DIR=$APP_DIR" >> $GITHUB_ENV
           echo "✅ Found application.fam at $APP_DIR"
 
-      - name: Clone Official firmware
-        if: inputs.firmware == 'official'
+      - name: Set ufbt SDK source
         run: |
-          BRANCH="release"
-          if [ "${{ inputs.channel }}" == "dev" ]; then BRANCH="dev"; fi
-          git clone --depth 1 -b $BRANCH https://github.com/flipperdevices/flipperzero-firmware.git /tmp/firmware
-          echo "FW_DIR=/tmp/firmware" >> $GITHUB_ENV
+          CHANNEL="${{ inputs.channel }}"
+          FW="${{ inputs.firmware }}"
 
-      - name: Clone Momentum firmware
-        if: inputs.firmware == 'momentum'
-        run: |
-          BRANCH="release"
-          if [ "${{ inputs.channel }}" == "dev" ]; then BRANCH="dev"; fi
-          git clone --depth 1 -b $BRANCH https://github.com/Next-Flip/Momentum-Firmware.git /tmp/firmware || \
-          git clone --depth 1 https://github.com/Next-Flip/Momentum-Firmware.git /tmp/firmware
-          echo "FW_DIR=/tmp/firmware" >> $GITHUB_ENV
+          if [ "$FW" = "official" ]; then
+            if [ "$CHANNEL" = "dev" ]; then
+              echo "UFBT_ARGS=--channel=dev" >> $GITHUB_ENV
+            else
+              echo "UFBT_ARGS=--channel=release" >> $GITHUB_ENV
+            fi
 
-      - name: Clone Unleashed firmware
-        if: inputs.firmware == 'unleashed'
-        run: |
-          BRANCH="dev"
-          if [ "${{ inputs.channel }}" == "release" ]; then
-            BRANCH="$(curl -s https://api.github.com/repos/DarkFlippers/unleashed-firmware/releases/latest | jq -r .tag_name)"
-          fi
-          git clone --depth 1 -b $BRANCH https://github.com/DarkFlippers/unleashed-firmware.git /tmp/firmware || \
-          git clone --depth 1 https://github.com/DarkFlippers/unleashed-firmware.git /tmp/firmware
-          echo "FW_DIR=/tmp/firmware" >> $GITHUB_ENV
+          elif [ "$FW" = "momentum" ]; then
+            if [ "$CHANNEL" = "dev" ]; then
+              echo "UFBT_ARGS=--index-url=https://up.momentum-fw.dev/firmware/directory.json --channel=dev" >> $GITHUB_ENV
+            else
+              echo "UFBT_ARGS=--index-url=https://up.momentum-fw.dev/firmware/directory.json --channel=release" >> $GITHUB_ENV
+            fi
 
-      - name: Clone Xtreme firmware
-        if: inputs.firmware == 'xtreme'
-        run: |
-          git clone --depth 1 https://github.com/ClaraCrazy/Flipper-Xtreme.git /tmp/firmware || \
-          git clone --depth 1 https://github.com/Flipper-XFW/Xtreme-Firmware.git /tmp/firmware
-          echo "FW_DIR=/tmp/firmware" >> $GITHUB_ENV
+          elif [ "$FW" = "unleashed" ]; then
+            if [ "$CHANNEL" = "dev" ]; then
+              echo "UFBT_ARGS=--index-url=https://up.unleashedflip.com/directory.json --channel=dev" >> $GITHUB_ENV
+            else
+              echo "UFBT_ARGS=--index-url=https://up.unleashedflip.com/directory.json --channel=release" >> $GITHUB_ENV
+            fi
 
-      - name: Install toolchain dependencies
-        run: |
-          cd $FW_DIR
-          pip install pyserial heatshrink2 Pillow 2>/dev/null || true
-          chmod +x ./fbt 2>/dev/null || true
-
-      - name: Remove conflicting apps and copy app into firmware
-        run: |
-          # Get app ID to detect conflicts
-          APP_ID=$(python3 -c "
-          import re, sys
-          try:
-            text = open('$APP_DIR/application.fam').read()
-            m = re.search(r'appid\s*=\s*[\"\'](.*?)[\"\']', text)
-            print(m.group(1) if m else '')
-          except: print('')
-          " 2>/dev/null || echo "")
-
-          echo "App ID: '$APP_ID'"
-
-          # Remove any bundled app with the same ID (searches all .fam files in firmware)
-          if [ -n "$APP_ID" ]; then
-            find $FW_DIR -name "application.fam" | while read fam; do
-              if grep -q "appid.*[\"']${APP_ID}[\"']" "$fam" 2>/dev/null; then
-                DIR=$(dirname "$fam")
-                # Don't remove from our target location
-                if [ "$DIR" != "$FW_DIR/applications_user/fap_build_app" ]; then
-                  echo "Removing conflicting app at: $DIR"
-                  rm -rf "$DIR"
-                fi
-              fi
-            done
+          elif [ "$FW" = "xtreme" ]; then
+            # Xtreme uses official SDK — ufbt doesn't have a dedicated index for it
+            echo "UFBT_ARGS=--channel=release" >> $GITHUB_ENV
           fi
 
-          mkdir -p $FW_DIR/applications_user/fap_build_app
-          cp -r "$APP_DIR"/. $FW_DIR/applications_user/fap_build_app/
-          echo "APP_SLOT=applications_user/fap_build_app" >> $GITHUB_ENV
+      - name: Build with ufbt
+        uses: flipperdevices/flipperzero-ufbt-action@v0.1.3
+        id: build-app
+        with:
+          app-dir: ${{ env.APP_DIR }}
+          ufbt-args: ${{ env.UFBT_ARGS }}
 
-      - name: Compile .fap with fbt
-        run: |
-          cd $FW_DIR
-          ./fbt fap APPSRC=$APP_SLOT 2>&1
-
-      - name: Find and collect .fap file
+      - name: Collect .fap file
         run: |
           mkdir -p /tmp/output
-          # Find the compiled fap — look in build output, not the whole firmware tree
-          FAP=$(find $FW_DIR/build -name "*.fap" -newer /tmp/app 2>/dev/null | grep -v debug_elf | head -1)
+          # ufbt puts the output in dist/ inside the app directory
+          FAP=$(find "${{ env.APP_DIR }}/dist" -name "*.fap" 2>/dev/null | head -1)
+          # fallback — search anywhere newer than the clone
           if [ -z "$FAP" ]; then
-            FAP=$(find $FW_DIR/build -name "*.fap" 2>/dev/null | grep -v debug_elf | head -1)
+            FAP=$(find /tmp/app -name "*.fap" 2>/dev/null | head -1)
           fi
           if [ -z "$FAP" ]; then
-            echo "❌ No .fap file found after compilation"
+            echo "❌ No .fap file found"
             exit 1
           fi
           echo "✅ Found: $FAP"
@@ -137,7 +98,7 @@ jobs:
           cp "$FAP" "/tmp/output/${REPO_NAME}.fap"
           echo "FAP_NAME=${REPO_NAME}.fap" >> $GITHUB_ENV
 
-      - name: Upload .fap artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: "${{ env.FAP_NAME }}"
@@ -146,7 +107,7 @@ jobs:
 
       - name: Summary
         run: |
-          echo "## ✅ Compilation Successful!" >> $GITHUB_STEP_SUMMARY
+          echo "## ✅ Compiled successfully!" >> $GITHUB_STEP_SUMMARY
           echo "| Repo | ${{ inputs.repo_url }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Firmware | ${{ inputs.firmware }} (${{ inputs.channel }}) |" >> $GITHUB_STEP_SUMMARY
           echo "| Output | ${{ env.FAP_NAME }} |" >> $GITHUB_STEP_SUMMARY
