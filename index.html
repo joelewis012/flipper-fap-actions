@@ -878,6 +878,7 @@ let debugMode    = localStorage.getItem('fap_debug')  === 'true';
 let currentLang  = localStorage.getItem('fap_lang')   || 'en';
 const polls      = {};
 const fwVersions = {};
+const fwVersionsDev = {};
 const logCache   = {};
 let detectedApps   = [];
 let appCheckTimer  = null;
@@ -1011,13 +1012,45 @@ async function checkRepoForApps(url) {
 
 // ── Firmware versions ─────────────────────────────────────────────────────────
 async function fetchFirmwareVersions() {
-  for(const [fw,repo] of Object.entries(FW_REPOS)){
-    try{const res=await fetch(`https://api.github.com/repos/${repo}/releases/latest`);if(!res.ok)continue;const d=await res.json();if(d.tag_name){fwVersions[fw]=d.tag_name;const el=document.getElementById('fw-ver-'+fw);if(el)el.textContent=d.tag_name;}}catch(_){}
+  for (const [fw, repo] of Object.entries(FW_REPOS)) {
+    try {
+      // Fetch latest release
+      const relRes = await fetch(`https://api.github.com/repos/${repo}/releases/latest`);
+      if (relRes.ok) {
+        const d = await relRes.json();
+        if (d.tag_name) {
+          fwVersions[fw] = d.tag_name;
+          const el = document.getElementById('fw-ver-'+fw);
+          if (el) el.textContent = d.tag_name;
+        }
+      }
+      // Also fetch latest dev (pre-release) — grab first from releases list
+      const devRes = await fetch(`https://api.github.com/repos/${repo}/releases?per_page=5`);
+      if (devRes.ok) {
+        const releases = await devRes.json();
+        const prerelease = releases.find(r => r.prerelease);
+        if (prerelease) fwVersionsDev[fw] = prerelease.tag_name;
+      }
+    } catch(_) {}
   }
-  const fw=document.querySelector('input[name="fw"]:checked')?.value||'official';
-  const el=document.getElementById('out-fw'); if(el) el.textContent=fwLabel(fw);
+  // Update display based on current selection
+  const fw = document.querySelector('input[name="fw"]:checked')?.value || 'official';
+  const ch = document.querySelector('input[name="ch"]:checked')?.value || 'release';
+  const el = document.getElementById('out-fw');
+  if (el) el.textContent = fwLabelForChannel(fw, ch);
 }
-function fwLabel(fw){return fwVersions[fw]?`${FW_NAMES[fw]} ${fwVersions[fw]}`:(FW_NAMES[fw]||fw);}
+
+function fwLabelForChannel(fw, ch) {
+  if (ch === 'dev') {
+    const devVer = fwVersionsDev[fw];
+    return devVer ? `${FW_NAMES[fw]||fw} ${devVer}` : `${FW_NAMES[fw]||fw} dev`;
+  }
+  return fwVersions[fw] ? `${FW_NAMES[fw]||fw} ${fwVersions[fw]}` : (FW_NAMES[fw]||fw);
+}
+function fwLabel(fw) {
+  const ch = document.querySelector('input[name="ch"]:checked')?.value || 'release';
+  return fwLabelForChannel(fw, ch);
+}
 
 async function showChangelog(fw) {
   const modal=document.getElementById('changelog-modal'); if(!modal) return;
@@ -1118,7 +1151,8 @@ function quickCompile(idx){
 // ── UI listeners ──────────────────────────────────────────────────────────────
 document.querySelectorAll('input[name="fw"]').forEach(r=>{r.addEventListener('change',()=>{
   const fn=document.getElementById('fw-note');if(fn)fn.textContent=FW_NOTES[r.value]||'';
-  const of=document.getElementById('out-fw');if(of)of.textContent=fwLabel(r.value);
+  const ch=document.querySelector('input[name="ch"]:checked')?.value||'release';
+  const of=document.getElementById('out-fw');if(of)of.textContent=fwLabelForChannel(r.value,ch);
   updateETA();renderAppDir();
 });});
 document.querySelectorAll('input[name="ch"]').forEach(r=>{r.addEventListener('change',()=>{
@@ -1127,10 +1161,7 @@ document.querySelectorAll('input[name="ch"]').forEach(r=>{r.addEventListener('ch
   // Update the full build info box when channel changes
   const fw=document.querySelector('input[name="fw"]:checked')?.value||'official';
   const of=document.getElementById('out-fw');
-  if(of){
-    const ver=fwVersions[fw]||(r.value==='dev'?'dev':'latest');
-    of.textContent=`${FW_NAMES[fw]||fw} ${ver}`;
-  }
+  if(of) of.textContent=fwLabelForChannel(fw, r.value);
 });});
 const repoInputEl=document.getElementById('repo-url');
 if(repoInputEl){
