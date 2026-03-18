@@ -561,10 +561,6 @@
         <span id="worker-dot" class="status-dot dot-loading"></span>
         <span id="worker-label">worker loading…</span>
       </span>
-      <span style="font-family:var(--mono);font-size:0.72rem;color:var(--muted);display:flex;align-items:center;gap:7px;">
-        <span class="status-dot dot-online"></span>
-        <span id="online-num" style="display:none;">0</span>
-      </span>
     </div>
     <div class="status-bar">
       <div class="stat"><span class="stat-num" id="stat-total">—</span><span class="stat-label">Compiled</span></div>
@@ -573,6 +569,50 @@
   </header>
 
   <div class="divider"></div>
+
+  <!-- How to Use -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-title" style="margin-bottom:14px;">How to Use</div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+
+      <div style="display:flex;gap:12px;align-items:flex-start;">
+        <div style="background:var(--orange);color:#000;font-weight:900;font-size:0.7rem;width:22px;height:22px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">1</div>
+        <div>
+          <div style="font-weight:700;font-size:0.82rem;margin-bottom:4px;">Find the app on GitHub or Gitea</div>
+          <div style="font-family:var(--mono);font-size:0.7rem;color:var(--muted);line-height:1.6;">
+            Go to the app's repo page. Tap the green <strong style="color:var(--text);">Code</strong> button → <strong style="color:var(--text);">HTTPS</strong> → copy the URL shown.<br>
+            <span style="color:var(--orange);">https://github.com/username/app-name</span><br>
+            <span style="color:var(--muted);font-size:0.64rem;">⚠ Must be a Flipper app repo with an <strong>application.fam</strong> file — not the firmware itself.</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;align-items:flex-start;">
+        <div style="background:var(--orange);color:#000;font-weight:900;font-size:0.7rem;width:22px;height:22px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">2</div>
+        <div>
+          <div style="font-weight:700;font-size:0.82rem;margin-bottom:4px;">Pick your firmware</div>
+          <div style="font-family:var(--mono);font-size:0.7rem;color:var(--muted);line-height:1.6;">Choose the firmware running on your Flipper. Not sure? Check <strong style="color:var(--text);">Settings → About</strong> on your Flipper.</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;align-items:flex-start;">
+        <div style="background:var(--orange);color:#000;font-weight:900;font-size:0.7rem;width:22px;height:22px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">3</div>
+        <div>
+          <div style="font-weight:700;font-size:0.82rem;margin-bottom:4px;">Tap Compile .FAP</div>
+          <div style="font-family:var(--mono);font-size:0.7rem;color:var(--muted);line-height:1.6;">Wait ~30–60 seconds. When done tap <strong style="color:var(--green);">↓ Download .fap</strong> to save the file.</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;align-items:flex-start;">
+        <div style="background:var(--orange);color:#000;font-weight:900;font-size:0.7rem;width:22px;height:22px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">4</div>
+        <div>
+          <div style="font-weight:700;font-size:0.82rem;margin-bottom:4px;">Copy to Flipper</div>
+          <div style="font-family:var(--mono);font-size:0.7rem;color:var(--muted);line-height:1.6;">Transfer the <strong style="color:var(--text);">.fap</strong> file to the <span style="color:var(--orange);">apps/</span> folder on your Flipper SD card using <strong style="color:var(--text);">qFlipper</strong> or the Flipper mobile app.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
 
   <div class="card">
     <div class="card-title">Compile Application</div>
