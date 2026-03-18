@@ -11,7 +11,7 @@ on:
         description: "Target firmware"
         required: true
         type: choice
-        options: [official, momentum, unleashed, xtreme]
+        options: [official, momentum, unleashed]
         default: official
       channel:
         description: "Build channel"
