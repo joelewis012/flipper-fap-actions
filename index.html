@@ -572,13 +572,13 @@
 
   <!-- How to Use -->
   <div class="card" style="margin-bottom:20px;">
-    <div class="card-title" style="margin-bottom:14px;">How to Use</div>
+    <div class="card-title" data-i18n="how_to_use" style="margin-bottom:14px;">How to Use</div>
     <div style="display:flex;flex-direction:column;gap:14px;">
 
       <div style="display:flex;gap:12px;align-items:flex-start;">
         <div style="background:var(--orange);color:#000;font-weight:900;font-size:0.7rem;width:22px;height:22px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">1</div>
         <div>
-          <div style="font-weight:700;font-size:0.82rem;margin-bottom:4px;">Find the app on GitHub or Gitea</div>
+          <div style="font-weight:700;font-size:0.82rem;margin-bottom:4px;" data-i18n="step1_title">Find the app on GitHub or Gitea</div>
           <div style="font-family:var(--mono);font-size:0.7rem;color:var(--muted);line-height:1.6;">
             Go to the app's repo page. Tap the green <strong style="color:var(--text);">Code</strong> button → <strong style="color:var(--text);">HTTPS</strong> → copy the URL shown.<br>
             <span style="color:var(--orange);">https://github.com/username/app-name</span><br>
@@ -590,7 +590,7 @@
       <div style="display:flex;gap:12px;align-items:flex-start;">
         <div style="background:var(--orange);color:#000;font-weight:900;font-size:0.7rem;width:22px;height:22px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">2</div>
         <div>
-          <div style="font-weight:700;font-size:0.82rem;margin-bottom:4px;">Pick your firmware</div>
+          <div style="font-weight:700;font-size:0.82rem;margin-bottom:4px;" data-i18n="step2_title">Pick your firmware</div>
           <div style="font-family:var(--mono);font-size:0.7rem;color:var(--muted);line-height:1.6;">Choose the firmware running on your Flipper. Not sure? Check <strong style="color:var(--text);">Settings → About</strong> on your Flipper.</div>
         </div>
       </div>
@@ -598,7 +598,7 @@
       <div style="display:flex;gap:12px;align-items:flex-start;">
         <div style="background:var(--orange);color:#000;font-weight:900;font-size:0.7rem;width:22px;height:22px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">3</div>
         <div>
-          <div style="font-weight:700;font-size:0.82rem;margin-bottom:4px;">Tap Compile .FAP</div>
+          <div style="font-weight:700;font-size:0.82rem;margin-bottom:4px;" data-i18n="step3_title">Tap Compile .FAP</div>
           <div style="font-family:var(--mono);font-size:0.7rem;color:var(--muted);line-height:1.6;">Wait ~30–60 seconds. When done tap <strong style="color:var(--green);">↓ Download .fap</strong> to save the file.</div>
         </div>
       </div>
@@ -606,7 +606,7 @@
       <div style="display:flex;gap:12px;align-items:flex-start;">
         <div style="background:var(--orange);color:#000;font-weight:900;font-size:0.7rem;width:22px;height:22px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">4</div>
         <div>
-          <div style="font-weight:700;font-size:0.82rem;margin-bottom:4px;">Copy to Flipper</div>
+          <div style="font-weight:700;font-size:0.82rem;margin-bottom:4px;" data-i18n="step4_title">Copy to Flipper</div>
           <div style="font-family:var(--mono);font-size:0.7rem;color:var(--muted);line-height:1.6;">Transfer the <strong style="color:var(--text);">.fap</strong> file to the <span style="color:var(--orange);">apps/</span> folder on your Flipper SD card using <strong style="color:var(--text);">qFlipper</strong> or the Flipper mobile app.</div>
         </div>
       </div>
@@ -615,7 +615,7 @@
   </div>
 
   <div class="card">
-    <div class="card-title">Compile Application</div>
+    <div class="card-title" data-i18n="card_compile">Compile Application</div>
 
     <!-- Debug info bar -->
     <div id="debug-bar" style="display:none;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px 14px;margin-bottom:18px;font-family:var(--mono);font-size:0.72rem;line-height:1.8;">
@@ -633,7 +633,7 @@
 
     <div class="form-group">
       <div class="repo-field-label" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;">
-        <label style="margin:0;">Git Repository URL</label>
+        <label style="margin:0;" data-i18n="label_repo">Git Repository URL</label>
         <button onclick="shareLink()" id="share-btn" style="font-family:var(--mono);font-size:0.66rem;background:none;border:1px solid var(--border);border-radius:4px;padding:3px 9px;cursor:pointer;color:var(--muted);transition:all 0.15s;" onmouseover="this.style.color='var(--orange)';this.style.borderColor='var(--orange)'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border)'">🔗 Share</button>
       </div>
       <div class="input-wrap">
@@ -657,13 +657,13 @@
       <div id="recent-repos" style="display:none;flex-wrap:wrap;gap:6px;margin-top:6px;"></div>
       <div class="notice mt">
         <span class="ico">ⓘ</span>
-        <span>Supports any <strong>GitHub</strong> or <strong>Gitea</strong> repo URL. Must contain an <code>application.fam</code> file.</span>
+        <span data-i18n="notice_url">Supports any GitHub or Gitea repo URL. Must contain an application.fam file.</span>
       </div>
     </div>
 
     <div class="firmware-grid">
       <div class="form-group">
-        <label>Target Firmware</label>
+        <label data-i18n="label_firmware">Target Firmware</label>
         <div class="fw-options">
           <div class="fw-card">
             <input type="radio" name="fw" id="fw-official" value="official" checked/>
@@ -685,7 +685,7 @@
       </div>
 
       <div class="form-group">
-        <label>Build Channel</label>
+        <label data-i18n="label_channel">Build Channel</label>
         <div class="channel-toggle">
           <input type="radio" name="ch" id="ch-release" value="release" checked/>
           <label for="ch-release">Release</label>
@@ -709,7 +709,7 @@
     <button class="btn-compile" id="compile-btn" onclick="submitCompile()">
       <div class="btn-inner">
         <div class="spinner" id="btn-spinner"></div>
-        <span id="btn-text">⚙ Compile .FAP</span>
+        <span id="btn-text" data-i18n="compile_fap">⚙ Compile .FAP</span>
       </div>
     </button>
   </div>
@@ -728,7 +728,7 @@
   <!-- Popular Apps -->
   <div class="card" style="margin-bottom:20px;" id="popular-apps-card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-      <div class="card-title" style="margin:0;">Popular Apps</div>
+      <div class="card-title" style="margin:0;" data-i18n="popular_apps">Popular Apps</div>
       <span style="font-family:var(--mono);font-size:0.65rem;color:var(--muted);">Community compiled</span>
     </div>
     <div id="popular-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px;min-width:0;">
@@ -876,17 +876,86 @@ const api = (path, opts={}) =>
 
 // ── i18n ──────────────────────────────────────────────────────────────────────
 const I18N = {
-  en: { compile_fap:'⚙ Compile .FAP', triggering:'Triggering…', finding:'Finding run…', card_compile:'Compile Application', card_appdir:'App Directory', card_compiled:'Compiled Applications', label_repo:'Git Repository URL', label_firmware:'Target Firmware', label_channel:'Build Channel', ch_stable:'Stable — recommended for most users.', ch_dev:'Dev build — latest commits, may contain bugs.', no_results:'No apps match your search.', copy_url:'📋 Copy URL', copied:'✓ Copied!', recompile:'↻ Recompile' },
-  fr: { compile_fap:'⚙ Compiler .FAP', triggering:'Déclenchement…', finding:'Recherche…', card_compile:'Compiler une application', card_appdir:'Répertoire des apps', card_compiled:'Applications compilées', label_repo:'URL du dépôt Git', label_firmware:'Firmware cible', label_channel:'Canal de build', ch_stable:'Stable — recommandé.', ch_dev:'Dev — peut être instable.', no_results:'Aucune application trouvée.', copy_url:'📋 Copier URL', copied:'✓ Copié!', recompile:'↻ Recompiler' },
-  de: { compile_fap:'⚙ .FAP kompilieren', triggering:'Auslösen…', finding:'Suchen…', card_compile:'Anwendung kompilieren', card_appdir:'App-Verzeichnis', card_compiled:'Kompilierte Apps', label_repo:'Git-Repository-URL', label_firmware:'Ziel-Firmware', label_channel:'Build-Kanal', ch_stable:'Stabil — empfohlen.', ch_dev:'Dev — kann instabil sein.', no_results:'Keine Apps gefunden.', copy_url:'📋 URL kopieren', copied:'✓ Kopiert!', recompile:'↻ Neu kompilieren' },
-  es: { compile_fap:'⚙ Compilar .FAP', triggering:'Activando…', finding:'Buscando…', card_compile:'Compilar aplicación', card_appdir:'Directorio de apps', card_compiled:'Aplicaciones compiladas', label_repo:'URL del repositorio', label_firmware:'Firmware objetivo', label_channel:'Canal', ch_stable:'Estable — recomendado.', ch_dev:'Dev — puede ser inestable.', no_results:'No se encontraron apps.', copy_url:'📋 Copiar URL', copied:'✓ Copiado!', recompile:'↻ Recompilar' },
-  ru: { compile_fap:'⚙ Скомпилировать', triggering:'Запуск…', finding:'Поиск…', card_compile:'Компиляция', card_appdir:'Каталог приложений', card_compiled:'Скомпилированные приложения', label_repo:'URL репозитория', label_firmware:'Прошивка', label_channel:'Канал', ch_stable:'Стабильная — рекомендуется.', ch_dev:'Dev — может быть нестабильна.', no_results:'Приложения не найдены.', copy_url:'📋 Копировать', copied:'✓ Скопировано!', recompile:'↻ Перекомпилировать' },
-  zh: { compile_fap:'⚙ 编译 .FAP', triggering:'触发中…', finding:'查找中…', card_compile:'编译应用', card_appdir:'应用目录', card_compiled:'已编译应用', label_repo:'Git 仓库 URL', label_firmware:'目标固件', label_channel:'构建渠道', ch_stable:'稳定版 — 推荐。', ch_dev:'开发版 — 可能不稳定。', no_results:'未找到应用。', copy_url:'📋 复制链接', copied:'✓ 已复制!', recompile:'↻ 重新编译' },
+  en: {
+    compile_fap:'⚙ Compile .FAP', triggering:'Triggering…', finding:'Finding run…',
+    card_compile:'Compile Application', card_appdir:'App Directory', card_compiled:'Compiled Applications',
+    how_to_use:'How to Use', popular_apps:'Popular Apps',
+    label_repo:'GIT REPOSITORY URL', label_firmware:'TARGET FIRMWARE', label_channel:'BUILD CHANNEL',
+    ch_stable:'Stable — recommended for most users.', ch_dev:'Dev build — latest commits, may contain bugs.',
+    notice_url:'Supports any GitHub or Gitea repo URL. Must contain an application.fam file.',
+    step1_title:'Find the app on GitHub or Gitea', step2_title:'Pick your firmware',
+    step3_title:'Tap Compile .FAP', step4_title:'Copy to Flipper',
+    copy_url:'📋 Copy URL', copied:'✓ Copied!', recompile:'↻ Recompile',
+    no_results:'No apps match your search.',
+  },
+  fr: {
+    compile_fap:'⚙ Compiler .FAP', triggering:'Déclenchement…', finding:'Recherche…',
+    card_compile:'Compiler une application', card_appdir:'Répertoire des apps', card_compiled:'Applications compilées',
+    how_to_use:'Comment utiliser', popular_apps:'Apps populaires',
+    label_repo:'URL DU DÉPÔT GIT', label_firmware:'FIRMWARE CIBLE', label_channel:'CANAL DE BUILD',
+    ch_stable:'Stable — recommandé pour la plupart.', ch_dev:'Build dev — peut être instable.',
+    notice_url:"Supporte n'importe quel dépôt GitHub ou Gitea. Doit contenir un fichier application.fam.",
+    step1_title:'Trouver l\'app sur GitHub ou Gitea', step2_title:'Choisir votre firmware',
+    step3_title:'Appuyer sur Compiler .FAP', step4_title:'Copier sur le Flipper',
+    copy_url:'📋 Copier URL', copied:'✓ Copié!', recompile:'↻ Recompiler',
+    no_results:'Aucune application trouvée.',
+  },
+  de: {
+    compile_fap:'⚙ .FAP kompilieren', triggering:'Auslösen…', finding:'Suchen…',
+    card_compile:'App kompilieren', card_appdir:'App-Verzeichnis', card_compiled:'Kompilierte Apps',
+    how_to_use:'Verwendung', popular_apps:'Beliebte Apps',
+    label_repo:'GIT-REPOSITORY-URL', label_firmware:'ZIEL-FIRMWARE', label_channel:'BUILD-KANAL',
+    ch_stable:'Stabil — für die meisten Benutzer empfohlen.', ch_dev:'Dev-Build — kann instabil sein.',
+    notice_url:'Unterstützt jedes GitHub- oder Gitea-Repository. Muss eine application.fam-Datei enthalten.',
+    step1_title:'App auf GitHub oder Gitea finden', step2_title:'Firmware auswählen',
+    step3_title:'.FAP kompilieren tippen', step4_title:'Auf Flipper kopieren',
+    copy_url:'📋 URL kopieren', copied:'✓ Kopiert!', recompile:'↻ Neu kompilieren',
+    no_results:'Keine Apps gefunden.',
+  },
+  es: {
+    compile_fap:'⚙ Compilar .FAP', triggering:'Activando…', finding:'Buscando…',
+    card_compile:'Compilar aplicación', card_appdir:'Directorio de apps', card_compiled:'Apps compiladas',
+    how_to_use:'Cómo usar', popular_apps:'Apps populares',
+    label_repo:'URL DEL REPOSITORIO', label_firmware:'FIRMWARE OBJETIVO', label_channel:'CANAL',
+    ch_stable:'Estable — recomendado para la mayoría.', ch_dev:'Dev — puede ser inestable.',
+    notice_url:'Compatible con cualquier repositorio GitHub o Gitea. Debe contener un archivo application.fam.',
+    step1_title:'Encontrar la app en GitHub o Gitea', step2_title:'Elegir el firmware',
+    step3_title:'Pulsar Compilar .FAP', step4_title:'Copiar al Flipper',
+    copy_url:'📋 Copiar URL', copied:'✓ Copiado!', recompile:'↻ Recompilar',
+    no_results:'No se encontraron apps.',
+  },
+  ru: {
+    compile_fap:'⚙ Скомпилировать', triggering:'Запуск…', finding:'Поиск…',
+    card_compile:'Компиляция', card_appdir:'Каталог приложений', card_compiled:'Скомпилированные',
+    how_to_use:'Как использовать', popular_apps:'Популярные приложения',
+    label_repo:'URL РЕПОЗИТОРИЯ', label_firmware:'ПРОШИВКА', label_channel:'КАНАЛ',
+    ch_stable:'Стабильная — рекомендуется.', ch_dev:'Dev — может быть нестабильна.',
+    notice_url:'Поддерживает любой репозиторий GitHub или Gitea. Должен содержать файл application.fam.',
+    step1_title:'Найти приложение на GitHub или Gitea', step2_title:'Выбрать прошивку',
+    step3_title:'Нажать Компилировать .FAP', step4_title:'Скопировать на Flipper',
+    copy_url:'📋 Копировать', copied:'✓ Скопировано!', recompile:'↻ Перекомпилировать',
+    no_results:'Приложения не найдены.',
+  },
+  zh: {
+    compile_fap:'⚙ 编译 .FAP', triggering:'触发中…', finding:'查找中…',
+    card_compile:'编译应用', card_appdir:'应用目录', card_compiled:'已编译应用',
+    how_to_use:'使用方法', popular_apps:'热门应用',
+    label_repo:'GIT 仓库 URL', label_firmware:'目标固件', label_channel:'构建渠道',
+    ch_stable:'稳定版 — 推荐大多数用户使用。', ch_dev:'开发版 — 可能不稳定。',
+    notice_url:'支持任何 GitHub 或 Gitea 仓库。必须包含 application.fam 文件。',
+    step1_title:'在 GitHub 或 Gitea 上找到应用', step2_title:'选择固件',
+    step3_title:'点击编译 .FAP', step4_title:'复制到 Flipper',
+    copy_url:'📋 复制链接', copied:'✓ 已复制!', recompile:'↻ 重新编译',
+    no_results:'未找到应用。',
+  },
 };
 const t = key => (I18N[currentLang]||I18N.en)[key] || (I18N.en[key]||key);
 function setLang(lang) { currentLang=lang; localStorage.setItem('fap_lang',lang); applyLang(); }
 function applyLang() {
   document.querySelectorAll('[data-i18n]').forEach(el => { const v=t(el.getAttribute('data-i18n')); if(v) el.textContent=v; });
+  // Update placeholder text
+  const repoInput=document.getElementById('repo-url');
+  if(repoInput) repoInput.placeholder='https://github.com/user/app  or  https://your-gitea.com/user/app';
   const sel=document.getElementById('lang-select'); if(sel) sel.value=currentLang;
   const btn=document.getElementById('btn-text');
   if(btn&&!document.getElementById('compile-btn').disabled) btn.textContent=t('compile_fap');
