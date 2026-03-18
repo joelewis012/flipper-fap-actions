@@ -843,7 +843,11 @@ const APP_DIR = [
 ];
 
 // ── State ─────────────────────────────────────────────────────────────────────
-let recentRepos  = JSON.parse(localStorage.getItem('fap_recent')  || '[]');
+let recentRepos = JSON.parse(localStorage.getItem('fap_recent') || '[]');
+// Filter out any old firmware repos that crept into recent list
+const FW_REPO_PATTERNS = ['flipperzero-firmware','Momentum-Firmware','unleashed-firmware','Xtreme-Firmware','firmware-wPlugins','Flipper-XFW'];
+recentRepos = recentRepos.filter(r => !FW_REPO_PATTERNS.some(p => r.includes(p)));
+localStorage.setItem('fap_recent', JSON.stringify(recentRepos));
 let favourites   = JSON.parse(localStorage.getItem('fap_favs')    || '[]');
 let isDark       = localStorage.getItem('fap_theme')  !== 'light';
 let debugMode    = localStorage.getItem('fap_debug')  === 'true';
