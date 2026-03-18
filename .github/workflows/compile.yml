@@ -30,17 +30,32 @@ jobs:
         run: |
           git clone --depth 1 --recurse-submodules "${{ inputs.repo_url }}" /tmp/app
           echo "✅ Cloned ${{ inputs.repo_url }}"
+          touch /tmp/clone_done
 
       - name: Find application.fam
         run: |
           FAM=$(find /tmp/app -name "application.fam" | head -1)
           if [ -z "$FAM" ]; then
-            echo "❌ No application.fam found"
+            echo "❌ No application.fam found — not a Flipper app repo"
             exit 1
           fi
           APP_DIR=$(dirname "$FAM")
           echo "APP_DIR=$APP_DIR" >> $GITHUB_ENV
           echo "✅ Found application.fam at $APP_DIR"
+
+      - name: Check for pre-built .fap in repo
+        run: |
+          PREBUILT=$(find /tmp/app \
+            -name "*.fap" \
+            ! -path "*/debug/*" \
+            ! -path "*/.git/*" \
+            2>/dev/null | head -1)
+          if [ -n "$PREBUILT" ]; then
+            echo "PREBUILT_FAP=$PREBUILT" >> $GITHUB_ENV
+            echo "✅ Pre-built .fap found: $PREBUILT"
+          else
+            echo "ℹ️ No pre-built .fap in repo"
+          fi
 
       - name: Set SDK index URL
         run: |
@@ -56,6 +71,8 @@ jobs:
           echo "SDK_CHANNEL=$CH" >> $GITHUB_ENV
 
       - name: Build with ufbt
+        id: build
+        continue-on-error: true
         uses: flipperdevices/flipperzero-ufbt-action@v0.1.3
         with:
           app-dir: ${{ env.APP_DIR }}
@@ -63,22 +80,39 @@ jobs:
           sdk-channel: ${{ env.SDK_CHANNEL }}
 
       - name: Collect .fap file
+        if: always()
         run: |
           mkdir -p /tmp/output
-          FAP=$(find "${{ env.APP_DIR }}/dist" -name "*.fap" 2>/dev/null | head -1)
-          if [ -z "$FAP" ]; then
-            FAP=$(find /tmp/app -name "*.fap" 2>/dev/null | head -1)
+          REPO_NAME=$(basename "${{ inputs.repo_url }}" .git)
+          FAP=""
+
+          # Priority 1: freshly compiled by ufbt
+          if [ "${{ steps.build.outcome }}" = "success" ]; then
+            FAP=$(find /tmp/app -name "*.fap" -newer /tmp/clone_done \
+              ! -path "*/debug/*" 2>/dev/null | head -1)
+            if [ -n "$FAP" ]; then
+              echo "✅ Using freshly compiled .fap: $FAP"
+              echo "BUILD_METHOD=Compiled from source" >> $GITHUB_ENV
+            fi
           fi
+
+          # Priority 2: pre-built .fap from the repo
+          if [ -z "$FAP" ] && [ -n "$PREBUILT_FAP" ]; then
+            FAP="$PREBUILT_FAP"
+            echo "⚠️ ufbt failed — using pre-built .fap from repo: $FAP"
+            echo "BUILD_METHOD=Pre-built from repo" >> $GITHUB_ENV
+          fi
+
           if [ -z "$FAP" ]; then
-            echo "❌ No .fap file found"
+            echo "❌ No .fap found — compilation failed and no pre-built fallback"
             exit 1
           fi
-          echo "✅ Found: $FAP"
-          REPO_NAME=$(basename "${{ inputs.repo_url }}" .git)
+
           cp "$FAP" "/tmp/output/${REPO_NAME}.fap"
           echo "FAP_NAME=${REPO_NAME}.fap" >> $GITHUB_ENV
 
       - name: Upload artifact
+        if: always() && env.FAP_NAME != ''
         uses: actions/upload-artifact@v4
         with:
           name: "${{ env.FAP_NAME }}"
@@ -86,7 +120,9 @@ jobs:
           retention-days: 30
 
       - name: Summary
+        if: always()
         run: |
-          echo "## ✅ Compiled!" >> $GITHUB_STEP_SUMMARY
+          echo "## ✅ Done!" >> $GITHUB_STEP_SUMMARY
           echo "| Repo | ${{ inputs.repo_url }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Firmware | ${{ inputs.firmware }} (${{ inputs.channel }}) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Method | ${BUILD_METHOD:-Unknown} |" >> $GITHUB_STEP_SUMMARY
