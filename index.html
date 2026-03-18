@@ -678,8 +678,7 @@
             <label for="fw-unleashed"><span class="fw-dot"></span><span class="fw-name">Unleashed <span class="fw-changelog" onclick="event.preventDefault();showChangelog('unleashed')">changelog</span></span><span class="fw-ver" id="fw-ver-unleashed">unlshd-086</span></label>
           </div>
           <div class="fw-card">
-            <input type="radio" name="fw" id="fw-xtreme" value="xtreme"/>
-            <label for="fw-xtreme"><span class="fw-dot"></span><span class="fw-name">Xtreme <span class="fw-changelog" onclick="event.preventDefault();showChangelog('xtreme')">changelog</span></span><span class="fw-ver" id="fw-ver-xtreme">xFW-0066</span><span class="fw-badge badge-new">New</span></label>
+
           </div>
         </div>
         <div class="version-note" id="fw-note">Stable official Flipper Zero firmware.</div>
@@ -802,16 +801,14 @@ const FW_REPOS = {
   official:  'flipperdevices/flipperzero-firmware',
   momentum:  'Next-Flip/Momentum-Firmware',
   unleashed: 'DarkFlippers/unleashed-firmware',
-  xtreme:    'Flipper-XFW/Xtreme-Firmware',
 };
-const FW_NAMES = { official:'Official', momentum:'Momentum', unleashed:'Unleashed', xtreme:'Xtreme' };
+const FW_NAMES = { official:'Official', momentum:'Momentum', unleashed:'Unleashed' };
 const FW_NOTES = {
   official:  'Stable official Flipper Zero firmware.',
   momentum:  'Feature-rich fork focused on hackability & customisation.',
   unleashed: 'Removes region locks, adds extra protocols & plugins.',
-  xtreme:    'Bleeding-edge features, experimental — use with caution.',
 };
-const FW_EST = { official:90, momentum:120, unleashed:110, xtreme:130 };
+const FW_EST = { official:90, momentum:120, unleashed:110 };
 
 // ── App Directory ─────────────────────────────────────────────────────────────
 const APP_DIR = [
