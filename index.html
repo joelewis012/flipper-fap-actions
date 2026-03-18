@@ -750,6 +750,8 @@
         <option value="WiFi">WiFi</option>
         <option value="Games">Games</option>
         <option value="BLE">Bluetooth</option>
+        <option value="RFID">RFID</option>
+        <option value="IR">Infrared</option>
       </select>
     </div>
     <div id="app-dir-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px;min-width:0;"></div>
@@ -813,22 +815,59 @@ const FW_EST = { official:90, momentum:120, unleashed:110, xtreme:130 };
 
 // ── App Directory ─────────────────────────────────────────────────────────────
 const APP_DIR = [
-  { name:'TOTP Authenticator', desc:'Two-factor auth codes on your Flipper',        repo:'https://github.com/akopachov/flipper-zero_authenticator',   cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🔐' },
-  { name:'WiFi Marauder',      desc:'WiFi pentesting companion app',                 repo:'https://github.com/0xchocolate/flipperzero-wifi-marauder',  cat:'WiFi',    compatible:['official','momentum','unleashed'], recommended:'official',  icon:'📶' },
-  { name:'Sub-GHz Bruteforce', desc:'Brute force Sub-GHz remote codes',             repo:'https://github.com/derskythe/flipperzero-subghz-db',        cat:'Sub-GHz', compatible:['unleashed'],                       recommended:'unleashed', icon:'📡', note:'Unleashed only' },
-  { name:'Unitemp',            desc:'Temperature & humidity sensor reader',          repo:'https://github.com/quen0n/unitemp-flipperzero',             cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🌡️' },
-  { name:'Seader',             desc:'Read & emulate smart card credentials',         repo:'https://github.com/bettse/seader',                          cat:'NFC',     compatible:['official','momentum','unleashed'], recommended:'official',  icon:'💳' },
-  { name:'FlipBIP',            desc:'Crypto wallet & BIP39 mnemonic tools',         repo:'https://github.com/xtruan/FlipBIP',                         cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'💰' },
-  { name:'Doom',               desc:'Classic Doom ported to Flipper Zero',           repo:'https://github.com/p4nic4ttack/doom-flipper-zero',          cat:'Games',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'💀' },
-  { name:'2048',               desc:'The classic 2048 puzzle game',                  repo:'https://github.com/eugene-kirzhanov/flipper-zero-2048-game', cat:'Games',  compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🎮' },
-  { name:'GPS NMEA',           desc:'GPS receiver display via UART',                 repo:'https://github.com/ezod/flipperzero-gps',                   cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'📡' },
-  { name:'NFC Playlist',       desc:'Emulate multiple NFC cards in sequence',        repo:'https://github.com/bmatcuk/flipperzero-nfc-playlist',       cat:'NFC',     compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🔄' },
-  { name:'Multi Converter',    desc:'Unit converter — length, weight, temp',         repo:'https://github.com/theisel/fap-multi-converter',            cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'📐' },
-  { name:'USB Keyboard',       desc:'Turn Flipper into a USB HID keyboard',          repo:'https://github.com/huuck/FlipperZeroUSBKeyboard',           cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'⌨️' },
-  { name:'Spectrum Analyzer',  desc:'2.4GHz spectrum analyzer via CC1101',           repo:'https://github.com/jolcese/flipperzero-firmware',           cat:'Sub-GHz', compatible:['official','unleashed'],            recommended:'unleashed', icon:'📊' },
-  { name:'Tetris',             desc:'Classic Tetris game for Flipper Zero',          repo:'https://github.com/jeffplang/flipperzero-firmware',         cat:'Games',   compatible:['official','momentum'],             recommended:'official',  icon:'🟦' },
-  { name:'Flappy Bird',        desc:'Flappy Bird clone for Flipper Zero',             repo:'https://github.com/DrZlo13/flipperzero-firmware',           cat:'Games',   compatible:['official'],                        recommended:'official',  icon:'🐦', note:'Official only' },
-  { name:'BLE Spam',           desc:'Bluetooth advertisement spam',                  repo:'https://github.com/Flipper-XFW/Xtreme-Firmware',           cat:'BLE',     compatible:['xtreme','momentum'],               recommended:'xtreme',    icon:'📲', note:'Xtreme/Momentum only' },
+  // ── Tools ──────────────────────────────────────────────────────────────────
+  { name:'TOTP Authenticator',  desc:'2FA codes — works with Google, GitHub and more',     repo:'https://github.com/akopachov/flipper-zero_authenticator',          cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🔐' },
+  { name:'Unitemp',             desc:'Read temperature, humidity & pressure from sensors', repo:'https://github.com/quen0n/unitemp-flipperzero',                    cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🌡️' },
+  { name:'FlipBIP',             desc:'Crypto wallet — BIP39 mnemonics & addresses',        repo:'https://github.com/xtruan/FlipBIP',                               cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'💰' },
+  { name:'USB Keyboard',        desc:'Turn Flipper into a USB HID keyboard / BadUSB',      repo:'https://github.com/huuck/FlipperZeroUSBKeyboard',                  cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'⌨️' },
+  { name:'Multi Converter',     desc:'Unit converter — length, weight, temperature',       repo:'https://github.com/theisel/fap-multi-converter',                   cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'📐' },
+  { name:'GPS NMEA',            desc:'GPS receiver display over UART',                     repo:'https://github.com/ezod/flipperzero-gps',                         cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🛰️' },
+  { name:'Morse Code',          desc:'Send and decode morse code',                         repo:'https://github.com/DarkFlippers/unleashed-firmware',               cat:'Tools',   compatible:['unleashed'],                       recommended:'unleashed', icon:'📡', note:'Unleashed only' },
+  { name:'Countdown Timer',     desc:'Simple countdown timer with alarm',                  repo:'https://github.com/0w0mewo/fpz_cntdown_timer',                     cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'⏱️' },
+  { name:'Password Generator',  desc:'Generate secure random passwords on device',         repo:'https://github.com/Rjevski/flipper-zero-password-generator',       cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🔑' },
+  { name:'QR Code',             desc:'Display QR codes on the Flipper screen',             repo:'https://github.com/bmatcuk/flipperzero-qrcode',                   cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'📷' },
+  { name:'Calendar',            desc:'Simple calendar app for Flipper Zero',               repo:'https://github.com/RogueMaster/flipperzero-firmware-wPlugins',     cat:'Tools',   compatible:['momentum'],                        recommended:'momentum',  icon:'📅', note:'Momentum only' },
+  { name:'Tetris Score',        desc:'Track and display Tetris high scores',               repo:'https://github.com/Eugene-Oserholt/flipper-scoreboard',            cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🏆' },
+  // ── WiFi ───────────────────────────────────────────────────────────────────
+  { name:'WiFi Marauder',       desc:'WiFi pentesting companion app',                      repo:'https://github.com/0xchocolate/flipperzero-wifi-marauder',         cat:'WiFi',    compatible:['official','momentum','unleashed'], recommended:'official',  icon:'📶' },
+  { name:'WiFi Scanner',        desc:'Scan for nearby WiFi networks',                      repo:'https://github.com/SequoiaSan/FlipperZero-WiFi-Scanner_Module',    cat:'WiFi',    compatible:['official','momentum','unleashed'], recommended:'official',  icon:'📡' },
+  { name:'Deauth Detector',     desc:'Detect WiFi deauthentication attacks',               repo:'https://github.com/Pyrox666/FlipperZero_Deauth_Detector',          cat:'WiFi',    compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🛡️' },
+  { name:'Evil Portal',         desc:'Create a captive portal access point',               repo:'https://github.com/bigbrodude6119/flipper-zero-evil-portal',       cat:'WiFi',    compatible:['official','momentum','unleashed'], recommended:'official',  icon:'😈' },
+  // ── NFC ────────────────────────────────────────────────────────────────────
+  { name:'Seader',              desc:'Read & emulate smart card credentials',               repo:'https://github.com/bettse/seader',                                 cat:'NFC',     compatible:['official','momentum','unleashed'], recommended:'official',  icon:'💳' },
+  { name:'NFC Playlist',        desc:'Emulate multiple NFC cards in sequence',              repo:'https://github.com/bmatcuk/flipperzero-nfc-playlist',              cat:'NFC',     compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🔄' },
+  { name:'NFC Magic',           desc:'Work with magic NFC cards (gen1/gen2)',               repo:'https://github.com/flipperdevices/flipperzero-firmware',           cat:'NFC',     compatible:['official'],                        recommended:'official',  icon:'✨', note:'Official only' },
+  { name:'NFC Relay',           desc:'Relay NFC card data over WiFi/BLE',                  repo:'https://github.com/MathiasM-G/FlipperNFCRelay',                   cat:'NFC',     compatible:['official','momentum','unleashed'], recommended:'official',  icon:'📲' },
+  // ── Sub-GHz ─────────────────────────────────────────────────────────────────
+  { name:'Sub-GHz Bruteforce',  desc:'Brute force Sub-GHz remote codes',                   repo:'https://github.com/derskythe/flipperzero-subghz-db',               cat:'Sub-GHz', compatible:['unleashed'],                       recommended:'unleashed', icon:'📻', note:'Unleashed only' },
+  { name:'Spectrum Analyzer',   desc:'2.4GHz spectrum analyzer',                           repo:'https://github.com/jolcese/flipperzero-firmware',                  cat:'Sub-GHz', compatible:['official','unleashed'],             recommended:'unleashed', icon:'📊' },
+  { name:'Laser Tag',           desc:'Infrared laser tag game for multiple Flippers',       repo:'https://github.com/RogueMaster/flipperzero-firmware-wPlugins',     cat:'Sub-GHz', compatible:['momentum'],                        recommended:'momentum',  icon:'🔫', note:'Momentum only' },
+  { name:'RF Jammer',           desc:'Sub-GHz signal transmission tool',                   repo:'https://github.com/RocketGod-git/flipper-zero-rf-jammer',         cat:'Sub-GHz', compatible:['unleashed'],                       recommended:'unleashed', icon:'⚡', note:'Unleashed only' },
+  // ── Games ───────────────────────────────────────────────────────────────────
+  { name:'Doom',                desc:'Classic Doom ported to Flipper Zero',                 repo:'https://github.com/p4nic4ttack/doom-flipper-zero',                 cat:'Games',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'💀' },
+  { name:'2048',                desc:'The classic 2048 sliding puzzle',                     repo:'https://github.com/eugene-kirzhanov/flipper-zero-2048-game',       cat:'Games',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🎮' },
+  { name:'Snake',               desc:'Classic Snake game',                                  repo:'https://github.com/flipperdevices/flipperzero-firmware',           cat:'Games',   compatible:['official'],                        recommended:'official',  icon:'🐍', note:'Official only' },
+  { name:'Tetris',              desc:'Classic Tetris — clear lines to score',               repo:'https://github.com/jeffplang/flipperzero-firmware',               cat:'Games',   compatible:['official','momentum'],             recommended:'official',  icon:'🟦' },
+  { name:'Flappy Bird',         desc:'Flap your way through pipes',                         repo:'https://github.com/DrZlo13/flipperzero-firmware',                  cat:'Games',   compatible:['official'],                        recommended:'official',  icon:'🐦', note:'Official only' },
+  { name:'Arkanoid',            desc:'Classic brick-breaking game',                         repo:'https://github.com/nicokosi/flipper-zero-arkanoid',                cat:'Games',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🏓' },
+  { name:'Mandelbrot Set',      desc:'Explore the Mandelbrot fractal',                      repo:'https://github.com/Ow0cast/flipperzero-firmware',                  cat:'Games',   compatible:['official'],                        recommended:'official',  icon:'🌀', note:'Official only' },
+  { name:'Flipper Pong',        desc:'Two-player Pong over infrared',                       repo:'https://github.com/nmrr/flipperzero-pong',                        cat:'Games',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🏓' },
+  { name:'Asteroids',           desc:'Classic Asteroids space shooter',                     repo:'https://github.com/antirez/flipper-zero-asteroids',               cat:'Games',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🚀' },
+  { name:'Minesweeper',         desc:'Classic Minesweeper puzzle game',                     repo:'https://github.com/squee72564/F0-Minesweeper-Fap',                cat:'Games',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'💣' },
+  { name:'Sokoban',             desc:'Classic box-pushing puzzle game',                     repo:'https://github.com/naminov/SMario_for_flipper_zero',              cat:'Games',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'📦' },
+  { name:'Dice',                desc:'Virtual dice roller — multiple dice types',            repo:'https://github.com/Ka3u6y6a/flipper-zero-dice',                   cat:'Games',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🎲' },
+  // ── BLE ─────────────────────────────────────────────────────────────────────
+  { name:'BLE Spam',            desc:'Bluetooth advertisement spammer',                     repo:'https://github.com/Flipper-XFW/Xtreme-Firmware',                  cat:'BLE',     compatible:['xtreme','momentum'],               recommended:'xtreme',    icon:'📲', note:'Xtreme/Momentum only' },
+  { name:'BLE Scanner',         desc:'Scan for nearby Bluetooth devices',                   repo:'https://github.com/Flipper-XFW/Xtreme-Firmware',                  cat:'BLE',     compatible:['xtreme','momentum'],               recommended:'xtreme',    icon:'🔍', note:'Xtreme/Momentum only' },
+  { name:'Bluetooth Remote',    desc:'Use Flipper as a Bluetooth HID remote',               repo:'https://github.com/flipperdevices/flipperzero-firmware',           cat:'BLE',     compatible:['official','momentum'],             recommended:'official',  icon:'🎛️' },
+  { name:'Apple BLE Spam',      desc:'Spam Apple BLE proximity pairing',                    repo:'https://github.com/ECTO-1A/AppleJuice',                           cat:'BLE',     compatible:['momentum','xtreme'],               recommended:'momentum',  icon:'🍎', note:'Momentum/Xtreme only' },
+  // ── RFID ─────────────────────────────────────────────────────────────────────
+  { name:'RFID Fuzzer',         desc:'Fuzz RFID card readers',                              repo:'https://github.com/RogueMaster/flipperzero-firmware-wPlugins',     cat:'RFID',    compatible:['momentum'],                        recommended:'momentum',  icon:'🔓', note:'Momentum only' },
+  { name:'Mifare Fuzzer',       desc:'Fuzz Mifare NFC card readers',                        repo:'https://github.com/sslupsky/flipper-zero-mifare-fuzzer',           cat:'RFID',    compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🃏' },
+  // ── IR ───────────────────────────────────────────────────────────────────────
+  { name:'Universal IR',        desc:'Control TVs, ACs and other IR devices',               repo:'https://github.com/flipperdevices/flipperzero-firmware',           cat:'IR',      compatible:['official','momentum','unleashed'], recommended:'official',  icon:'📺' },
+  { name:'TV-B-Gone',           desc:'Turn off TVs in public with infrared',                repo:'https://github.com/jroland/flipper-zero-tvbgone-fm',              cat:'IR',      compatible:['official','momentum','unleashed'], recommended:'official',  icon:'📴' },
+  { name:'AC Remote',           desc:'Universal air conditioner remote',                    repo:'https://github.com/flipperdevices/flipperzero-firmware',           cat:'IR',      compatible:['official','momentum','unleashed'], recommended:'official',  icon:'❄️' },
 ];
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -984,12 +1023,39 @@ async function showChangelog(fw) {
   const modal=document.getElementById('changelog-modal'); if(!modal) return;
   modal.style.display='flex';
   const nameEl=document.getElementById('cl-fw-name'); if(nameEl) nameEl.textContent=FW_NAMES[fw]||fw;
-  const body=document.getElementById('cl-body'); if(body) body.innerHTML='<div style="text-align:center;padding:20px;font-family:var(--mono);color:var(--muted)">Loading…</div>';
-  try{
-    const res=await fetch(`https://api.github.com/repos/${FW_REPOS[fw]}/releases?per_page=5`); if(!res.ok) throw new Error();
-    const releases=await res.json();
-    if(body) body.innerHTML=releases.map(r=>`<div class="cl-entry"><span class="cl-ver">${esc(r.tag_name)}</span><span class="cl-date">${new Date(r.published_at).toLocaleDateString()}</span><div class="cl-body">${esc((r.body||'').split('\n').slice(0,8).join('\n').replace(/#{1,3} /g,'').replace(/\*\*/g,'').trim())}</div></div>`).join('');
-  }catch(e){if(body) body.innerHTML=`<div style="font-family:var(--mono);color:var(--red);text-align:center;padding:20px;">❌ ${esc(e.message)}</div>`;}
+  const body=document.getElementById('cl-body');
+  if(body) body.innerHTML='<div style="text-align:center;padding:20px;font-family:var(--mono);color:var(--muted)">Loading…</div>';
+  try {
+    // Fetch more releases to show both release and dev builds
+    const res = await fetch(`https://api.github.com/repos/${FW_REPOS[fw]}/releases?per_page=10`);
+    if(!res.ok) throw new Error(`GitHub returned ${res.status}`);
+    const releases = await res.json();
+    if(!releases.length) throw new Error('No releases found');
+    if(body) body.innerHTML = releases.map(r => {
+      const isPrerelease = r.prerelease;
+      const badge = isPrerelease
+        ? `<span style="font-family:var(--mono);font-size:0.58rem;background:rgba(0,229,255,0.15);color:var(--cyan);border:1px solid var(--cyan);border-radius:3px;padding:1px 5px;margin-left:6px;">DEV</span>`
+        : `<span style="font-family:var(--mono);font-size:0.58rem;background:rgba(57,255,20,0.12);color:var(--green);border:1px solid var(--green);border-radius:3px;padding:1px 5px;margin-left:6px;">RELEASE</span>`;
+      const notes = (r.body||'')
+        .split('\n')
+        .filter(l => l.trim() && !l.startsWith('##') && !l.startsWith('**Full'))
+        .slice(0,6)
+        .join('\n')
+        .replace(/#{1,3} /g,'')
+        .replace(/\*\*/g,'')
+        .replace(/\*/g,'•')
+        .trim();
+      return `<div class="cl-entry">
+        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:4px;">
+          <span class="cl-ver">${esc(r.tag_name)}</span>${badge}
+          <span class="cl-date" style="margin-left:auto;">${new Date(r.published_at).toLocaleDateString()}</span>
+        </div>
+        ${notes ? `<div class="cl-body">${esc(notes)}</div>` : ''}
+      </div>`;
+    }).join('');
+  } catch(e) {
+    if(body) body.innerHTML=`<div style="font-family:var(--mono);color:var(--red);text-align:center;padding:20px;">❌ ${esc(e.message)}</div>`;
+  }
 }
 function closeChangelog(){const m=document.getElementById('changelog-modal');if(m)m.style.display='none';}
 
@@ -1058,6 +1124,13 @@ document.querySelectorAll('input[name="fw"]').forEach(r=>{r.addEventListener('ch
 document.querySelectorAll('input[name="ch"]').forEach(r=>{r.addEventListener('change',()=>{
   const cn=document.getElementById('ch-note');if(cn)cn.textContent=r.value==='release'?t('ch_stable'):t('ch_dev');
   const oc=document.getElementById('out-ch');if(oc)oc.textContent=r.value;
+  // Update the full build info box when channel changes
+  const fw=document.querySelector('input[name="fw"]:checked')?.value||'official';
+  const of=document.getElementById('out-fw');
+  if(of){
+    const ver=fwVersions[fw]||(r.value==='dev'?'dev':'latest');
+    of.textContent=`${FW_NAMES[fw]||fw} ${ver}`;
+  }
 });});
 const repoInputEl=document.getElementById('repo-url');
 if(repoInputEl){
@@ -1377,14 +1450,7 @@ setInterval(()=>loadCompiledApps(1), 30000);
 
 </script>
 
-<!-- Firmware Changelog Modal -->
-<div id="changelog-modal" style="display:none;" class="changelog-modal" onclick="if(event.target===this)closeChangelog()">
-  <div class="changelog-inner">
-    <button class="changelog-close" onclick="closeChangelog()">✕</button>
-    <div class="changelog-title">Firmware <span id="changelog-fw-name">Changelog</span></div>
-    <div id="changelog-body" class="changelog-loading">Loading releases…</div>
-  </div>
-</div>
+
 
 <div id="share-toast" class="ok-popup" style="display:none;">🔗 Link copied to clipboard!</div>
 <div id="err-popup" class="err-popup" style="display:none;"><span class="err-close" onclick="document.getElementById('err-popup').style.display='none'">✕</span><div class="err-title" id="err-title">Error</div><div id="err-body"></div></div>
@@ -1396,12 +1462,7 @@ setInterval(()=>loadCompiledApps(1), 30000);
     <div id="cl-body"><div style="font-family:var(--mono);font-size:0.76rem;color:var(--muted);text-align:center;padding:20px;">Loading…</div></div>
   </div>
 </div>
-<div id="err-popup" class="err-popup" style="display:none;">
-  <button class="err-close" onclick="document.getElementById('err-popup').style.display='none'">✕</button>
-  <div class="err-title" id="err-title">Error</div>
-  <div id="err-body"></div>
-</div>
-<div id="share-toast" class="ok-popup" style="display:none;"></div>
+
 
 
 <!-- Install banner (shown on mobile Safari) -->
@@ -1415,23 +1476,7 @@ setInterval(()=>loadCompiledApps(1), 30000);
 </div>
 
 
-<div id="changelog-modal" class="cl-overlay" style="display:none;" onclick="if(event.target===this)closeChangelog()">
-  <div class="cl-box"><button class="cl-close" onclick="closeChangelog()">✕</button>
-    <h2>Firmware <span id="cl-fw-name">Changelog</span></h2>
-    <div id="cl-body"><div style="font-family:var(--mono);font-size:0.76rem;color:var(--muted);text-align:center;padding:20px;">Loading…</div></div>
-  </div>
-</div>
-<div id="err-popup" class="err-popup" style="display:none;">
-  <button class="err-close" onclick="document.getElementById('err-popup').style.display='none'">✕</button>
-  <div class="err-title" id="err-title">Error</div><div id="err-body"></div>
-</div>
-<div id="share-toast" class="ok-popup" style="display:none;"></div>
-<div id="install-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:8000;background:var(--bg2);border-top:1px solid var(--border);padding:12px 16px;align-items:center;gap:12px;box-shadow:0 -4px 20px rgba(0,0,0,0.4);">
-  <img src="icon.png" style="width:36px;height:36px;border-radius:8px;flex-shrink:0;"/>
-  <div style="flex:1;"><div style="font-weight:700;font-size:0.85rem;">Add FlipperFAP to Home Screen</div><div style="font-family:var(--mono);font-size:0.65rem;color:var(--muted);">Tap Share → Add to Home Screen</div></div>
-  <button onclick="dismissInstall()" style="background:var(--orange);border:none;border-radius:6px;color:#000;font-weight:700;font-size:0.8rem;padding:8px 14px;cursor:pointer;">Got it</button>
-  <button onclick="dismissInstall()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.2rem;padding:4px 8px;">✕</button>
-</div>
+
 <div id="notif-prompt" style="display:none;position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--orange);border-radius:10px;padding:14px 18px;display:none;align-items:center;gap:12px;z-index:9000;box-shadow:0 4px 24px rgba(0,0,0,0.5);max-width:340px;width:90%;">
   <span style="font-size:1.3rem;">🔔</span>
   <div style="font-family:var(--mono);font-size:0.75rem;color:var(--text);flex:1;line-height:1.4;">Get notified when your .fap is ready?</div>
