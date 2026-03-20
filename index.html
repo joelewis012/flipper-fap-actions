@@ -367,8 +367,7 @@
   .jobs-list { display: flex; flex-direction: column; gap: 10px; }
   @keyframes slideIn { from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)} }
   .job-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto auto; gap: 4px 16px; animation: slideIn 0.3s ease; position: relative; overflow: hidden; min-width: 0; }
-  .job-url { font-family:var(--mono); font-size:0.68rem; color:var(--muted); overflow-x:auto; white-space:nowrap; scrollbar-width:none; -ms-overflow-style:none; max-width:100%; display:block; }
-  .job-url::-webkit-scrollbar { display:none; }
+  .job-url { font-family:var(--mono); font-size:0.68rem; color:var(--muted); white-space:normal; word-break:break-all; max-width:100%; display:block; line-height:1.4; }
   .job-meta-row { display:flex; flex-wrap:wrap; gap:6px; align-items:center; min-width:0; overflow:hidden; }
   .job-meta-chip { font-family:var(--mono); font-size:0.68rem; color:var(--muted); white-space:nowrap; flex-shrink:0; }
   .job-card.status-queued    { border-left: 3px solid var(--yellow); }
