@@ -1581,7 +1581,13 @@ async function toggleLog(runId,btnEl){
 
 // ── Stats ─────────────────────────────────────────────────────────────────────
 async function fetchStats(){
-  try{const res=await api('/api/stats');if(!res.ok)return;const s=await res.json();const e1=document.getElementById('stat-total');if(e1)e1.textContent=s.total??'—';const e3=document.getElementById('stat-fw');if(e3)e3.textContent=s.top_firmware??'—';}catch(_){}
+  try{
+    const res=await api('/api/stats');if(!res.ok)return;const s=await res.json();
+    const e1=document.getElementById('stat-total'); if(e1) e1.textContent=s.total??'—';
+    const e2=document.getElementById('stat-month'); if(e2) e2.textContent=s.this_month??'—';
+    const e3=document.getElementById('stat-today'); if(e3) e3.textContent=s.today??'—';
+    const e4=document.getElementById('stat-fw');    if(e4) e4.textContent=s.top_firmware??'—';
+  }catch(_){}
 }
 
 // ── Popular apps ──────────────────────────────────────────────────────────────
