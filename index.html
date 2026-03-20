@@ -1690,7 +1690,8 @@ checkWorkerStatus();
 
 setInterval(fetchStats,        300000);
 setInterval(fetchPopularApps,  600000);
-setInterval(()=>loadCompiledApps(1), 30000);
+// Auto-refresh compiled list but stay on whatever page the user is viewing
+setInterval(()=>loadCompiledApps(compiledPage), 30000);
 
 </script>
 

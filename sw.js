@@ -1,12 +1,14 @@
 // FlipperFAP Service Worker
-const CACHE = 'flipperfap-v1';
+// Does NOT force reload on update — users stay on their current page
 
 self.addEventListener('install', e => {
-  self.skipWaiting();
+  // Don't skipWaiting — wait for user to naturally navigate before activating
+  // This prevents forced reloads when a new version is deployed
 });
 
 self.addEventListener('activate', e => {
-  e.waitUntil(clients.claim());
+  // Don't claim clients immediately — avoids reloading active sessions
+  e.waitUntil(Promise.resolve());
 });
 
 // Handle push notifications
