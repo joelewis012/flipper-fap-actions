@@ -659,6 +659,7 @@
       <div class="notice mt">
         <span class="ico">ⓘ</span>
         <span data-i18n="notice_url">Supports any GitHub or Gitea repo URL. Must contain an application.fam file.</span>
+          <br><span style="font-size:0.62rem;color:var(--muted);">⚠ Multi-app repos will only compile the first app found. Point to a specific subfolder for best results.</span>
       </div>
     </div>
 
@@ -1192,7 +1193,7 @@ async function checkRepoForApps(url) {
       const sel=document.getElementById('app-select');
       if(sel)sel.innerHTML=detectedApps.map((a,i)=>`<option value="${i}">${esc(a.name)} (${esc(a.dir||'root')})</option>`).join('');
       if(selDiv)selDiv.style.display='block';
-      showBar(`✓ ${detectedApps.length} apps found in repo`,'ok');
+      showBar(`⚠ ${detectedApps.length} apps found — only the first will compile. Select one below or use a subfolder URL.`,'warn');
     }
   } catch(_){
     showBar('⚠️ Could not validate URL','warn');
