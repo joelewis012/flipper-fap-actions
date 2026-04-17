@@ -257,8 +257,6 @@ input.error { border-color: var(--red) !important; }
 .app-gh-link:hover { color:var(--orange); }
 .app-card-fw { font-family:var(--mono);font-size:0.62rem;color:var(--green);background:rgba(57,255,20,0.07);border:1px solid rgba(57,255,20,0.15);border-radius:4px;padding:2px 7px;display:inline-block;margin-top:4px; }
 .app-card-fw strong { color:var(--green); }
-.app-card-cta { font-family:var(--mono);font-size:0.63rem;color:var(--green);background:rgba(57,255,20,0.07);border:1px solid rgba(57,255,20,0.2);border-radius:4px;padding:3px 8px;text-align:center;margin-top:2px; }
-.app-card:hover .app-card-cta { background:rgba(57,255,20,0.16); }
 
 /* ── Compat badges ── */
 .fw-chips { display:flex;flex-wrap:wrap;gap:3px;margin:6px 0 4px; }
@@ -1815,9 +1813,9 @@ async function fetchPopularApps(){
         <div style="font-family:var(--mono);font-size:0.6rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(short)}</div>
         <div class="app-card-fw">✅ Best on <strong>${esc(FW_NAMES[app.topFw]||app.topFw)}</strong></div>
         ${app.lastSeen?`<div style="font-family:var(--mono);font-size:0.58rem;color:var(--muted);">🕐 Last compiled ${timeAgo(app.lastSeen)}</div>`:''}
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
-          <div class="app-card-cta">⚙ Quick Compile</div>
-          <a href="${esc(fullUrl)}" target="_blank" onclick="event.stopPropagation()" style="font-family:var(--mono);font-size:0.6rem;color:var(--orange);text-decoration:none;border:1px solid var(--orange);border-radius:4px;padding:3px 8px;opacity:0.8;">⧉ Repo</a>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:8px;">
+          <div class="app-card-cta" style="flex:1;text-align:center;">⚙ Quick Compile</div>
+          <a href="${esc(fullUrl)}" target="_blank" onclick="event.stopPropagation()" style="font-family:var(--mono);font-size:0.63rem;color:var(--orange);text-decoration:none;border:1px solid rgba(255,107,0,0.4);border-radius:4px;padding:3px 8px;background:rgba(255,107,0,0.07);white-space:nowrap;">⧉ Repo</a>
         </div>
       </div>`;
     }).join('');
