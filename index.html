@@ -917,8 +917,11 @@ let dolphinTimer = null;
 let dolphinTick  = 0;
 
 // ── Worker API ────────────────────────────────────────────────────────────────
-const api = (path, opts={}) =>
-  fetch(WORKER_URL + path, { ...opts, headers: { 'Content-Type':'application/json', ...(opts.headers||{}) } });
+const api = (path, opts={}) => {
+  const isGet = !opts.method || opts.method === 'GET';
+  const headers = isGet ? {} : { 'Content-Type':'application/json', ...(opts.headers||{}) };
+  return fetch(WORKER_URL + path, { ...opts, headers });
+};
 
 // ── i18n ──────────────────────────────────────────────────────────────────────
 const I18N = {
@@ -1822,7 +1825,8 @@ async function checkWorkerStatus(){
     const res=await Promise.race([api('/api/repo-info'),new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),5000))]);
     if(res.ok){if(dot)dot.className='status-dot dot-online';if(label)label.textContent='worker online';}
     else{if(dot)dot.className='status-dot dot-offline';if(label)label.textContent='worker error HTTP '+res.status;}
-  }catch(e){if(dot)dot.className='status-dot dot-offline';if(label)label.textContent='offline: '+( e&&e.message?e.message:JSON.stringify(e));}
+  }catch(e){if(dot)dot.className='status-dot dot-offline';if(label)label.textContent='offline: '+(e&&e.message?e.message:JSON.stringify(e));}
+}
 
 // ── Notifications ─────────────────────────────────────────────────────────────
 function showNotifPrompt(){if(!('Notification'in window)||Notification.permission!=='default'||lsGet('fap_notif_dismissed',''))return;const el=document.getElementById('notif-prompt');if(el)el.style.display='flex';}
