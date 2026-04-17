@@ -1817,7 +1817,7 @@ async function fetchPopularApps(){
         ${app.lastSeen?`<div style="font-family:var(--mono);font-size:0.58rem;color:var(--muted);">🕐 Last compiled ${timeAgo(app.lastSeen)}</div>`:''}
         <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
           <div class="app-card-cta">⚙ Quick Compile</div>
-          <a href="${esc(fullUrl)}" target="_blank" onclick="event.stopPropagation()" style="font-family:var(--mono);font-size:0.6rem;color:var(--muted);text-decoration:none;">⧉</a>
+          <a href="${esc(fullUrl)}" target="_blank" onclick="event.stopPropagation()" style="font-family:var(--mono);font-size:0.6rem;color:var(--orange);text-decoration:none;border:1px solid var(--orange);border-radius:4px;padding:3px 8px;opacity:0.8;">⧉ Repo</a>
         </div>
       </div>`;
     }).join('');
