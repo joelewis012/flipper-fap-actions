@@ -453,6 +453,13 @@ footer a:hover { text-decoration:underline; }
 </head>
 <body>
 
+<!-- ── Worker Offline Banner ─────────────────────────────────────────────── -->
+<div id="offline-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:repeating-linear-gradient(90deg,#1a0000,#2a0800 40px,#1a0000 80px);border-bottom:2px solid var(--red);padding:10px 16px;text-align:center;font-family:var(--mono);font-size:0.78rem;color:var(--red);letter-spacing:0.05em;box-shadow:0 0 20px rgba(255,0,0,0.3);">
+  <span style="animation:pulse 1.5s ease-in-out infinite;display:inline-block;">⚠</span>
+  &nbsp;WORKER OFFLINE — COMPILE UNAVAILABLE — BE BACK SOON&nbsp;
+  <span style="animation:pulse 1.5s ease-in-out infinite;display:inline-block;">⚠</span>
+</div>
+
 <!-- ── Token Setup Modal ───────────────────────────────────────────────────── -->
 <div class="modal-overlay" id="token-modal" style="display:none!important">
   <div class="modal">
@@ -595,6 +602,10 @@ footer a:hover { text-decoration:underline; }
         <button id="debug-toggle-btn" onclick="toggleDebugBar()" style="font-family:var(--mono);font-size:0.68rem;background:none;border:1px solid var(--border);border-radius:4px;padding:3px 10px;cursor:pointer;color:var(--muted);">🔍 Debug: OFF</button>
       </div>
       <div id="dbg-test-result" style="margin-top:6px;font-size:0.68rem;min-height:14px;color:var(--muted);"></div>
+      <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;">
+        <button onclick="testConnection()" style="font-family:var(--mono);font-size:0.68rem;background:none;border:1px solid var(--border);border-radius:4px;padding:3px 10px;cursor:pointer;color:var(--muted);">⚡ Test Connection</button>
+        <button onclick="toggleOfflineBanner()" style="font-family:var(--mono);font-size:0.68rem;background:none;border:1px solid var(--red);border-radius:4px;padding:3px 10px;cursor:pointer;color:var(--red);">🔴 Test Offline Page</button>
+      </div>
     </div>
 
     <div class="form-group">
@@ -1819,13 +1830,32 @@ async function testConnection(){
 }
 
 // ── Worker status ─────────────────────────────────────────────────────────────
-async function checkWorkerStatus(){
+function setWorkerOffline(msg){
   const dot=document.getElementById('worker-dot'),label=document.getElementById('worker-label');
+  const banner=document.getElementById('offline-banner');
+  if(dot)dot.className='status-dot dot-offline';
+  if(label)label.textContent=msg||'worker offline';
+  if(banner){banner.style.display='block';document.body.style.paddingTop='44px';}
+}
+function setWorkerOnline(){
+  const dot=document.getElementById('worker-dot'),label=document.getElementById('worker-label');
+  const banner=document.getElementById('offline-banner');
+  if(dot)dot.className='status-dot dot-online';
+  if(label)label.textContent='worker online';
+  if(banner){banner.style.display='none';document.body.style.paddingTop='';}
+}
+let _bannerTestActive=false;
+function toggleOfflineBanner(){
+  _bannerTestActive=!_bannerTestActive;
+  if(_bannerTestActive){setWorkerOffline('worker offline [TEST]');}
+  else{setWorkerOnline();}
+}
+async function checkWorkerStatus(){
   try{
     const res=await Promise.race([api('/api/repo-info'),new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),5000))]);
-    if(res.ok){if(dot)dot.className='status-dot dot-online';if(label)label.textContent='worker online';}
-    else{if(dot)dot.className='status-dot dot-offline';if(label)label.textContent='worker error HTTP '+res.status;}
-  }catch(e){if(dot)dot.className='status-dot dot-offline';if(label)label.textContent='offline: '+(e&&e.message?e.message:JSON.stringify(e));}
+    if(res.ok){setWorkerOnline();}
+    else{setWorkerOffline('worker error HTTP '+res.status);}
+  }catch(e){setWorkerOffline('offline: '+(e&&e.message?e.message:JSON.stringify(e)));}
 }
 
 // ── Notifications ─────────────────────────────────────────────────────────────
