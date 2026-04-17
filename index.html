@@ -592,7 +592,7 @@ footer a:hover { text-decoration:underline; }
       <div>repo:&nbsp; <span id="dbg-repo"  style="color:var(--text);">loading...</span></div>
       <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;">
         <button onclick="testConnection()" style="font-family:var(--mono);font-size:0.68rem;background:none;border:1px solid var(--border);border-radius:4px;padding:3px 10px;cursor:pointer;color:var(--cyan);">⚡ Test Connection</button>
-        <button id="debug-toggle-btn" onclick="toggleDebug()" style="font-family:var(--mono);font-size:0.68rem;background:none;border:1px solid var(--border);border-radius:4px;padding:3px 10px;cursor:pointer;color:var(--muted);">🔍 Debug: OFF</button>
+        <button id="debug-toggle-btn" onclick="toggleDebugBar()" style="font-family:var(--mono);font-size:0.68rem;background:none;border:1px solid var(--border);border-radius:4px;padding:3px 10px;cursor:pointer;color:var(--muted);">🔍 Debug: OFF</button>
       </div>
       <div id="dbg-test-result" style="margin-top:6px;font-size:0.68rem;min-height:14px;color:var(--muted);"></div>
     </div>
@@ -828,7 +828,9 @@ footer a:hover { text-decoration:underline; }
      FlipperFAP v2.0 — JavaScript
      ════════════════════════════════════════════════════════════════════════════ -->
 <script>
-const WORKER_URL = 'https://flipperfap-worker.joelewis-1996.workers.dev';
+// !! UPDATE THIS after deploying worker.js to Cloudflare !!
+// Copy the worker URL from: Cloudflare Dashboard → Workers → your worker → URL shown at top
+const WORKER_URL = 'https://YOUR-WORKER-NAME.YOUR-SUBDOMAIN.workers.dev';
 
 const FW_REPOS = {
   official:  'flipperdevices/flipperzero-firmware',
@@ -1843,6 +1845,12 @@ function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 function timeAgo(ts){const s=Math.round((Date.now()-ts)/1000);if(s<60)return`${s}s ago`;if(s<3600)return`${Math.round(s/60)}m ago`;if(s<86400)return`${Math.round(s/3600)}h ago`;return`${Math.round(s/86400)}d ago`;}
 
 // ── Init ──────────────────────────────────────────────────────────────────────
+// saveToken — modal is hidden in v2 (token lives in worker secret, not browser)
+// kept as a stub so the button reference doesn't throw a JS error
+function saveToken() {
+  document.getElementById('modal-err').textContent = 'Token setup is handled via the Cloudflare Worker. See the README.';
+}
+
 document.getElementById('token-modal').style.display='none';
 applyTheme();
 applyDebug();
