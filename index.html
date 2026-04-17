@@ -3,511 +3,463 @@
 <head>
 <meta charset="UTF-8"/>
 
-  <!-- ── iOS Home Screen / PWA ─────────────────────────────────────────── -->
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-  <meta name="apple-mobile-web-app-title" content="FlipperFAP"/>
-  <meta name="theme-color" content="#0a0a0b"/>
-  <meta name="mobile-web-app-capable" content="yes"/>
+<!-- ── PWA / iOS ─────────────────────────────────────────────────────────── -->
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="FlipperFAP"/>
+<meta name="theme-color" content="#0a0a0b"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<link rel="apple-touch-icon" id="touch-icon" href="icon.png"/>
+<link rel="manifest" href="manifest.json"/>
 
-  <!-- Home screen icon (generated inline as SVG→PNG via canvas on load) -->
-  <link rel="apple-touch-icon" id="touch-icon" href="icon.png"/>
-  <link rel="manifest" href="manifest.json"/>
+<!-- ── OG / Social ───────────────────────────────────────────────────────── -->
+<meta property="og:title" content="FlipperFAP — Online .FAP Compiler"/>
+<meta property="og:description" content="Compile Flipper Zero .fap apps from any GitHub or Gitea repo. Free, no server needed, works on iPhone."/>
+<meta property="og:image" content="https://joelewis012.github.io/flipper-fap-actions/icon512.png"/>
+<meta property="og:url" content="https://joelewis012.github.io/flipper-fap-actions/"/>
+<meta property="og:type" content="website"/>
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="FlipperFAP — Online .FAP Compiler"/>
+<meta name="twitter:description" content="Compile Flipper Zero .fap apps from any GitHub or Gitea repo. Free, no server needed."/>
+<meta name="twitter:image" content="https://joelewis012.github.io/flipper-fap-actions/icon512.png"/>
 
-  <!-- Splash screen background colour -->
-  <style>
-    /* Full screen when launched from home screen */
-    @media (display-mode: standalone) {
-      body { padding-top: env(safe-area-inset-top); }
-      .container { padding-top: 16px; }
-    }
-  
-  /* ── Stage 1 additions ───────────────────────────────────────────────── */
-  .status-bar { display:flex; justify-content:center; gap:20px; margin-top:24px; flex-wrap:wrap; }
-  .stat { text-align:center; }
-  .stat-num { font-family:var(--mono); font-size:1.5rem; color:var(--orange); text-shadow:0 0 12px rgba(255,107,0,0.4); display:block; }
-  .stat-label { font-size:0.68rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; }
-
-  .recent-chip { font-family:var(--mono); font-size:0.65rem; padding:3px 9px; background:var(--bg3); border:1px solid var(--border); border-radius:4px; cursor:pointer; color:var(--muted); white-space:nowrap; max-width:200px; overflow:hidden; text-overflow:ellipsis; transition:all 0.15s; }
-  .recent-chip:hover { color:var(--orange); border-color:var(--orange); }
-
-  .fw-changelog { font-family:var(--mono); font-size:0.65rem; color:var(--cyan); cursor:pointer; text-decoration:underline; margin-left:6px; opacity:0.7; }
-  .fw-changelog:hover { opacity:1; }
-
-  /* Error popup */
-  .err-popup { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#1a0a0a; border:1px solid var(--red); border-radius:8px; padding:14px 20px; font-family:var(--mono); font-size:0.78rem; color:var(--red); max-width:340px; width:90%; z-index:999; box-shadow:0 4px 24px rgba(0,0,0,0.5); animation:slideUp 0.3s ease; }
-  @keyframes slideUp { from{opacity:0;transform:translateX(-50%) translateY(10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
-  .err-popup .err-title { font-weight:700; margin-bottom:4px; }
-  .err-popup .err-close { position:absolute; top:8px; right:12px; cursor:pointer; opacity:0.6; font-size:1rem; }
-  .err-popup .err-close:hover { opacity:1; }
-
-  /* Success popup */
-  .ok-popup { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#0a1a0a; border:1px solid var(--green); border-radius:8px; padding:12px 20px; font-family:var(--mono); font-size:0.78rem; color:var(--green); max-width:300px; width:90%; z-index:999; box-shadow:0 4px 24px rgba(0,0,0,0.5); animation:slideUp 0.3s ease; }
-
-  /* Changelog modal */
-  .changelog-modal { position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:500; display:flex; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px); }
-  .changelog-inner { background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:24px; max-width:480px; width:100%; max-height:80vh; overflow-y:auto; position:relative; }
-  .changelog-inner::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--orange),transparent); border-radius:10px 10px 0 0; }
-  .changelog-title { font-weight:800; font-size:1rem; margin-bottom:4px; }
-  .changelog-title span { color:var(--orange); }
-  .changelog-close { position:absolute; top:14px; right:16px; cursor:pointer; color:var(--muted); font-size:1.2rem; background:none; border:none; }
-  .changelog-close:hover { color:var(--text); }
-  .changelog-entry { margin-top:14px; padding-bottom:14px; border-bottom:1px solid var(--border); }
-  .changelog-entry:last-child { border-bottom:none; }
-  .changelog-ver { font-family:var(--mono); font-size:0.78rem; color:var(--orange); font-weight:700; }
-  .changelog-date { font-family:var(--mono); font-size:0.68rem; color:var(--muted); margin-left:8px; }
-  .changelog-items { margin-top:6px; font-size:0.78rem; color:var(--text); line-height:1.7; }
-  .changelog-loading { font-family:var(--mono); font-size:0.78rem; color:var(--muted); padding:20px 0; text-align:center; }
-
-  /* Estimated time */
-  .eta-bar { font-family:var(--mono); font-size:0.68rem; color:var(--cyan); margin-top:4px; }
-
-  /* ── Stage 2 ─────────────────────────────────────────────────────────── */
-  body.light {
-    --orange: #d45500; --bg: #f2f2f5; --bg2: #ffffff; --bg3: #e8e8ee;
-    --border: #ccccda; --text: #1a1a2e; --muted: #66667a;
-    --green: #1a9900; --cyan: #0077aa; --yellow: #997700; --red: #cc2200;
-  }
-  body.light::before { background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px); }
-  body.light::after  { background-image:linear-gradient(rgba(0,0,0,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,0.02) 1px,transparent 1px); }
-
-  .app-card { background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:12px; cursor:pointer; transition:all 0.15s; display:flex; flex-direction:column; gap:5px; }
-  .app-card:hover { border-color:var(--orange); transform:translateY(-1px); box-shadow:0 4px 14px rgba(0,0,0,0.2); }
-  .app-card-name { font-weight:700; font-size:0.83rem; color:var(--text); }
-  .app-card-desc { font-family:var(--mono); font-size:0.63rem; color:var(--muted); line-height:1.4; }
-  .app-card-fw   { font-family:var(--mono); font-size:0.6rem; color:var(--orange); }
-  .app-card-cta  { font-family:var(--mono); font-size:0.63rem; color:var(--green); background:rgba(57,255,20,0.07); border:1px solid rgba(57,255,20,0.2); border-radius:4px; padding:3px 8px; text-align:center; margin-top:2px; }
-  .app-card:hover .app-card-cta { background:rgba(57,255,20,0.16); }
-
-  .feed-item { display:flex; align-items:center; gap:9px; padding:7px 10px; background:var(--bg3); border-radius:6px; margin-bottom:6px; }
-  .feed-dot  { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-  .feed-repo { font-family:var(--mono); font-size:0.68rem; color:var(--text); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .feed-fw   { font-family:var(--mono); font-size:0.62rem; color:var(--orange); flex-shrink:0; }
-  .feed-time { font-family:var(--mono); font-size:0.6rem; color:var(--muted); flex-shrink:0; }
-
-  .build-log-wrap { margin-top:8px; }
-  .build-log { background:#05050a; border:1px solid var(--border); border-radius:6px; padding:10px 12px; font-family:var(--mono); font-size:0.66rem; color:#8a8aaa; max-height:200px; overflow-y:auto; line-height:1.6; white-space:pre-wrap; word-break:break-all; }
-  .build-log .log-err  { color:#ff7070; }
-  .build-log .log-ok   { color:var(--green); }
-  .build-log .log-warn { color:var(--yellow); }
-  .log-toggle { font-family:var(--mono); font-size:0.64rem; color:var(--muted); background:none; border:none; cursor:pointer; padding:4px 0 0; text-decoration:underline; display:block; }
-  .log-toggle:hover { color:var(--cyan); }
-
-  .err-popup { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#130808; border:1px solid var(--red); border-radius:8px; padding:14px 20px 14px 16px; font-family:var(--mono); font-size:0.76rem; color:var(--red); max-width:340px; width:90%; z-index:9999; box-shadow:0 4px 24px rgba(0,0,0,0.6); animation:popUp 0.3s ease; }
-  .ok-popup  { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#081308; border:1px solid var(--green); border-radius:8px; padding:12px 20px; font-family:var(--mono); font-size:0.76rem; color:var(--green); max-width:320px; width:90%; z-index:9999; box-shadow:0 4px 24px rgba(0,0,0,0.6); animation:popUp 0.3s ease; }
-  @keyframes popUp { from{opacity:0;transform:translateX(-50%) translateY(10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
-  .err-title { font-weight:700; margin-bottom:4px; }
-  .err-close { position:absolute; top:8px; right:12px; cursor:pointer; opacity:0.6; font-size:1rem; background:none; border:none; color:inherit; }
-
-  .cl-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:5000; display:flex; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px); }
-  .cl-box { background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:24px; max-width:480px; width:100%; max-height:80vh; overflow-y:auto; position:relative; }
-  .cl-box::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--orange),transparent); border-radius:10px 10px 0 0; }
-  .cl-box h2 { font-size:1rem; font-weight:800; margin-bottom:16px; }
-  .cl-box h2 span { color:var(--orange); }
-  .cl-close { position:absolute; top:14px; right:16px; background:none; border:none; cursor:pointer; color:var(--muted); font-size:1.2rem; }
-  .cl-entry { margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid var(--border); }
-  .cl-entry:last-child { border-bottom:none; margin-bottom:0; padding-bottom:0; }
-  .cl-ver  { font-family:var(--mono); font-size:0.76rem; color:var(--orange); font-weight:700; }
-  .cl-date { font-family:var(--mono); font-size:0.66rem; color:var(--muted); margin-left:8px; }
-  .cl-body { font-size:0.76rem; color:var(--text); line-height:1.7; margin-top:5px; white-space:pre-wrap; }
-
-
-  /* ── Stage 3 ─────────────────────────────────────────────────────────── */
-
-  /* App directory search + filter bar */
-  .dir-toolbar { display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
-  .dir-search { flex:1; min-width:140px; background:var(--bg3); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:var(--mono); font-size:0.8rem; padding:8px 12px; outline:none; transition:border-color 0.2s; }
-  .dir-search:focus { border-color:var(--orange); }
-  .dir-search::placeholder { color:var(--muted); }
-  .cat-btn { font-family:var(--mono); font-size:0.68rem; padding:6px 11px; background:var(--bg3); border:1px solid var(--border); border-radius:6px; color:var(--muted); cursor:pointer; transition:all 0.15s; white-space:nowrap; }
-  .cat-btn.active { background:rgba(255,107,0,0.1); border-color:var(--orange); color:var(--orange); }
-  .cat-btn:hover:not(.active) { border-color:var(--muted); color:var(--text); }
-
-  /* App card star */
-  .app-card-header { display:flex; align-items:flex-start; justify-content:space-between; gap:6px; }
-  .star-btn { background:none; border:none; cursor:pointer; font-size:1rem; padding:0; line-height:1; flex-shrink:0; opacity:0.4; transition:opacity 0.15s,transform 0.15s; }
-  .star-btn.starred { opacity:1; }
-  .star-btn:hover { opacity:1; transform:scale(1.2); }
-
-  /* App dir pagination */
-  .dir-pagination { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:14px; }
-  .page-btn { font-family:var(--mono); font-size:0.72rem; padding:5px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:6px; color:var(--muted); cursor:pointer; transition:all 0.15s; }
-  .page-btn:hover:not(:disabled) { border-color:var(--orange); color:var(--orange); }
-  .page-btn:disabled { opacity:0.3; cursor:not-allowed; }
-  .page-info { font-family:var(--mono); font-size:0.68rem; color:var(--muted); }
-
-  /* Feed scroll */
-  .feed-scroll { max-height:360px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; }
-  .feed-scroll::-webkit-scrollbar { width:4px; }
-  .feed-scroll::-webkit-scrollbar-track { background:transparent; }
-  .feed-scroll::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
-
-  /* Jobs pagination */
-  .jobs-pagination { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:14px; }
-
-  /* Job card extras */
-  .job-actions { display:flex; gap:6px; margin-top:6px; flex-wrap:wrap; }
-  .copy-url-btn { font-family:var(--mono); font-size:0.64rem; color:var(--muted); background:none; border:1px solid var(--border); border-radius:4px; padding:3px 8px; cursor:pointer; transition:all 0.15s; }
-  .copy-url-btn:hover { color:var(--cyan); border-color:var(--cyan); }
-  .recompile-btn { font-family:var(--mono); font-size:0.64rem; color:var(--orange); background:rgba(255,107,0,0.06); border:1px solid rgba(255,107,0,0.25); border-radius:4px; padding:3px 8px; cursor:pointer; transition:all 0.15s; }
-  .recompile-btn:hover { background:rgba(255,107,0,0.14); }
-
-  /* Install banner */
-  .install-banner { position:fixed; bottom:0; left:0; right:0; background:var(--bg2); border-top:1px solid var(--border); padding:14px 20px; display:flex; align-items:center; gap:12px; z-index:8000; box-shadow:0 -4px 20px rgba(0,0,0,0.4); animation:slideUp2 0.4s ease; }
-  @keyframes slideUp2 { from{transform:translateY(100%)} to{transform:translateY(0)} }
-  .install-banner-text { flex:1; font-family:var(--mono); font-size:0.76rem; color:var(--text); line-height:1.4; }
-  .install-banner-text strong { color:var(--orange); }
-  .install-btn-yes { padding:8px 16px; background:var(--orange); border:none; border-radius:6px; color:#000; font-family:var(--sans); font-size:0.82rem; font-weight:800; cursor:pointer; white-space:nowrap; }
-  .install-btn-no  { padding:8px 12px; background:none; border:1px solid var(--border); border-radius:6px; color:var(--muted); font-family:var(--mono); font-size:0.72rem; cursor:pointer; white-space:nowrap; }
-  .install-btn-no:hover { color:var(--red); border-color:var(--red); }
-
-  /* No results */
-  .no-results { font-family:var(--mono); font-size:0.76rem; color:var(--muted); text-align:center; padding:20px; grid-column:1/-1; }
-
-
-  /* ── Stage 2 ─────────────────────────────────────────────────────────── */
-  body.light { --orange:#d45500;--bg:#f2f2f5;--bg2:#ffffff;--bg3:#e8e8ee;--border:#ccccda;--text:#1a1a2e;--muted:#66667a;--green:#1a9900;--cyan:#0077aa;--yellow:#997700;--red:#cc2200; }
-  .app-card { background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;cursor:pointer;transition:all 0.15s;display:flex;flex-direction:column;gap:5px;overflow:hidden;min-width:0; }
-  .app-card:hover { border-color:var(--orange);transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,0.2); }
-  .app-card-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:8px; }
-  .app-icon { font-size:1.6rem;line-height:1; }
-  .app-card-name { font-weight:700;font-size:0.83rem;color:var(--text); }
-  .app-card-desc { font-family:var(--mono);font-size:0.63rem;color:var(--muted);line-height:1.4; }
-  .app-card-fw   { font-family:var(--mono);font-size:0.6rem;color:var(--orange); }
-  .app-card-cta  { font-family:var(--mono);font-size:0.63rem;color:var(--green);background:rgba(57,255,20,0.07);border:1px solid rgba(57,255,20,0.2);border-radius:4px;padding:3px 8px;text-align:center;margin-top:2px; }
-  .app-card:hover .app-card-cta { background:rgba(57,255,20,0.16); }
-  .app-card-footer { display:flex;align-items:center;justify-content:space-between;margin-top:8px; }
-  .app-gh-link { font-family:var(--mono);font-size:0.6rem;color:var(--muted);text-decoration:none; }
-  .app-gh-link:hover { color:var(--orange); }
-  .fw-chips { display:flex;flex-wrap:wrap;gap:3px;margin:6px 0 4px; }
-  .fw-chip  { font-family:var(--mono);font-size:0.56rem;background:var(--bg2);border:1px solid var(--border);border-radius:3px;padding:1px 5px;color:var(--muted); }
-  .compat-badge { font-family:var(--mono);font-size:0.58rem;border-radius:3px;padding:2px 6px;display:inline-block;margin-top:2px; }
-  .compat-rec  { background:rgba(57,255,20,0.15);color:var(--green); }
-  .compat-ok   { background:rgba(0,229,255,0.12);color:var(--cyan); }
-  .compat-warn { background:rgba(255,57,57,0.12);color:var(--red); }
-  .app-note { font-family:var(--mono);font-size:0.58rem;color:var(--yellow);margin-top:3px; }
-  .fav-btn { background:none;border:none;cursor:pointer;font-size:1rem;padding:0;line-height:1;transition:transform 0.15s;flex-shrink:0; }
-  .fav-btn:hover { transform:scale(1.2); }
-  .build-log-wrap { margin-top:8px; }
-  .build-log { background:#05050a;border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-family:var(--mono);font-size:0.66rem;color:#8a8aaa;max-height:200px;overflow-y:auto;line-height:1.6;white-space:pre-wrap;word-break:break-all; }
-  .build-log .log-err  { color:#ff7070; }
-  .build-log .log-ok   { color:var(--green); }
-  .build-log .log-warn { color:var(--yellow); }
-  .log-toggle { font-family:var(--mono);font-size:0.64rem;color:var(--muted);background:none;border:none;cursor:pointer;padding:4px 0 0;text-decoration:underline;display:block; }
-  .log-toggle:hover { color:var(--cyan); }
-  .err-popup { position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#130808;border:1px solid var(--red);border-radius:8px;padding:14px 20px 14px 16px;font-family:var(--mono);font-size:0.76rem;color:var(--red);max-width:340px;width:90%;z-index:9999;box-shadow:0 4px 24px rgba(0,0,0,0.6);animation:popUp 0.3s ease; }
-  .ok-popup  { position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#081308;border:1px solid var(--green);border-radius:8px;padding:12px 20px;font-family:var(--mono);font-size:0.76rem;color:var(--green);max-width:320px;width:90%;z-index:9999;box-shadow:0 4px 24px rgba(0,0,0,0.6);animation:popUp 0.3s ease; }
-  @keyframes popUp { from{opacity:0;transform:translateX(-50%) translateY(10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
-  .err-title { font-weight:700;margin-bottom:4px; }
-  .err-close { position:absolute;top:8px;right:12px;cursor:pointer;opacity:0.6;font-size:1rem;background:none;border:none;color:inherit; }
-  .cl-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:5000;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px); }
-  .cl-box { background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:24px;max-width:480px;width:100%;max-height:80vh;overflow-y:auto;position:relative; }
-  .cl-box::before { content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--orange),transparent);border-radius:10px 10px 0 0; }
-  .cl-box h2 { font-size:1rem;font-weight:800;margin-bottom:16px; }
-  .cl-box h2 span { color:var(--orange); }
-  .cl-close { position:absolute;top:14px;right:16px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:1.2rem; }
-  .cl-entry { margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border); }
-  .cl-entry:last-child { border-bottom:none;margin-bottom:0;padding-bottom:0; }
-  .cl-ver  { font-family:var(--mono);font-size:0.76rem;color:var(--orange);font-weight:700; }
-  .cl-date { font-family:var(--mono);font-size:0.66rem;color:var(--muted);margin-left:8px; }
-  .cl-body { font-size:0.76rem;color:var(--text);line-height:1.7;margin-top:5px;white-space:pre-wrap; }
-  /* Stage 3 */
-  .page-btn { font-family:var(--mono);font-size:0.7rem;padding:5px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--muted);cursor:pointer;transition:all 0.15s; }
-  .page-btn:hover { border-color:var(--orange);color:var(--orange); }
-  .page-btn.active { background:var(--orange);border-color:var(--orange);color:#000;font-weight:700; }
-  .job-action-btn { font-family:var(--mono);font-size:0.64rem;color:var(--muted);background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:3px 9px;cursor:pointer;transition:all 0.15s;white-space:nowrap; }
-  .job-action-btn:hover { color:var(--orange);border-color:var(--orange); }
-  .job-action-btn.copied { color:var(--green);border-color:var(--green); }
-  /* Status dots */
-  .status-dot { width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0; }
-  .dot-online  { background:var(--green);box-shadow:0 0 5px var(--green);animation:pulse 2.5s ease-in-out infinite;animation-delay:0s; }
-  .dot-offline { background:var(--red);  box-shadow:0 0 5px var(--red);  animation:pulse 2.5s ease-in-out infinite;animation-delay:0s; }
-  .dot-loading { background:#888888;box-shadow:none;animation:none; }
-  /* Grid overflow fix */
-  #popular-grid > div, #app-dir-grid > div { min-width:0; }
-  /* Status bar */
-  .status-bar { display:flex;justify-content:center;gap:20px;margin-top:20px;flex-wrap:wrap; }
-  .stat { text-align:center; }
-  .stat-num { font-family:var(--mono);font-size:1.5rem;color:var(--orange);text-shadow:0 0 12px rgba(255,107,0,0.4);display:block; }
-  .stat-label { font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em; }
-  .recent-chip { font-family:var(--mono);font-size:0.65rem;padding:3px 9px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;cursor:pointer;color:var(--muted);white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;transition:all 0.15s; }
-  .recent-chip:hover { color:var(--orange);border-color:var(--orange); }
-  .fw-changelog { font-family:var(--mono);font-size:0.65rem;color:var(--cyan);cursor:pointer;text-decoration:underline;margin-left:6px;opacity:0.7; }
-  .fw-changelog:hover { opacity:1; }
-  .eta-bar { font-family:var(--mono);font-size:0.68rem;color:var(--cyan);text-align:center;margin-bottom:4px; }
-  .gh-link { font-family:var(--mono);font-size:0.7rem;color:var(--muted);background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:4px;padding:4px 10px;text-decoration:none;white-space:nowrap;transition:all 0.15s;display:inline-flex;align-items:center;justify-content:center; }
-  .gh-link:hover { color:var(--text);border-color:var(--muted); }
-
-</style>
-
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>FlipperFAP — Online Compiler</title>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;700;900&display=swap" rel="stylesheet"/>
-<!-- ═══════════════════════════════════════════════════════════════════
-     GOOGLE ADSENSE — replace ca-pub-XXXXXXXXXXXXXXXX with your
-     Publisher ID from https://adsense.google.com/start
-     ═══════════════════════════════════════════════════════════════ -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
 <style>
-  :root {
-    --orange: #FF6B00;
-    --orange-dim: #cc5500;
-    --orange-glow: #ff8c3380;
-    --bg: #0a0a0b;
-    --bg2: #111114;
-    --bg3: #18181d;
-    --border: #2a2a35;
-    --text: #e8e8f0;
-    --muted: #5a5a6e;
-    --green: #39ff14;
-    --red: #ff3939;
-    --yellow: #ffd600;
-    --cyan: #00e5ff;
-    --mono: 'Share Tech Mono', monospace;
-    --sans: 'Exo 2', sans-serif;
-  }
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; overflow-x: hidden; }
-  body::before { content: ''; position: fixed; inset: 0; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px); pointer-events: none; z-index: 1000; }
-  body::after { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(255,107,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,107,0,0.03) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; }
-  .container { max-width: 900px; margin: 0 auto; padding: 0 20px 80px; position: relative; z-index: 1; }
+/* ════════════════════════════════════════════════════════════════════════════
+   FlipperFAP v2.0 — Single consolidated stylesheet
+   ════════════════════════════════════════════════════════════════════════════ */
 
-  /* ── Header ── */
-  header { padding: 48px 0 36px; text-align: center; }
-  .logo-wrap { display: inline-flex; align-items: center; gap: 14px; margin-bottom: 12px; }
-  h1 { font-family: var(--sans); font-size: clamp(1.8rem,4vw,2.6rem); font-weight: 900; letter-spacing: -0.02em; line-height: 1; }
-  h1 span.accent { color: var(--orange); }
-  .tagline { font-family: var(--mono); font-size: 0.78rem; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 8px; }
-  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.3} }
-  .live-dot { width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);display:inline-block;animation:pulse 1.5s ease-in-out infinite;vertical-align:middle;margin-right:4px; }
+/* ── Variables ── */
+:root {
+  --orange:     #FF6B00;
+  --orange-dim: #cc5500;
+  --orange-glow:#ff8c3380;
+  --bg:         #0a0a0b;
+  --bg2:        #111114;
+  --bg3:        #18181d;
+  --border:     #2a2a35;
+  --text:       #e8e8f0;
+  --muted:      #5a5a6e;
+  --green:      #39ff14;
+  --red:        #ff3939;
+  --yellow:     #ffd600;
+  --cyan:       #00e5ff;
+  --mono:       'Share Tech Mono', monospace;
+  --sans:       'Exo 2', sans-serif;
+}
 
-  .divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border), var(--orange-dim), var(--border), transparent); margin: 32px 0; }
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  /* ── Setup Banner ── */
-  .setup-banner { background: rgba(255,107,0,0.07); border: 1px solid rgba(255,107,0,0.3); border-radius: 8px; padding: 20px 24px; margin-bottom: 24px; }
-  .setup-banner h3 { font-size: 0.85rem; font-weight: 700; color: var(--orange); margin-bottom: 12px; letter-spacing: 0.05em; text-transform: uppercase; }
-  .setup-steps { display: flex; flex-direction: column; gap: 8px; }
-  .setup-step { display: flex; gap: 12px; align-items: flex-start; font-family: var(--mono); font-size: 0.75rem; color: var(--muted); line-height: 1.5; }
-  .step-num { background: var(--orange); color: #000; font-weight: 900; width: 20px; height: 20px; border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 0.7rem; margin-top: 1px; }
-  .setup-step a { color: var(--orange); text-decoration: none; }
-  .setup-step a:hover { text-decoration: underline; }
-  .setup-step code { background: var(--bg3); padding: 1px 6px; border-radius: 3px; color: var(--text); font-size: 0.72rem; }
+/* ── Body & background ── */
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+  pointer-events: none;
+  z-index: 1000;
+}
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: linear-gradient(rgba(255,107,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,107,0,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
 
-  /* ── Token input section ── */
-  .token-section { margin-bottom: 20px; }
-  .token-row { display: flex; gap: 8px; }
-  .token-row input { flex: 1; }
-  .token-status { font-family: var(--mono); font-size: 0.7rem; margin-top: 6px; min-height: 16px; }
-  .token-ok { color: var(--green); }
-  .token-err { color: var(--red); }
+/* ── Light mode ── */
+body.light {
+  --orange:#d45500; --bg:#f2f2f5; --bg2:#ffffff; --bg3:#e8e8ee;
+  --border:#ccccda; --text:#1a1a2e; --muted:#66667a;
+  --green:#1a9900; --cyan:#0077aa; --yellow:#997700; --red:#cc2200;
+}
+body.light::before { background: repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px); }
+body.light::after  { background-image: linear-gradient(rgba(0,0,0,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,0.02) 1px,transparent 1px); }
 
-  /* ── Card ── */
-  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 28px; position: relative; overflow: hidden; }
-  .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--orange), transparent); }
-  .card-title { font-family: var(--mono); font-size: 0.72rem; color: var(--orange); text-transform: uppercase; letter-spacing: 0.18em; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
-  .card-title::before { content: '//'; color: var(--muted); }
+/* ── PWA standalone ── */
+@media (display-mode: standalone) {
+  body { padding-top: env(safe-area-inset-top); }
+  .container { padding-top: 16px; }
+}
 
-  /* ── Form ── */
-  .form-group { margin-bottom: 20px; }
-  label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
-  .input-wrap { position: relative; }
-  .input-wrap .prefix { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-family: var(--mono); font-size: 0.85rem; color: var(--orange); pointer-events: none; }
-  input[type="text"], input[type="password"] { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: var(--mono); font-size: 0.9rem; padding: 12px 14px 12px 36px; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
-  input[type="text"]:focus, input[type="password"]:focus { border-color: var(--orange); box-shadow: 0 0 0 2px var(--orange-glow); }
-  input::placeholder { color: var(--muted); }
-  input.error { border-color: var(--red) !important; }
+/* ── Container ── */
+.container { max-width: 900px; margin: 0 auto; padding: 0 20px 100px; position: relative; z-index: 1; }
 
-  /* ── Firmware grid ── */
-  .firmware-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  @media (max-width: 560px) { .firmware-grid { grid-template-columns: 1fr; } }
-  .fw-options { display: flex; flex-direction: column; gap: 8px; }
-  .fw-card { position: relative; }
-  .fw-card input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
-  .fw-card label { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; transition: all 0.15s; margin: 0; text-transform: none; letter-spacing: 0; font-size: 0.9rem; font-weight: 400; color: var(--text); }
-  .fw-card input:checked + label { border-color: var(--orange); background: rgba(255,107,0,0.06); }
-  .fw-card label:hover { border-color: var(--orange-dim); }
-  .fw-dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--muted); flex-shrink: 0; transition: all 0.15s; }
-  .fw-card input:checked + label .fw-dot { border-color: var(--orange); background: var(--orange); box-shadow: 0 0 6px var(--orange); }
-  .fw-name { font-weight: 600; flex: 1; }
-  .fw-ver { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); background: rgba(255,255,255,0.04); padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
-  .fw-card input:checked + label .fw-ver { color: var(--orange); background: rgba(255,107,0,0.12); }
-  .fw-badge { font-size: 0.62rem; padding: 2px 6px; border-radius: 3px; font-weight: 700; text-transform: uppercase; }
-  .badge-new { background: rgba(57,255,20,0.15); color: var(--green); }
-  .badge-pop { background: rgba(255,107,0,0.15); color: var(--orange); }
-  .version-note { font-family: var(--mono); font-size: 0.68rem; color: var(--muted); margin-top: 6px; min-height: 16px; }
+/* ── Header ── */
+header { padding: 48px 0 36px; text-align: center; }
+.logo-wrap { display: inline-flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+h1 { font-family: var(--sans); font-size: clamp(1.8rem,4vw,2.6rem); font-weight: 900; letter-spacing: -0.02em; line-height: 1; }
+h1 span.accent { color: var(--orange); }
+.tagline { font-family: var(--mono); font-size: 0.78rem; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 8px; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.3} }
+.live-dot { width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);display:inline-block;animation:pulse 1.5s ease-in-out infinite;vertical-align:middle;margin-right:4px; }
 
-  /* ── Channel toggle ── */
-  .channel-toggle { display: flex; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
-  .channel-toggle input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
-  .channel-toggle label { flex: 1; text-align: center; padding: 11px 16px; cursor: pointer; font-size: 0.85rem; font-weight: 600; margin: 0; text-transform: none; letter-spacing: 0; color: var(--muted); transition: all 0.15s; }
-  .channel-toggle input:checked + label { color: var(--bg); background: var(--orange); box-shadow: 0 0 12px var(--orange-glow); }
-  .channel-desc { font-family: var(--mono); font-size: 0.68rem; color: var(--muted); margin-top: 8px; }
+/* ── Divider ── */
+.divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border), var(--orange-dim), var(--border), transparent); margin: 32px 0; }
 
-  .out-box { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px; font-family: var(--mono); font-size: 0.78rem; color: var(--muted); line-height: 1.7; margin-top: 16px; }
-  .out-box .k { color: var(--orange); }
-  .out-box .g { color: var(--green); }
+/* ── Status bar ── */
+.status-bar { display:flex; justify-content:center; gap:20px; margin-top:20px; flex-wrap:wrap; }
+.stat { text-align:center; }
+.stat-num { font-family:var(--mono); font-size:1.5rem; color:var(--orange); text-shadow:0 0 12px rgba(255,107,0,0.4); display:block; }
+.stat-label { font-size:0.68rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; }
 
-  /* ── Button ── */
-  .btn-compile { width: 100%; padding: 15px 24px; background: var(--orange); border: none; border-radius: 6px; color: #000; font-family: var(--sans); font-size: 1rem; font-weight: 900; letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; margin-top: 24px; }
-  .btn-compile::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%); pointer-events: none; }
-  .btn-compile:hover:not(:disabled) { background: #ff8533; box-shadow: 0 0 24px rgba(255,107,0,0.5); transform: translateY(-1px); }
-  .btn-compile:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-  .btn-inner { display: flex; align-items: center; justify-content: center; gap: 10px; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .spinner { width: 18px; height: 18px; border: 2px solid rgba(0,0,0,0.3); border-top-color: #000; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
+/* ── Status dots ── */
+.status-dot { width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0; }
+.dot-online  { background:var(--green);box-shadow:0 0 5px var(--green);animation:pulse 2.5s ease-in-out infinite; }
+.dot-offline { background:var(--red);  box-shadow:0 0 5px var(--red);  animation:pulse 2.5s ease-in-out infinite; }
+.dot-loading { background:#888888;box-shadow:none;animation:none; }
 
-  /* ── Jobs ── */
-  .jobs-section { margin-top: 36px; }
-  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-  .section-title { font-family: var(--mono); font-size: 0.72rem; color: var(--orange); text-transform: uppercase; letter-spacing: 0.18em; display: flex; align-items: center; gap: 8px; }
-  .section-title::before { content: '//'; color: var(--muted); }
-  .clear-btn { font-family: var(--mono); font-size: 0.7rem; color: var(--muted); background: none; border: 1px solid var(--border); border-radius: 4px; padding: 4px 10px; cursor: pointer; transition: all 0.15s; }
-  .clear-btn:hover { color: var(--red); border-color: var(--red); }
+/* ── Card ── */
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 28px; position: relative; overflow: hidden; }
+.card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--orange), transparent); }
+.card-title { font-family: var(--mono); font-size: 0.72rem; color: var(--orange); text-transform: uppercase; letter-spacing: 0.18em; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+.card-title::before { content: '//'; color: var(--muted); }
 
-  .jobs-list { display: flex; flex-direction: column; gap: 10px; }
-  @keyframes slideIn { from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)} }
-  .job-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto auto; gap: 4px 16px; animation: slideIn 0.3s ease; position: relative; overflow: hidden; min-width: 0; }
-  .job-url { font-family:var(--mono); font-size:0.68rem; color:var(--muted); white-space:normal; word-break:break-all; max-width:100%; display:block; line-height:1.4; }
-  .job-meta-row { display:flex; flex-wrap:wrap; gap:6px; align-items:center; min-width:0; overflow:hidden; }
-  .job-meta-chip { font-family:var(--mono); font-size:0.68rem; color:var(--muted); white-space:nowrap; flex-shrink:0; }
-  .job-card.status-queued    { border-left: 3px solid var(--yellow); }
-  .job-card.status-running   { border-left: 3px solid var(--cyan); }
-  .job-card.status-success   { border-left: 3px solid var(--green); }
-  .job-card.status-failure,
-  .job-card.status-error     { border-left: 3px solid var(--red); }
-  .job-card.status-running::before { content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);animation:scanJob 1.5s linear infinite; }
-  @keyframes scanJob{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
-  .job-repo { font-family: var(--mono); font-size: 0.8rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; grid-column: 1; grid-row: 1; }
-  .job-meta { font-size: 0.7rem; color: var(--muted); grid-column: 1; grid-row: 2; display: flex; gap: 12px; flex-wrap: wrap; }
-  .job-msg  { font-family: var(--mono); font-size: 0.68rem; color: var(--muted); grid-column: 1; grid-row: 3; margin-top: 2px; }
-  .job-card.status-failure .job-msg,
-  .job-card.status-error .job-msg { color: #ff7070; }
-  .job-status { grid-column: 2; grid-row: 1/4; align-self: center; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
-  .status-badge { font-family: var(--mono); font-size: 0.68rem; padding: 3px 10px; border-radius: 4px; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
-  .badge-queued  { background: rgba(255,214,0,0.12); color: var(--yellow); }
-  .badge-running { background: rgba(0,229,255,0.12); color: var(--cyan); }
-  .badge-success { background: rgba(57,255,20,0.12); color: var(--green); }
-  .badge-failure,
-  .badge-error   { background: rgba(255,57,57,0.12); color: var(--red); }
-  .download-btn { font-family: var(--mono); font-size: 0.7rem; color: var(--green); background: rgba(57,255,20,0.08); border: 1px solid rgba(57,255,20,0.25); border-radius: 4px; padding: 4px 10px; cursor: pointer; text-decoration: none; transition: all 0.15s; white-space: nowrap; }
-  .download-btn:hover { background: rgba(57,255,20,0.15); border-color: var(--green); }
-  .gh-link { font-family: var(--mono); font-size: 0.7rem; color: var(--muted); background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 4px; padding: 4px 10px; text-decoration: none; white-space: nowrap; transition: all 0.15s; }
-  .gh-link:hover { color: var(--text); border-color: var(--muted); }
+/* ── Form ── */
+.form-group { margin-bottom: 20px; }
+label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+.input-wrap { position: relative; }
+.input-wrap .prefix { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-family: var(--mono); font-size: 0.85rem; color: var(--orange); pointer-events: none; }
+input[type="text"], input[type="password"] { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: var(--mono); font-size: 0.9rem; padding: 12px 14px 12px 36px; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
+input[type="text"]:focus, input[type="password"]:focus { border-color: var(--orange); box-shadow: 0 0 0 2px var(--orange-glow); }
+input::placeholder { color: var(--muted); }
+input.error { border-color: var(--red) !important; }
 
-  .legend { margin-top: 20px; padding: 14px 16px; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; display: flex; flex-wrap: wrap; gap: 12px 24px; }
-  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.72rem; color: var(--muted); font-family: var(--mono); }
-  .legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+/* ── Firmware grid ── */
+.firmware-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 560px) { .firmware-grid { grid-template-columns: 1fr; } }
+.fw-options { display: flex; flex-direction: column; gap: 8px; }
+.fw-card { position: relative; }
+.fw-card input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+.fw-card label { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; transition: all 0.15s; margin: 0; text-transform: none; letter-spacing: 0; font-size: 0.9rem; font-weight: 400; color: var(--text); }
+.fw-card input:checked + label { border-color: var(--orange); background: rgba(255,107,0,0.06); }
+.fw-card label:hover { border-color: var(--orange-dim); }
+.fw-dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--muted); flex-shrink: 0; transition: all 0.15s; }
+.fw-card input:checked + label .fw-dot { border-color: var(--orange); background: var(--orange); box-shadow: 0 0 6px var(--orange); }
+.fw-name { font-weight: 600; flex: 1; }
+.fw-ver { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); background: rgba(255,255,255,0.04); padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+.fw-card input:checked + label .fw-ver { color: var(--orange); background: rgba(255,107,0,0.12); }
+.fw-badge { font-size: 0.62rem; padding: 2px 6px; border-radius: 3px; font-weight: 700; text-transform: uppercase; }
+.badge-new { background: rgba(57,255,20,0.15); color: var(--green); }
+.badge-pop { background: rgba(255,107,0,0.15); color: var(--orange); }
+.version-note { font-family: var(--mono); font-size: 0.68rem; color: var(--muted); margin-top: 6px; min-height: 16px; }
+.fw-changelog { font-family: var(--mono); font-size: 0.65rem; color: var(--cyan); cursor: pointer; text-decoration: underline; margin-left: 6px; opacity: 0.7; }
+.fw-changelog:hover { opacity: 1; }
 
-  .notice { padding: 10px 14px; background: rgba(255,107,0,0.06); border: 1px solid rgba(255,107,0,0.2); border-radius: 6px; font-family: var(--mono); font-size: 0.72rem; color: var(--muted); display: flex; gap: 8px; line-height: 1.5; }
-  .notice .ico { color: var(--orange); flex-shrink: 0; }
-  .mt { margin-top: 10px; }
+/* ── Channel toggle ── */
+.channel-toggle { display: flex; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.channel-toggle input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+.channel-toggle label { flex: 1; text-align: center; padding: 11px 16px; cursor: pointer; font-size: 0.85rem; font-weight: 600; margin: 0; text-transform: none; letter-spacing: 0; color: var(--muted); transition: all 0.15s; }
+.channel-toggle input:checked + label { color: var(--bg); background: var(--orange); box-shadow: 0 0 12px var(--orange-glow); }
+.channel-desc { font-family: var(--mono); font-size: 0.68rem; color: var(--muted); margin-top: 8px; }
 
-  .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); font-family: var(--mono); font-size: 0.82rem; border: 1px dashed var(--border); border-radius: 6px; }
-  .empty-state .big { font-size: 2rem; margin-bottom: 8px; opacity: 0.3; }
+/* ── Out box ── */
+.out-box { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px; font-family: var(--mono); font-size: 0.78rem; color: var(--muted); line-height: 1.7; margin-top: 16px; }
+.out-box .k { color: var(--orange); }
+.out-box .g { color: var(--green); }
 
-  footer { text-align: center; padding: 32px 0; font-family: var(--mono); font-size: 0.7rem; color: var(--muted); position: relative; z-index: 1; }
-  footer a { color: var(--orange); text-decoration: none; }
+/* ── Compile button ── */
+.btn-compile { width: 100%; padding: 15px 24px; background: var(--orange); border: none; border-radius: 6px; color: #000; font-family: var(--sans); font-size: 1rem; font-weight: 900; letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; margin-top: 24px; }
+.btn-compile::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%); pointer-events: none; }
+.btn-compile:hover:not(:disabled) { background: #ff8533; box-shadow: 0 0 24px rgba(255,107,0,0.5); transform: translateY(-1px); }
+.btn-compile:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.btn-inner { display: flex; align-items: center; justify-content: center; gap: 10px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner { width: 18px; height: 18px; border: 2px solid rgba(0,0,0,0.3); border-top-color: #000; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
 
-  /* ── Ads & Support ── */
+/* ── ETA ── */
+.eta-bar { font-family: var(--mono); font-size: 0.68rem; color: var(--cyan); text-align: center; margin-bottom: 4px; }
 
-  .support-bar {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    padding: 16px 20px;
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    margin: 28px 0;
-    flex-wrap: wrap;
-  }
-  .support-bar-text {
-    font-family: var(--mono);
-    font-size: 0.75rem;
-    color: var(--muted);
-  }
-  .coffee-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    padding: 8px 16px;
-    background: #FFDD00;
-    border: none;
-    border-radius: 6px;
-    color: #000;
-    font-family: var(--sans);
-    font-size: 0.82rem;
-    font-weight: 800;
-    cursor: pointer;
-    text-decoration: none;
-    transition: all 0.15s;
-    white-space: nowrap;
-  }
-  .coffee-btn:hover {
-    background: #ffe733;
-    box-shadow: 0 0 16px rgba(255,221,0,0.35);
-    transform: translateY(-1px);
-  }
-  .kofi-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    padding: 8px 16px;
-    background: #29ABE0;
-    border: none;
-    border-radius: 6px;
-    color: #fff;
-    font-family: var(--sans);
-    font-size: 0.82rem;
-    font-weight: 800;
-    cursor: pointer;
-    text-decoration: none;
-    transition: all 0.15s;
-    white-space: nowrap;
-  }
-  .kofi-btn:hover {
-    background: #3dbcf1;
-    box-shadow: 0 0 16px rgba(41,171,224,0.35);
-    transform: translateY(-1px);
-  }
+/* ── Jobs / compiled section ── */
+.jobs-section { margin-top: 36px; }
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.section-title { font-family: var(--mono); font-size: 0.72rem; color: var(--orange); text-transform: uppercase; letter-spacing: 0.18em; display: flex; align-items: center; gap: 8px; }
+.section-title::before { content: '//'; color: var(--muted); }
+.clear-btn { font-family: var(--mono); font-size: 0.7rem; color: var(--muted); background: none; border: 1px solid var(--border); border-radius: 4px; padding: 4px 10px; cursor: pointer; transition: all 0.15s; }
+.clear-btn:hover { color: var(--red); border-color: var(--red); }
 
-  /* ── Token modal ── */
-  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px); }
-  .modal { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 28px; max-width: 480px; width: 100%; position: relative; }
-  .modal::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--orange), transparent); border-radius: 10px 10px 0 0; }
-  .modal h2 { font-size: 1.1rem; font-weight: 800; margin-bottom: 8px; }
-  .modal h2 span { color: var(--orange); }
-  .modal p { font-size: 0.82rem; color: var(--muted); line-height: 1.6; margin-bottom: 16px; font-family: var(--mono); }
-  .modal-steps { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
-  .modal-step { display: flex; gap: 10px; font-family: var(--mono); font-size: 0.75rem; color: var(--muted); line-height: 1.5; align-items: flex-start; }
-  .modal-step .n { background: var(--orange); color: #000; font-weight: 900; width: 18px; height: 18px; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; flex-shrink: 0; margin-top: 2px; }
-  .modal-step a { color: var(--orange); }
-  .modal-step code { background: var(--bg3); padding: 0 5px; border-radius: 3px; font-size: 0.7rem; color: var(--text); }
-  .modal-input-wrap { position: relative; margin-bottom: 12px; }
-  .modal-input-wrap input { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: var(--mono); font-size: 0.88rem; padding: 12px 14px; outline: none; transition: border-color 0.2s; }
-  .modal-input-wrap input:focus { border-color: var(--orange); }
-  .modal-btn { width: 100%; padding: 13px; background: var(--orange); border: none; border-radius: 6px; color: #000; font-family: var(--sans); font-size: 0.95rem; font-weight: 900; cursor: pointer; transition: all 0.2s; }
-  .modal-btn:hover { background: #ff8533; }
-  .modal-err { font-family: var(--mono); font-size: 0.72rem; color: var(--red); margin-bottom: 10px; min-height: 16px; }
+/* ── Job cards ── */
+.jobs-list { display: flex; flex-direction: column; gap: 10px; }
+@keyframes slideIn { from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)} }
+.job-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto auto; gap: 4px 16px; animation: slideIn 0.3s ease; position: relative; overflow: hidden; min-width: 0; }
+.job-url { font-family:var(--mono); font-size:0.68rem; color:var(--muted); white-space:normal; word-break:break-all; max-width:100%; display:block; line-height:1.4; }
+.job-meta-row { display:flex; flex-wrap:wrap; gap:6px; align-items:center; min-width:0; overflow:hidden; }
+.job-meta-chip { font-family:var(--mono); font-size:0.68rem; color:var(--muted); white-space:nowrap; flex-shrink:0; }
+.job-card.status-queued    { border-left: 3px solid var(--yellow); }
+.job-card.status-running   { border-left: 3px solid var(--cyan); }
+.job-card.status-success   { border-left: 3px solid var(--green); }
+.job-card.status-failure, .job-card.status-error { border-left: 3px solid var(--red); }
+.job-card.status-running::before { content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);animation:scanJob 1.5s linear infinite; }
+@keyframes scanJob{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+.job-repo  { font-family: var(--mono); font-size: 0.8rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; grid-column: 1; grid-row: 1; }
+.job-meta  { font-size: 0.7rem; color: var(--muted); grid-column: 1; grid-row: 2; display: flex; gap: 12px; flex-wrap: wrap; }
+.job-msg   { font-family: var(--mono); font-size: 0.68rem; color: var(--muted); grid-column: 1; grid-row: 3; margin-top: 2px; }
+.job-card.status-failure .job-msg, .job-card.status-error .job-msg { color: #ff7070; }
+.job-status { grid-column: 2; grid-row: 1/4; align-self: center; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.status-badge { font-family: var(--mono); font-size: 0.68rem; padding: 3px 10px; border-radius: 4px; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
+.badge-queued  { background: rgba(255,214,0,0.12); color: var(--yellow); }
+.badge-running { background: rgba(0,229,255,0.12); color: var(--cyan); }
+.badge-success { background: rgba(57,255,20,0.12); color: var(--green); }
+.badge-failure, .badge-error { background: rgba(255,57,57,0.12); color: var(--red); }
+.download-btn { font-family: var(--mono); font-size: 0.7rem; color: var(--green); background: rgba(57,255,20,0.08); border: 1px solid rgba(57,255,20,0.25); border-radius: 4px; padding: 4px 10px; cursor: pointer; text-decoration: none; transition: all 0.15s; white-space: nowrap; }
+.download-btn:hover { background: rgba(57,255,20,0.15); border-color: var(--green); }
+.gh-link { font-family: var(--mono); font-size: 0.7rem; color: var(--muted); background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 4px; padding: 4px 10px; text-decoration: none; white-space: nowrap; transition: all 0.15s; display: inline-flex; align-items: center; justify-content: center; }
+.gh-link:hover { color: var(--text); border-color: var(--muted); }
 
-  .repo-field-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-  .repo-field-label label { margin: 0; }
-  .change-token-btn { font-family: var(--mono); font-size: 0.65rem; color: var(--muted); background: none; border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px; cursor: pointer; transition: all 0.15s; }
-  .change-token-btn:hover { color: var(--orange); border-color: var(--orange); }
+/* ── Job action buttons ── */
+.job-action-btn { font-family:var(--mono);font-size:0.64rem;color:var(--muted);background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:3px 9px;cursor:pointer;transition:all 0.15s;white-space:nowrap; }
+.job-action-btn:hover { color:var(--orange);border-color:var(--orange); }
+.job-action-btn.copied { color:var(--green);border-color:var(--green); }
+
+/* ── Build log ── */
+.build-log-wrap { margin-top: 8px; }
+.build-log { background:#05050a; border:1px solid var(--border); border-radius:6px; padding:10px 12px; font-family:var(--mono); font-size:0.66rem; color:#8a8aaa; max-height:200px; overflow-y:auto; line-height:1.6; white-space:pre-wrap; word-break:break-all; }
+.build-log .log-err  { color:#ff7070; }
+.build-log .log-ok   { color:var(--green); }
+.build-log .log-warn { color:var(--yellow); }
+.log-toggle { font-family:var(--mono);font-size:0.64rem;color:var(--muted);background:none;border:none;cursor:pointer;padding:4px 0 0;text-decoration:underline;display:block; }
+.log-toggle:hover { color:var(--cyan); }
+
+/* ── Legend ── */
+.legend { margin-top: 20px; padding: 14px 16px; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; display: flex; flex-wrap: wrap; gap: 12px 24px; }
+.legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.72rem; color: var(--muted); font-family: var(--mono); }
+.legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+/* ── Pagination ── */
+.page-btn { font-family:var(--mono);font-size:0.7rem;padding:5px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--muted);cursor:pointer;transition:all 0.15s; }
+.page-btn:hover { border-color:var(--orange);color:var(--orange); }
+.page-btn.active { background:var(--orange);border-color:var(--orange);color:#000;font-weight:700; }
+.page-btn:disabled { opacity:0.3;cursor:not-allowed; }
+
+/* ── App cards ── */
+.app-card { background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;cursor:pointer;transition:all 0.15s;display:flex;flex-direction:column;gap:5px;overflow:hidden;min-width:0; }
+.app-card:hover { border-color:var(--orange);transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,0.2); }
+.app-card-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:8px; }
+.app-icon { font-size:1.6rem;line-height:1; }
+.app-card-name { font-weight:700;font-size:0.83rem;color:var(--text); }
+.app-card-desc { font-family:var(--mono);font-size:0.63rem;color:var(--muted);line-height:1.4; }
+.app-card-footer { display:flex;align-items:center;justify-content:space-between;margin-top:8px; }
+.app-gh-link { font-family:var(--mono);font-size:0.6rem;color:var(--muted);text-decoration:none; }
+.app-gh-link:hover { color:var(--orange); }
+.app-card-cta { font-family:var(--mono);font-size:0.63rem;color:var(--green);background:rgba(57,255,20,0.07);border:1px solid rgba(57,255,20,0.2);border-radius:4px;padding:3px 8px;text-align:center;margin-top:2px; }
+.app-card:hover .app-card-cta { background:rgba(57,255,20,0.16); }
+
+/* ── Compat badges ── */
+.fw-chips { display:flex;flex-wrap:wrap;gap:3px;margin:6px 0 4px; }
+.fw-chip  { font-family:var(--mono);font-size:0.56rem;background:var(--bg2);border:1px solid var(--border);border-radius:3px;padding:1px 5px;color:var(--muted); }
+.compat-badge { font-family:var(--mono);font-size:0.58rem;border-radius:3px;padding:2px 6px;display:inline-block;margin-top:2px; }
+.compat-rec  { background:rgba(57,255,20,0.15);color:var(--green); }
+.compat-ok   { background:rgba(0,229,255,0.12);color:var(--cyan); }
+.compat-warn { background:rgba(255,57,57,0.12);color:var(--red); }
+.app-note { font-family:var(--mono);font-size:0.58rem;color:var(--yellow);margin-top:3px; }
+
+/* ── Fav button ── */
+.fav-btn { background:none;border:none;cursor:pointer;font-size:1rem;padding:0;line-height:1;transition:transform 0.15s;flex-shrink:0; }
+.fav-btn:hover { transform:scale(1.2); }
+
+/* ── Report button ── */
+.report-btn { background:none;border:none;cursor:pointer;font-size:0.75rem;padding:0 0 0 4px;line-height:1;opacity:0.3;transition:opacity 0.15s;flex-shrink:0; }
+.report-btn:hover { opacity:1; }
+
+/* ── Feed ── */
+.feed-item { display:flex;align-items:center;gap:9px;padding:7px 10px;background:var(--bg3);border-radius:6px;margin-bottom:6px; }
+.feed-dot  { width:8px;height:8px;border-radius:50%;flex-shrink:0; }
+.feed-repo { font-family:var(--mono);font-size:0.68rem;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.feed-fw   { font-family:var(--mono);font-size:0.62rem;color:var(--orange);flex-shrink:0; }
+.feed-time { font-family:var(--mono);font-size:0.6rem;color:var(--muted);flex-shrink:0; }
+.feed-scroll { max-height:360px;overflow-y:auto;display:flex;flex-direction:column;gap:6px; }
+.feed-scroll::-webkit-scrollbar { width:4px; }
+.feed-scroll::-webkit-scrollbar-track { background:transparent; }
+.feed-scroll::-webkit-scrollbar-thumb { background:var(--border);border-radius:2px; }
+
+/* ── Recent chips ── */
+.recent-chip { font-family:var(--mono);font-size:0.65rem;padding:3px 9px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;cursor:pointer;color:var(--muted);white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;transition:all 0.15s; }
+.recent-chip:hover { color:var(--orange);border-color:var(--orange); }
+
+/* ── Notice ── */
+.notice { padding: 10px 14px; background: rgba(255,107,0,0.06); border: 1px solid rgba(255,107,0,0.2); border-radius: 6px; font-family: var(--mono); font-size: 0.72rem; color: var(--muted); display: flex; gap: 8px; line-height: 1.5; }
+.notice .ico { color: var(--orange); flex-shrink: 0; }
+.mt { margin-top: 10px; }
+
+/* ── Empty state ── */
+.empty-state { text-align: center; padding: 40px 20px; color: var(--muted); font-family: var(--mono); font-size: 0.82rem; border: 1px dashed var(--border); border-radius: 6px; }
+.empty-state .big { font-size: 2rem; margin-bottom: 8px; opacity: 0.3; }
+.no-results { font-family:var(--mono);font-size:0.76rem;color:var(--muted);text-align:center;padding:20px;grid-column:1/-1; }
+
+/* ── Support bar ── */
+.support-bar { position:relative;z-index:1;display:flex;align-items:center;justify-content:center;gap:12px;padding:16px 20px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin:28px 0;flex-wrap:wrap; }
+.support-bar-text { font-family:var(--mono);font-size:0.75rem;color:var(--muted); }
+.coffee-btn { display:inline-flex;align-items:center;gap:7px;padding:8px 16px;background:#FFDD00;border:none;border-radius:6px;color:#000;font-family:var(--sans);font-size:0.82rem;font-weight:800;cursor:pointer;text-decoration:none;transition:all 0.15s;white-space:nowrap; }
+.coffee-btn:hover { background:#ffe733;box-shadow:0 0 16px rgba(255,221,0,0.35);transform:translateY(-1px); }
+.kofi-btn { display:inline-flex;align-items:center;gap:7px;padding:8px 16px;background:#29ABE0;border:none;border-radius:6px;color:#fff;font-family:var(--sans);font-size:0.82rem;font-weight:800;cursor:pointer;text-decoration:none;transition:all 0.15s;white-space:nowrap; }
+.kofi-btn:hover { background:#3dbcf1;box-shadow:0 0 16px rgba(41,171,224,0.35);transform:translateY(-1px); }
+
+/* ── Weekly most compiled ── */
+.weekly-banner { background:rgba(255,107,0,0.06);border:1px solid rgba(255,107,0,0.25);border-radius:8px;padding:14px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px; }
+.weekly-label { font-family:var(--mono);font-size:0.68rem;color:var(--orange);white-space:nowrap; }
+.weekly-name { font-weight:700;font-size:0.85rem; }
+.weekly-count { font-family:var(--mono);font-size:0.65rem;color:var(--muted); }
+.weekly-btn { margin-left:auto;font-family:var(--mono);font-size:0.68rem;color:var(--green);background:rgba(57,255,20,0.07);border:1px solid rgba(57,255,20,0.25);border-radius:4px;padding:4px 10px;cursor:pointer;transition:all 0.15s;white-space:nowrap; }
+.weekly-btn:hover { background:rgba(57,255,20,0.16); }
+
+/* ── Token section ── */
+.token-section { margin-bottom: 20px; }
+.token-row { display: flex; gap: 8px; }
+.token-row input { flex: 1; }
+.token-status { font-family: var(--mono); font-size: 0.7rem; margin-top: 6px; min-height: 16px; }
+.token-ok { color: var(--green); }
+.token-err { color: var(--red); }
+.repo-field-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.repo-field-label label { margin: 0; }
+.change-token-btn { font-family: var(--mono); font-size: 0.65rem; color: var(--muted); background: none; border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px; cursor: pointer; transition: all 0.15s; }
+.change-token-btn:hover { color: var(--orange); border-color: var(--orange); }
+
+/* ── Modal shared ── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px); }
+.modal { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 28px; max-width: 480px; width: 100%; position: relative; }
+.modal::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--orange), transparent); border-radius: 10px 10px 0 0; }
+.modal h2 { font-size: 1.1rem; font-weight: 800; margin-bottom: 8px; }
+.modal h2 span { color: var(--orange); }
+.modal p { font-size: 0.82rem; color: var(--muted); line-height: 1.6; margin-bottom: 16px; font-family: var(--mono); }
+.modal-steps { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+.modal-step { display: flex; gap: 10px; font-family: var(--mono); font-size: 0.75rem; color: var(--muted); line-height: 1.5; align-items: flex-start; }
+.modal-step .n { background: var(--orange); color: #000; font-weight: 900; width: 18px; height: 18px; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; flex-shrink: 0; margin-top: 2px; }
+.modal-step a { color: var(--orange); }
+.modal-step code { background: var(--bg3); padding: 0 5px; border-radius: 3px; font-size: 0.7rem; color: var(--text); }
+.modal-input-wrap { position: relative; margin-bottom: 12px; }
+.modal-input-wrap input { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: var(--mono); font-size: 0.88rem; padding: 12px 14px; outline: none; transition: border-color 0.2s; }
+.modal-input-wrap input:focus { border-color: var(--orange); }
+.modal-btn { width: 100%; padding: 13px; background: var(--orange); border: none; border-radius: 6px; color: #000; font-family: var(--sans); font-size: 0.95rem; font-weight: 900; cursor: pointer; transition: all 0.2s; }
+.modal-btn:hover { background: #ff8533; }
+.modal-err { font-family: var(--mono); font-size: 0.72rem; color: var(--red); margin-bottom: 10px; min-height: 16px; }
+
+/* ── Changelog modal (cl-overlay) ── */
+.cl-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:5000;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px); }
+.cl-box { background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:24px;max-width:480px;width:100%;max-height:80vh;overflow-y:auto;position:relative; }
+.cl-box::before { content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--orange),transparent);border-radius:10px 10px 0 0; }
+.cl-box h2 { font-size:1rem;font-weight:800;margin-bottom:16px; }
+.cl-box h2 span { color:var(--orange); }
+.cl-close { position:absolute;top:14px;right:16px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:1.2rem; }
+.cl-close:hover { color:var(--text); }
+.cl-entry { margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border); }
+.cl-entry:last-child { border-bottom:none;margin-bottom:0;padding-bottom:0; }
+.cl-ver  { font-family:var(--mono);font-size:0.76rem;color:var(--orange);font-weight:700; }
+.cl-date { font-family:var(--mono);font-size:0.66rem;color:var(--muted);margin-left:8px; }
+.cl-body { font-size:0.76rem;color:var(--text);line-height:1.7;margin-top:5px;white-space:pre-wrap; }
+
+/* ── What's New modal ── */
+.wn-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9500;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px); }
+.wn-overlay.hidden { display:none; }
+.wn-box { background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:28px;max-width:460px;width:100%;position:relative;max-height:90vh;overflow-y:auto; }
+.wn-box::before { content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--orange),transparent);border-radius:10px 10px 0 0; }
+.wn-badge { display:inline-block;background:var(--orange);color:#000;font-family:var(--mono);font-size:0.62rem;font-weight:700;padding:3px 9px;border-radius:20px;margin-bottom:14px;letter-spacing:0.05em; }
+.wn-box h2 { font-size:1.1rem;font-weight:800;margin-bottom:6px; }
+.wn-box h2 span { color:var(--orange); }
+.wn-sub { font-family:var(--mono);font-size:0.68rem;color:var(--muted);margin-bottom:20px; }
+.wn-list { display:flex;flex-direction:column;gap:10px;margin-bottom:22px; }
+.wn-item { display:flex;gap:12px;align-items:flex-start; }
+.wn-icon { font-size:1.1rem;flex-shrink:0;line-height:1.2; }
+.wn-text strong { display:block;font-size:0.83rem;font-weight:700;margin-bottom:2px; }
+.wn-text span { font-family:var(--mono);font-size:0.66rem;color:var(--muted);line-height:1.5; }
+.wn-close-btn { width:100%;padding:11px;background:var(--orange);border:none;border-radius:6px;color:#000;font-family:var(--sans);font-size:0.9rem;font-weight:900;cursor:pointer;transition:all 0.15s; }
+.wn-close-btn:hover { background:#ff8533; }
+
+/* ── Feedback FAB ── */
+.feedback-fab { position:fixed;bottom:28px;right:20px;z-index:8500;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-family:var(--mono);font-size:0.7rem;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.2s;box-shadow:0 2px 12px rgba(0,0,0,0.4);text-decoration:none; }
+.feedback-fab:hover { border-color:var(--orange);color:var(--orange);box-shadow:0 2px 18px rgba(255,107,0,0.2); }
+.fab-dot { width:6px;height:6px;border-radius:50%;background:var(--orange);flex-shrink:0; }
+
+/* ── Feedback modal ── */
+.fb-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px); }
+.fb-overlay.hidden { display:none; }
+.fb-box { background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:24px;max-width:440px;width:100%;position:relative; }
+.fb-box::before { content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--orange),transparent);border-radius:10px 10px 0 0; }
+.fb-box h2 { font-family:var(--sans);font-size:0.95rem;font-weight:800;margin-bottom:4px; }
+.fb-box h2 span { color:var(--orange); }
+.fb-sub { font-family:var(--mono);font-size:0.67rem;color:var(--muted);margin-bottom:16px; }
+.fb-close { position:absolute;top:14px;right:16px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:1.2rem;line-height:1; }
+.fb-close:hover { color:var(--text); }
+.fb-label { font-family:var(--mono);font-size:0.68rem;color:var(--muted);display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.08em; }
+.fb-type-row { display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap; }
+.fb-type-btn { font-family:var(--mono);font-size:0.68rem;padding:5px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--muted);cursor:pointer;transition:all 0.15s; }
+.fb-type-btn.active { background:rgba(255,107,0,0.1);border-color:var(--orange);color:var(--orange); }
+.fb-textarea { width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:0.76rem;padding:10px 12px;resize:vertical;min-height:90px;outline:none;transition:border-color 0.2s;margin-bottom:14px;display:block; }
+.fb-textarea:focus { border-color:var(--orange); }
+.fb-textarea::placeholder { color:var(--muted); }
+.fb-send { width:100%;padding:10px;background:var(--orange);border:none;border-radius:6px;color:#000;font-family:var(--sans);font-size:0.85rem;font-weight:800;cursor:pointer;transition:opacity 0.15s; }
+.fb-send:hover { opacity:0.88; }
+.fb-send:disabled { opacity:0.5;cursor:not-allowed; }
+.fb-success { text-align:center;padding:20px;font-family:var(--mono);font-size:0.82rem;color:var(--green); }
+
+/* ── Dolphin canvas wrapper ── */
+.dolphin-wrap { text-align:center;margin-bottom:10px; }
+.dolphin-canvas { image-rendering:pixelated;image-rendering:crisp-edges;border:1px solid var(--border);border-radius:4px;display:block;margin:0 auto; }
+
+/* ── Popups ── */
+@keyframes popUp { from{opacity:0;transform:translateX(-50%) translateY(10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+.err-popup { position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#130808;border:1px solid var(--red);border-radius:8px;padding:14px 20px 14px 16px;font-family:var(--mono);font-size:0.76rem;color:var(--red);max-width:340px;width:90%;z-index:9999;box-shadow:0 4px 24px rgba(0,0,0,0.6);animation:popUp 0.3s ease; }
+.ok-popup  { position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#081308;border:1px solid var(--green);border-radius:8px;padding:12px 20px;font-family:var(--mono);font-size:0.76rem;color:var(--green);max-width:320px;width:90%;z-index:9999;box-shadow:0 4px 24px rgba(0,0,0,0.6);animation:popUp 0.3s ease; }
+.err-title { font-weight:700;margin-bottom:4px; }
+.err-close { position:absolute;top:8px;right:12px;cursor:pointer;opacity:0.6;font-size:1rem;background:none;border:none;color:inherit; }
+
+/* ── Install banner ── */
+@keyframes slideUp2 { from{transform:translateY(100%)} to{transform:translateY(0)} }
+.install-banner { position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;gap:12px;z-index:8000;box-shadow:0 -4px 20px rgba(0,0,0,0.4);animation:slideUp2 0.4s ease; }
+.install-banner-text { flex:1;font-family:var(--mono);font-size:0.76rem;color:var(--text);line-height:1.4; }
+.install-banner-text strong { color:var(--orange); }
+.install-btn-yes { padding:8px 16px;background:var(--orange);border:none;border-radius:6px;color:#000;font-family:var(--sans);font-size:0.82rem;font-weight:800;cursor:pointer;white-space:nowrap; }
+.install-btn-no  { padding:8px 12px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-family:var(--mono);font-size:0.72rem;cursor:pointer;white-space:nowrap; }
+.install-btn-no:hover { color:var(--red);border-color:var(--red); }
+
+/* ── Setup banner (onboarding) ── */
+.setup-banner { background: rgba(255,107,0,0.07); border: 1px solid rgba(255,107,0,0.3); border-radius: 8px; padding: 20px 24px; margin-bottom: 24px; }
+.setup-banner h3 { font-size: 0.85rem; font-weight: 700; color: var(--orange); margin-bottom: 12px; letter-spacing: 0.05em; text-transform: uppercase; }
+.setup-steps { display: flex; flex-direction: column; gap: 8px; }
+.setup-step { display: flex; gap: 12px; align-items: flex-start; font-family: var(--mono); font-size: 0.75rem; color: var(--muted); line-height: 1.5; }
+.step-num { background: var(--orange); color: #000; font-weight: 900; width: 20px; height: 20px; border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 0.7rem; margin-top: 1px; }
+.setup-step a { color: var(--orange); text-decoration: none; }
+.setup-step a:hover { text-decoration: underline; }
+.setup-step code { background: var(--bg3); padding: 1px 6px; border-radius: 3px; color: var(--text); font-size: 0.72rem; }
+
+/* ── Footer ── */
+footer { text-align:center;padding:32px 0 24px;font-family:var(--mono);font-size:0.68rem;color:var(--muted);position:relative;z-index:1;line-height:2; }
+footer a { color:var(--orange);text-decoration:none; }
+footer a:hover { text-decoration:underline; }
+.footer-version { display:inline-block;background:rgba(255,107,0,0.12);border:1px solid rgba(255,107,0,0.3);border-radius:20px;color:var(--orange);font-size:0.62rem;padding:2px 10px;margin-left:8px;vertical-align:middle; }
+.footer-links { display:flex;align-items:center;justify-content:center;gap:16px;margin-top:10px;flex-wrap:wrap; }
+.footer-support-btn { display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:6px;font-family:var(--sans);font-size:0.75rem;font-weight:700;text-decoration:none;transition:all 0.15s;cursor:pointer;border:none; }
+.footer-coffee { background:#FFDD00;color:#000; }
+.footer-coffee:hover { background:#ffe733;transform:translateY(-1px); }
+.footer-kofi { background:#29ABE0;color:#fff; }
+.footer-kofi:hover { background:#3dbcf1;transform:translateY(-1px); }
+
+/* ── Grid overflow fix ── */
+#popular-grid > div, #app-dir-grid > div { min-width:0; }
 </style>
 </head>
 <body>
 
-<!-- Token Setup Modal -->
+<!-- ── Token Setup Modal ───────────────────────────────────────────────────── -->
 <div class="modal-overlay" id="token-modal" style="display:none!important">
   <div class="modal">
     <h2>Connect Your <span>GitHub</span></h2>
     <p>FlipperFAP uses GitHub Actions to compile your .fap files for free. You need a GitHub Personal Access Token to trigger compilations.</p>
     <div class="modal-steps">
-      <div class="modal-step"><span class="n">1</span><span>Fork the <a href="https://github.com/your-username/flipper-fap-actions" target="_blank" id="fork-link">flipper-fap-actions</a> repo to your GitHub account</span></div>
+      <div class="modal-step"><span class="n">1</span><span>Fork the <a href="https://github.com/joelewis012/flipper-fap-actions" target="_blank" id="fork-link">flipper-fap-actions</a> repo to your GitHub account</span></div>
       <div class="modal-step"><span class="n">2</span><span>Go to <a href="https://github.com/settings/tokens/new?scopes=repo,workflow&description=FlipperFAP" target="_blank">github.com/settings/tokens</a> → Generate new token (classic)</span></div>
       <div class="modal-step"><span class="n">3</span><span>Enable scopes: <code>repo</code> and <code>workflow</code> → click Generate</span></div>
       <div class="modal-step"><span class="n">4</span><span>Paste the token below. It's saved only in your browser (never sent to any server).</span></div>
@@ -520,6 +472,25 @@
   </div>
 </div>
 
+<!-- ── What's New v2.0 Modal ─────────────────────────────────────────────── -->
+<div class="wn-overlay hidden" id="wn-overlay">
+  <div class="wn-box">
+    <div class="wn-badge">✨ WHAT'S NEW</div>
+    <h2>FlipperFAP <span>v2.0</span></h2>
+    <p class="wn-sub">A big update for the Flipper community 🐬</p>
+    <div class="wn-list">
+      <div class="wn-item"><span class="wn-icon">🐬</span><div class="wn-text"><strong>Dolphin compile animation</strong><span>Watch your Flipper compile in real-time, pixel by pixel.</span></div></div>
+      <div class="wn-item"><span class="wn-icon">📚</span><div class="wn-text"><strong>Updated App Directory</strong><span>Duplicate entries removed, stale repos replaced, new apps added.</span></div></div>
+      <div class="wn-item"><span class="wn-icon">🔥</span><div class="wn-text"><strong>Weekly Most Compiled</strong><span>See what the community is building most this week.</span></div></div>
+      <div class="wn-item"><span class="wn-icon">💬</span><div class="wn-text"><strong>Feedback button</strong><span>Bug reports and ideas go straight to the dev.</span></div></div>
+      <div class="wn-item"><span class="wn-icon">🚩</span><div class="wn-text"><strong>Report broken apps</strong><span>Flag any app directory entry that won't compile.</span></div></div>
+      <div class="wn-item"><span class="wn-icon">🌙</span><div class="wn-text"><strong>Cleaner UI</strong><span>Consolidated styles, better light mode, bug fixes throughout.</span></div></div>
+    </div>
+    <button class="wn-close-btn" onclick="closeWhatsNew()">Let's go! 🚀</button>
+  </div>
+</div>
+
+<!-- ── Main container ─────────────────────────────────────────────────────── -->
 <div class="container">
   <header>
     <div class="logo-wrap">
@@ -548,7 +519,6 @@
       <span><span class="live-dot"></span> Online Application Compiler — Powered by GitHub Actions</span>
       <button id="theme-toggle" onclick="toggleTheme()" style="background:none;border:1px solid var(--border);border-radius:20px;padding:4px 12px;cursor:pointer;font-size:0.85rem;color:var(--muted);transition:all 0.2s;">🌙</button>
     </div>
-    <!-- Status indicators -->
     <div style="display:flex;align-items:center;justify-content:center;gap:20px;margin-top:12px;flex-wrap:wrap;">
       <select id="lang-select" onchange="setLang(this.value)" style="background:none;border:1px solid var(--border);border-radius:20px;color:var(--muted);font-family:var(--mono);font-size:0.72rem;padding:4px 8px;outline:none;cursor:pointer;">
         <option value="en">🇬🇧 EN</option>
@@ -579,7 +549,6 @@
   <div class="card" style="margin-bottom:20px;">
     <div class="card-title" data-i18n="how_to_use" style="margin-bottom:14px;">How to Use</div>
     <div style="display:flex;flex-direction:column;gap:14px;">
-
       <div style="display:flex;gap:12px;align-items:flex-start;">
         <div style="background:var(--orange);color:#000;font-weight:900;font-size:0.7rem;width:22px;height:22px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">1</div>
         <div>
@@ -587,7 +556,6 @@
           <div id="step1-body" style="font-family:var(--mono);font-size:0.7rem;color:var(--muted);line-height:1.6;"></div>
         </div>
       </div>
-
       <div style="display:flex;gap:12px;align-items:flex-start;">
         <div style="background:var(--orange);color:#000;font-weight:900;font-size:0.7rem;width:22px;height:22px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">2</div>
         <div>
@@ -595,7 +563,6 @@
           <div id="step2-body" style="font-family:var(--mono);font-size:0.7rem;color:var(--muted);line-height:1.6;">Choose the firmware running on your Flipper. Not sure? Check <strong style="color:var(--text);">Settings → About</strong> on your Flipper.</div>
         </div>
       </div>
-
       <div style="display:flex;gap:12px;align-items:flex-start;">
         <div style="background:var(--orange);color:#000;font-weight:900;font-size:0.7rem;width:22px;height:22px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">3</div>
         <div>
@@ -603,7 +570,6 @@
           <div id="step3-body" style="font-family:var(--mono);font-size:0.7rem;color:var(--muted);line-height:1.6;">Wait ~30–60 seconds. When done tap <strong style="color:var(--green);">↓ Download .fap</strong> to save the file.</div>
         </div>
       </div>
-
       <div style="display:flex;gap:12px;align-items:flex-start;">
         <div style="background:var(--orange);color:#000;font-weight:900;font-size:0.7rem;width:22px;height:22px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">4</div>
         <div>
@@ -611,21 +577,20 @@
           <div id="step4-body" style="font-family:var(--mono);font-size:0.7rem;color:var(--muted);line-height:1.6;">Transfer the <strong style="color:var(--text);">.fap</strong> file to the <span style="color:var(--orange);">apps/</span> folder on your Flipper SD card using <strong style="color:var(--text);">qFlipper</strong> or the Flipper mobile app.</div>
         </div>
       </div>
-
     </div>
   </div>
 
+  <!-- Compile Card -->
   <div class="card">
     <div class="card-title" data-i18n="card_compile">Compile Application</div>
 
-    <!-- Debug info bar -->
+    <!-- Debug bar -->
     <div id="debug-bar" style="display:none;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px 14px;margin-bottom:18px;font-family:var(--mono);font-size:0.72rem;line-height:1.8;">
       <div style="color:var(--orange);margin-bottom:4px;font-size:0.68rem;letter-spacing:0.1em;">⚙ CONNECTED AS</div>
       <div>token: <span id="dbg-token" style="color:var(--text);">loading...</span></div>
       <div>owner: <span id="dbg-owner" style="color:var(--text);">loading...</span></div>
       <div>repo:&nbsp; <span id="dbg-repo"  style="color:var(--text);">loading...</span></div>
       <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;">
-        
         <button onclick="testConnection()" style="font-family:var(--mono);font-size:0.68rem;background:none;border:1px solid var(--border);border-radius:4px;padding:3px 10px;cursor:pointer;color:var(--cyan);">⚡ Test Connection</button>
         <button id="debug-toggle-btn" onclick="toggleDebug()" style="font-family:var(--mono);font-size:0.68rem;background:none;border:1px solid var(--border);border-radius:4px;padding:3px 10px;cursor:pointer;color:var(--muted);">🔍 Debug: OFF</button>
       </div>
@@ -646,20 +611,11 @@
         <label style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;display:block;">Select App to Compile</label>
         <select id="app-select" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:0.85rem;padding:10px 12px;outline:none;"></select>
       </div>
-      <!-- Recent repos -->
-      <div id="recent-repos" style="display:none;margin-top:6px;display:flex;flex-wrap:wrap;gap:6px;"></div>
-      <!-- App selector (shown when multiple apps found) -->
-      <div id="app-selector" style="display:none;margin-top:10px;">
-        <label style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;display:block;">Select App to Compile</label>
-        <select id="app-select" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:0.85rem;padding:10px 12px;outline:none;"></select>
-      </div>
-      <!-- App name display -->
-      <div id="app-name-bar" style="display:none;margin-top:8px;padding:7px 12px;background:rgba(57,255,20,0.05);border:1px solid rgba(57,255,20,0.2);border-radius:6px;font-family:var(--mono);font-size:0.72rem;color:var(--green);"></div>
       <div id="recent-repos" style="display:none;flex-wrap:wrap;gap:6px;margin-top:6px;"></div>
       <div class="notice mt">
         <span class="ico">ⓘ</span>
         <span data-i18n="notice_url">Supports any GitHub or Gitea repo URL. Must contain an application.fam file.</span>
-          <br><span style="font-size:0.62rem;color:var(--muted);">⚠ Multi-app repos will only compile the first app found. Point to a specific subfolder for best results.</span>
+        <br><span style="font-size:0.62rem;color:var(--muted);">⚠ Multi-app repos: point to a specific subfolder for best results.</span>
       </div>
     </div>
 
@@ -679,9 +635,7 @@
             <input type="radio" name="fw" id="fw-unleashed" value="unleashed"/>
             <label for="fw-unleashed"><span class="fw-dot"></span><span class="fw-name">Unleashed <span class="fw-changelog" onclick="event.preventDefault();showChangelog('unleashed')">changelog</span></span><span class="fw-ver" id="fw-ver-unleashed">unlshd-086</span></label>
           </div>
-          <div class="fw-card">
-
-          </div>
+          <div class="fw-card"></div>
         </div>
         <div class="version-note" id="fw-note">Stable official Flipper Zero firmware.</div>
       </div>
@@ -695,7 +649,6 @@
           <label for="ch-dev" data-i18n-ch="dev_btn">Dev</label>
         </div>
         <div class="channel-desc" id="ch-note">Stable release — recommended for most users.</div>
-
         <div class="out-box">
           <div><span class="k">firmware:</span> <span id="out-fw">Official v1.4.3</span></div>
           <div><span class="k">channel: </span> <span id="out-ch">release</span></div>
@@ -706,8 +659,7 @@
       </div>
     </div>
 
-    <div class="eta-bar" id="eta-display" style="text-align:center;margin-bottom:4px;"></div>
-    <div class="eta-bar" id="eta-display" style="text-align:center;margin-bottom:4px;"></div>
+    <div class="eta-bar" id="eta-display"></div>
     <button class="btn-compile" id="compile-btn" onclick="submitCompile()">
       <div class="btn-inner">
         <div class="spinner" id="btn-spinner"></div>
@@ -716,18 +668,24 @@
     </button>
   </div>
 
-
   <!-- ── Support bar ── -->
   <div class="support-bar">
-    <span class="support-bar-text"><span data-i18n="support_text">☕ FlipperFAP is free — if it helped you, consider supporting:</span></span>
-    <a class="coffee-btn" href="https://buymeacoffee.com/Joelewis012" target="_blank">
-      ☕ Buy Me a Coffee
-    </a>
-    <a class="kofi-btn" href="https://ko-fi.com/joelewis012" target="_blank">
-      ❤ Ko-fi
-    </a>
+    <span class="support-bar-text" data-i18n="support_text">☕ FlipperFAP is free — if it helped you, consider supporting:</span>
+    <a class="coffee-btn" href="https://buymeacoffee.com/Joelewis012" target="_blank">☕ Buy Me a Coffee</a>
+    <a class="kofi-btn" href="https://ko-fi.com/joelewis012" target="_blank">❤ Ko-fi</a>
   </div>
-  <!-- Popular Apps -->
+
+  <!-- ── Weekly Most Compiled ── -->
+  <div id="weekly-wrap" style="display:none;">
+    <div class="weekly-banner">
+      <span class="weekly-label">🔥 THIS WEEK'S MOST COMPILED</span>
+      <span class="weekly-name" id="weekly-name">—</span>
+      <span class="weekly-count" id="weekly-count"></span>
+      <button class="weekly-btn" id="weekly-btn" onclick="">⚙ Quick Compile</button>
+    </div>
+  </div>
+
+  <!-- ── Popular Apps ── -->
   <div class="card" style="margin-bottom:20px;" id="popular-apps-card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
       <div class="card-title" style="margin:0;" data-i18n="popular_apps">Popular Apps</div>
@@ -738,7 +696,7 @@
     </div>
   </div>
 
-  <!-- App Directory -->
+  <!-- ── App Directory ── -->
   <div class="card" style="margin-bottom:20px;">
     <div style="margin-bottom:12px;"><div class="card-title" data-i18n="card_appdir">App Directory</div></div>
     <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
@@ -759,20 +717,23 @@
     <div id="app-dir-pages" style="display:flex;justify-content:center;gap:6px;margin-top:12px;flex-wrap:wrap;"></div>
   </div>
 
+  <!-- ── Compiled Applications ── -->
   <div class="jobs-section">
     <div class="section-header">
       <div class="section-title" data-i18n="card_compiled">Compiled Applications</div>
-      <span id="jobs-count" style="font-family:var(--mono);font-size:0.65rem;color:var(--muted);"></span>
     </div>
     <!-- Active compile status bar -->
-    <div id="active-compile-bar" style="display:none;background:var(--bg3);border:1px solid var(--cyan);border-radius:8px;padding:12px 16px;margin-bottom:12px;font-family:var(--mono);font-size:0.78rem;">
+    <div id="active-compile-bar" style="display:none;background:var(--bg3);border:1px solid var(--cyan);border-radius:8px;padding:14px 16px;margin-bottom:12px;font-family:var(--mono);font-size:0.78rem;">
+      <!-- Dolphin canvas animation -->
+      <div class="dolphin-wrap" style="margin-bottom:10px;">
+        <canvas id="dolphin-canvas" class="dolphin-canvas" width="256" height="128"></canvas>
+      </div>
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
         <div><span style="color:var(--cyan);">⚙ Compiling</span><span id="active-compile-name" style="color:var(--text);margin-left:6px;font-weight:700;"></span></div>
         <span id="active-compile-status" style="color:var(--muted);font-size:0.68rem;"></span>
       </div>
       <div id="active-compile-msg" style="color:var(--muted);font-size:0.68rem;margin-top:4px;"></div>
     </div>
-    <!-- KV compiled list -->
     <div id="compiled-list">
       <div class="empty-state"><div class="big">📦</div>Loading…</div>
     </div>
@@ -785,18 +746,88 @@
     </div>
   </div>
 </div>
+
+<!-- ── Footer ── -->
 <footer>
-  FlipperFAP &nbsp;·&nbsp; Powered by GitHub Actions &nbsp;·&nbsp;
-  <a href="https://github.com/flipperdevices/flipperzero-firmware" target="_blank">Flipper Firmware</a>
- 
+  <div>FlipperFAP<span class="footer-version">v2.0</span> &nbsp;·&nbsp; Powered by GitHub Actions &nbsp;·&nbsp; <a href="https://github.com/flipperdevices/flipperzero-firmware" target="_blank">Flipper Firmware</a></div>
+  <div class="footer-links">
+    <a class="footer-support-btn footer-coffee" href="https://buymeacoffee.com/Joelewis012" target="_blank">☕ Buy Me a Coffee</a>
+    <a class="footer-support-btn footer-kofi" href="https://ko-fi.com/joelewis012" target="_blank">❤ Ko-fi</a>
+  </div>
 </footer>
 
-<script>
-// ══════════════════════════════════════════════════════════════════════════════
-// ══════════════════════════════════════════════════════════════════════════════
-//  FlipperFAP — Complete Script
-// ══════════════════════════════════════════════════════════════════════════════
+<!-- ── Feedback FAB ── -->
+<button class="feedback-fab" onclick="openFeedback()" title="Send feedback">
+  <span class="fab-dot"></span> feedback
+</button>
 
+<!-- ── Feedback Modal ── -->
+<div class="fb-overlay hidden" id="fb-overlay">
+  <div class="fb-box">
+    <button class="fb-close" onclick="closeFeedback()">✕</button>
+    <h2>Send <span>Feedback</span></h2>
+    <p class="fb-sub">bugs, ideas, or just to say hi — goes straight to the dev</p>
+    <div id="fb-form-area">
+      <span class="fb-label">Type</span>
+      <div class="fb-type-row">
+        <button class="fb-type-btn active" onclick="selectFbType(this,'🐛 Bug report')">🐛 Bug</button>
+        <button class="fb-type-btn" onclick="selectFbType(this,'💡 Feature idea')">💡 Idea</button>
+        <button class="fb-type-btn" onclick="selectFbType(this,'👋 General')">👋 General</button>
+      </div>
+      <span class="fb-label">Message</span>
+      <textarea class="fb-textarea" id="fb-msg" placeholder="What's on your mind?"></textarea>
+      <button class="fb-send" id="fb-send-btn" onclick="sendFeedback()">Send →</button>
+    </div>
+    <div class="fb-success" id="fb-success" style="display:none;">
+      ✅ Thanks! Message received.
+    </div>
+  </div>
+</div>
+
+<!-- ── Install banner ── -->
+<div id="install-banner" style="display:none;" class="install-banner">
+  <div class="install-banner-text">
+    <strong>📱 Add FlipperFAP to Home Screen</strong><br>
+    Tap Share → Add to Home Screen for the best experience
+  </div>
+  <button class="install-btn-yes" onclick="dismissInstall(true)">Got it!</button>
+  <button class="install-btn-no"  onclick="dismissInstall(false)">✕</button>
+</div>
+
+<!-- ── Notification prompt ── -->
+<div id="notif-prompt" style="display:none;position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--orange);border-radius:10px;padding:14px 18px;align-items:center;gap:12px;z-index:9000;box-shadow:0 4px 24px rgba(0,0,0,0.5);max-width:340px;width:90%;">
+  <span style="font-size:1.3rem;">🔔</span>
+  <div style="font-family:var(--mono);font-size:0.75rem;color:var(--text);flex:1;line-height:1.4;">Get notified when your .fap is ready?</div>
+  <button onclick="requestNotifPermission()" style="background:var(--orange);border:none;border-radius:6px;color:#000;font-weight:700;font-size:0.75rem;padding:7px 14px;cursor:pointer;white-space:nowrap;">Allow</button>
+  <button onclick="dismissNotifPrompt()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;padding:2px 6px;">✕</button>
+</div>
+
+<!-- ── Debug toggle ── -->
+<div style="text-align:center;padding:4px 0 16px;">
+  <button onclick="toggleDebugBar()" style="background:none;border:none;color:var(--border);cursor:pointer;font-family:var(--mono);font-size:0.62rem;">debug</button>
+</div>
+
+<!-- ── Toast & error popups ── -->
+<div id="share-toast" class="ok-popup" style="display:none;">🔗 Link copied to clipboard!</div>
+<div id="err-popup" class="err-popup" style="display:none;">
+  <button class="err-close" onclick="document.getElementById('err-popup').style.display='none'">✕</button>
+  <div class="err-title" id="err-title">Error</div>
+  <div id="err-body"></div>
+</div>
+
+<!-- ── Changelog modal ── -->
+<div id="changelog-modal" class="cl-overlay" style="display:none;" onclick="if(event.target===this)closeChangelog()">
+  <div class="cl-box">
+    <button class="cl-close" onclick="closeChangelog()">✕</button>
+    <h2>Firmware <span id="cl-fw-name">Changelog</span></h2>
+    <div id="cl-body"><div style="font-family:var(--mono);font-size:0.76rem;color:var(--muted);text-align:center;padding:20px;">Loading…</div></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════════
+     FlipperFAP v2.0 — JavaScript
+     ════════════════════════════════════════════════════════════════════════════ -->
+<script>
 const WORKER_URL = 'https://flipperfap-worker.joelewis-1996.workers.dev';
 
 const FW_REPOS = {
@@ -812,52 +843,61 @@ const FW_NOTES = {
 };
 const FW_EST = { official:90, momentum:120, unleashed:110 };
 
-// ── App Directory ─────────────────────────────────────────────────────────────
+// ── App Directory v2.0 ────────────────────────────────────────────────────────
 const APP_DIR = [
-  // ── Tools ─────────────────────────────────────────────────────────────────
-  { name:'TOTP Authenticator', desc:'2FA codes — Google, GitHub, and more',              repo:'https://github.com/akopachov/flipper-zero_authenticator',          cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🔐' },
-  { name:'Unitemp',            desc:'Temperature, humidity & pressure sensors',          repo:'https://github.com/quen0n/unitemp-flipperzero',                    cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🌡️' },
-  { name:'FlipBIP',            desc:'Crypto wallet — BIP39 mnemonics & addresses',       repo:'https://github.com/xtruan/FlipBIP',                               cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'💰' },
-  { name:'USB Keyboard',       desc:'Use Flipper as a USB HID keyboard / BadUSB',        repo:'https://github.com/huuck/FlipperZeroUSBKeyboard',                  cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'⌨️' },
-  { name:'Multi Converter',    desc:'Unit converter — length, weight, temperature',      repo:'https://github.com/theisel/fap-multi-converter',                   cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'📐' },
-  { name:'GPS NMEA',           desc:'GPS receiver display over UART',                    repo:'https://github.com/ezod/flipperzero-gps',                         cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🛰️' },
-  { name:'QR Code',            desc:'Display QR codes on the Flipper screen',            repo:'https://github.com/bmatcuk/flipperzero-qrcode',                   cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'📷' },
-  { name:'Sentry Safe',        desc:'Open Sentry Safe & Master Lock without PIN',        repo:'https://github.com/H4ckd4ddy/flipperzero-sentry-safe-plugin',     cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🔓' },
-  // ── WiFi ──────────────────────────────────────────────────────────────────
-  { name:'WiFi Marauder',      desc:'WiFi pentesting — scan, deauth, sniff',             repo:'https://github.com/0xchocolate/flipperzero-wifi-marauder',         cat:'WiFi',    compatible:['official','momentum','unleashed'], recommended:'official',  icon:'📶' },
-  { name:'WiFi Scanner',       desc:'Scan for nearby WiFi networks via ESP8266',         repo:'https://github.com/SequoiaSan/FlipperZero-WiFi-Scanner_Module',    cat:'WiFi',    compatible:['official','momentum','unleashed'], recommended:'official',  icon:'📡' },
-  { name:'Evil Portal',        desc:'Open access point with fake login page',            repo:'https://github.com/bigbrodude6119/flipper-zero-evil-portal',       cat:'WiFi',    compatible:['official','momentum','unleashed'], recommended:'official',  icon:'😈' },
-  // ── NFC ───────────────────────────────────────────────────────────────────
-  { name:'Seader',             desc:'Read & emulate smart card credentials',             repo:'https://github.com/bettse/seader',                                 cat:'NFC',     compatible:['official','momentum','unleashed'], recommended:'official',  icon:'💳' },
-  { name:'NFC Playlist',       desc:'Emulate multiple NFC cards in sequence',            repo:'https://github.com/bmatcuk/flipperzero-nfc-playlist',              cat:'NFC',     compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🔄' },
-  { name:'NFC Magic',          desc:'Write and clone magic NFC gen1/gen2 cards',         repo:'https://github.com/flipperdevices/nfc_magic',                      cat:'NFC',     compatible:['official','momentum','unleashed'], recommended:'official',  icon:'✨' },
+  // ── Tools ──────────────────────────────────────────────────────────────────
+  { name:'TOTP Authenticator', desc:'2FA codes — Google, GitHub, and more',         repo:'https://github.com/akopachov/flipper-zero_authenticator',          cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🔐' },
+  { name:'Unitemp',            desc:'Temperature, humidity & pressure sensors',     repo:'https://github.com/quen0n/unitemp-flipperzero',                    cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🌡️' },
+  { name:'FlipBIP',            desc:'Crypto wallet — BIP39 mnemonics & addresses',  repo:'https://github.com/xtruan/FlipBIP',                               cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'💰' },
+  { name:'GPS NMEA',           desc:'GPS receiver display over UART',               repo:'https://github.com/ezod/flipperzero-gps',                         cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🛰️' },
+  { name:'QR Code',            desc:'Display QR codes on the Flipper screen',       repo:'https://github.com/bmatcuk/flipperzero-qrcode',                   cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'📷' },
+  { name:'Sentry Safe',        desc:'Open Sentry Safe & Master Lock without PIN',   repo:'https://github.com/H4ckd4ddy/flipperzero-sentry-safe-plugin',     cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🔓' },
+  { name:'Multi Converter',    desc:'Unit converter — length, weight, temperature', repo:'https://github.com/theisel/fap-multi-converter',                   cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'📐' },
+  // ── WiFi ───────────────────────────────────────────────────────────────────
+  { name:'WiFi Marauder',      desc:'WiFi pentesting — scan, deauth, sniff',        repo:'https://github.com/0xchocolate/flipperzero-wifi-marauder',         cat:'WiFi',    compatible:['official','momentum','unleashed'], recommended:'official',  icon:'📶' },
+  { name:'WiFi Scanner',       desc:'Scan for nearby WiFi networks via ESP8266',    repo:'https://github.com/SequoiaSan/FlipperZero-WiFi-Scanner_Module',    cat:'WiFi',    compatible:['official','momentum','unleashed'], recommended:'official',  icon:'📡' },
+  { name:'Evil Portal',        desc:'Open access point with fake login page',       repo:'https://github.com/bigbrodude6119/flipper-zero-evil-portal',       cat:'WiFi',    compatible:['official','momentum','unleashed'], recommended:'official',  icon:'😈' },
+  // ── NFC ────────────────────────────────────────────────────────────────────
+  { name:'Seader',             desc:'Read & emulate smart card credentials',        repo:'https://github.com/bettse/seader',                                 cat:'NFC',     compatible:['official','momentum','unleashed'], recommended:'official',  icon:'💳' },
+  { name:'NFC Playlist',       desc:'Emulate multiple NFC cards in sequence',       repo:'https://github.com/bmatcuk/flipperzero-nfc-playlist',              cat:'NFC',     compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🔄' },
+  { name:'NFC Magic',          desc:'Write and clone magic NFC gen1/gen2 cards',    repo:'https://github.com/flipperdevices/nfc_magic',                      cat:'NFC',     compatible:['official','momentum','unleashed'], recommended:'official',  icon:'✨' },
   // ── Sub-GHz ────────────────────────────────────────────────────────────────
-  { name:'Sub-GHz Bruteforce', desc:'Brute force Sub-GHz fixed-code remotes',            repo:'https://github.com/tobiabocchi/flipperzero-bruteforce',            cat:'Sub-GHz', compatible:['official','momentum','unleashed'], recommended:'official',  icon:'📻' },
-  { name:'RF Jammer',          desc:'Sub-GHz signal transmission tool',                  repo:'https://github.com/RocketGod-git/flipper-zero-rf-jammer',         cat:'Sub-GHz', compatible:['unleashed'],                       recommended:'unleashed', icon:'⚡', note:'Unleashed only' },
+  { name:'Sub-GHz Bruteforce', desc:'Brute force Sub-GHz fixed-code remotes',       repo:'https://github.com/tobiabocchi/flipperzero-bruteforce',            cat:'Sub-GHz', compatible:['official','momentum','unleashed'], recommended:'official',  icon:'📻' },
+  { name:'RF Jammer',          desc:'Sub-GHz signal transmission tool',             repo:'https://github.com/RocketGod-git/flipper-zero-rf-jammer',         cat:'Sub-GHz', compatible:['unleashed'],                       recommended:'unleashed', icon:'⚡', note:'Unleashed only' },
   // ── Games ──────────────────────────────────────────────────────────────────
-  { name:'Doom',               desc:'Classic Doom ported to Flipper Zero',               repo:'https://github.com/p4nic4ttack/doom-flipper-zero',                 cat:'Games',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'💀' },
-  { name:'2048',               desc:'The classic 2048 sliding puzzle',                   repo:'https://github.com/eugene-kirzhanov/flipper-zero-2048-game',       cat:'Games',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🎮' },
-  { name:'Asteroids',          desc:'Classic Asteroids space shooter',                   repo:'https://github.com/antirez/flipper-zero-asteroids',               cat:'Games',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🚀' },
-  { name:'Minesweeper',        desc:'Classic Minesweeper puzzle',                        repo:'https://github.com/squee72564/F0-Minesweeper-Fap',                cat:'Games',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'💣' },
-  { name:'Flipper Pong',       desc:'Two-player Pong over infrared',                     repo:'https://github.com/nmrr/flipperzero-pong',                        cat:'Games',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🏓' },
-  { name:'Arkanoid',           desc:'Classic brick-breaking arcade game',                repo:'https://github.com/nicokosi/flipper-zero-arkanoid',                cat:'Games',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🧱' },
-  { name:'Dice',               desc:'Virtual dice roller — multiple dice types',          repo:'https://github.com/Ka3u6y6a/flipper-zero-dice',                   cat:'Games',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🎲' },
-  { name:'Chess',              desc:'Full chess game with AI opponent',                  repo:'https://github.com/xtruan/flipper-chess',                         cat:'Games',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'♟️' },
-  { name:'Matagotchi',         desc:'Tamagotchi-like virtual pet game',                  repo:'https://github.com/MrModd/Matagotchi',                            cat:'Games',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🐣' },
+  { name:'Doom',               desc:'Classic Doom ported to Flipper Zero',          repo:'https://github.com/p4nic4ttack/doom-flipper-zero',                 cat:'Games',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'💀' },
+  { name:'2048',               desc:'The classic 2048 sliding puzzle',              repo:'https://github.com/eugene-kirzhanov/flipper-zero-2048-game',       cat:'Games',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🎮' },
+  { name:'Asteroids',          desc:'Classic Asteroids space shooter',              repo:'https://github.com/antirez/flipper-zero-asteroids',               cat:'Games',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🚀' },
+  { name:'Minesweeper',        desc:'Classic Minesweeper puzzle',                   repo:'https://github.com/squee72564/F0-Minesweeper-Fap',                cat:'Games',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'💣' },
+  { name:'Flipper Pong',       desc:'Two-player Pong over infrared',                repo:'https://github.com/nmrr/flipperzero-pong',                        cat:'Games',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🏓' },
+  { name:'Arkanoid',           desc:'Classic brick-breaking arcade game',           repo:'https://github.com/sfjuocekr/flipper-game-arkanoid',              cat:'Games',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🧱' },
+  { name:'Dice',               desc:'Virtual dice roller — D4 to D100',             repo:'https://github.com/Ka3u6y6a/flipper-zero-dice',                   cat:'Games',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🎲' },
+  { name:'Chess',              desc:'Full chess game with AI opponent',             repo:'https://github.com/xtruan/flipper-chess',                         cat:'Games',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'♟️' },
+  { name:'Matagotchi',         desc:'Tamagotchi-like virtual pet game',             repo:'https://github.com/MrModd/Matagotchi',                            cat:'Games',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🐣' },
   // ── BLE ────────────────────────────────────────────────────────────────────
-  { name:'Apple BLE Spam',     desc:'Spam Apple BLE proximity pairing popups',           repo:'https://github.com/ECTO-1A/AppleJuice',                           cat:'BLE',     compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🍎' },
+  { name:'Apple BLE Spam',     desc:'Spam Apple BLE proximity pairing popups',      repo:'https://github.com/ECTO-1A/AppleJuice',                           cat:'BLE',     compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🍎' },
+  { name:'BLE Spam (All)',     desc:'Spam BLE popups on Apple, Android & Windows',  repo:'https://github.com/noproto/ble_spam_ofw',                         cat:'BLE',     compatible:['official','momentum','unleashed'], recommended:'official',  icon:'📲' },
 ];
 
+// ── Safe localStorage ─────────────────────────────────────────────────────────
+function lsGet(key, fallback) {
+  try { const v = localStorage.getItem(key); return v !== null ? v : fallback; } catch(_) { return fallback; }
+}
+function lsSet(key, val) { try { localStorage.setItem(key, val); } catch(_) {} }
+function lsGetJson(key, fallback) { try { return JSON.parse(localStorage.getItem(key) || 'null') ?? fallback; } catch(_) { return fallback; } }
+function lsSetJson(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch(_) {} }
+
 // ── State ─────────────────────────────────────────────────────────────────────
-let recentRepos = JSON.parse(localStorage.getItem('fap_recent') || '[]');
-// Filter out any old firmware repos that crept into recent list
+let recentRepos  = lsGetJson('fap_recent', []);
 const FW_REPO_PATTERNS = ['flipperzero-firmware','Momentum-Firmware','unleashed-firmware','Xtreme-Firmware','firmware-wPlugins','Flipper-XFW'];
 recentRepos = recentRepos.filter(r => !FW_REPO_PATTERNS.some(p => r.includes(p)));
-localStorage.setItem('fap_recent', JSON.stringify(recentRepos));
-let favourites   = JSON.parse(localStorage.getItem('fap_favs')    || '[]');
-let isDark       = localStorage.getItem('fap_theme')  !== 'light';
-let debugMode    = localStorage.getItem('fap_debug')  === 'true';
-let currentLang  = localStorage.getItem('fap_lang')   || 'en';
+lsSetJson('fap_recent', recentRepos);
+
+let favourites  = lsGetJson('fap_favs', []);
+let isDark      = lsGet('fap_theme', 'dark') !== 'light';
+let debugMode   = lsGet('fap_debug', 'false') === 'true';
+let currentLang = lsGet('fap_lang', 'en');
+
 const polls      = {};
 const fwVersions = {};
 const fwVersionsDev = {};
@@ -867,18 +907,16 @@ let appCheckTimer  = null;
 let appDirPage     = 1;
 const APP_PER_PAGE = 8;
 let compiledPage   = 1;
-let compiledTotal  = 0;
 let compiledPages  = 1;
+let activeJob      = null;
 
-// Active compile tracking (one at a time)
-let activeJob = null;
+// Dolphin animation state
+let dolphinTimer = null;
+let dolphinTick  = 0;
 
 // ── Worker API ────────────────────────────────────────────────────────────────
 const api = (path, opts={}) =>
-  fetch(WORKER_URL + path, {
-    ...opts,
-    headers: { 'Content-Type':'application/json', ...(opts.headers||{}) },
-  });
+  fetch(WORKER_URL + path, { ...opts, headers: { 'Content-Type':'application/json', ...(opts.headers||{}) } });
 
 // ── i18n ──────────────────────────────────────────────────────────────────────
 const I18N = {
@@ -898,7 +936,7 @@ const I18N = {
     step3_body:'Wait ~30–60 seconds. When done tap ↓ Download .fap to save the file.',
     step4_title:'Copy to Flipper',
     step4_body:'Transfer the .fap file to the apps/ folder on your Flipper SD card using qFlipper or the Flipper mobile app.',
-    support_text:'FlipperFAP is free — if it helped you, consider supporting:',
+    support_text:'☕ FlipperFAP is free — if it helped you, consider supporting:',
     share_btn:'Share', quick_compile:'⚙ Quick Compile', github_btn:'GitHub',
     copy_url:'📋 Copy URL', copied:'✓ Copied!', recompile:'↻ Recompile',
     stat_total:'Compiled', stat_month:'This Month', stat_today:'Today', stat_fw:'Top Firmware',
@@ -914,23 +952,18 @@ const I18N = {
     ch_stable:'Stable — recommandé pour la plupart.', ch_dev:'Build dev — peut être instable.',
     notice_url:"Supporte n'importe quel dépôt GitHub ou Gitea. Doit contenir un fichier application.fam.",
     step1_title:"Trouver l'app sur GitHub ou Gitea",
-    step1_body:"Aller sur la page du dépôt. Appuyer sur Code → HTTPS → copier l'URL.",
+    step1_body:"Allez sur le dépôt sur GitHub ou Gitea. Appuyez sur le bouton vert Code → HTTPS → copiez l'URL.",
     step2_title:'Choisir votre firmware',
-    step2_body:'Choisir le firmware de votre Flipper. Pas sûr? Vérifiez Paramètres → À propos.',
+    step2_body:'Choisissez le firmware de votre Flipper. Pas sûr ? Vérifiez Paramètres → À propos sur votre Flipper.',
     step3_title:'Appuyer sur Compiler .FAP',
-    step3_body:'Attendre ~30–60 secondes. Ensuite taper ↓ Download .fap pour sauvegarder.',
+    step3_body:'Appuyez sur Compiler .FAP et attendez ~30–60 secondes. Ensuite appuyez sur ↓ Télécharger .fap.',
     step4_title:'Copier sur le Flipper',
-    step4_body:'Transférer le fichier .fap dans le dossier apps/ sur votre carte SD Flipper via qFlipper.',
+    step4_body:"Transférez le fichier .fap dans le dossier apps/ de la carte SD via qFlipper ou l'appli Flipper.",
     support_text:'FlipperFAP est gratuit — si cela vous a aidé, pensez à soutenir:',
     share_btn:'Partager', quick_compile:'⚙ Compiler', github_btn:'GitHub',
     copy_url:'📋 Copier URL', copied:'✓ Copié!', recompile:'↻ Recompiler',
-    stat_total:'Compilé', stat_month:'Ce mois', stat_today:'Aujourd\'hui', stat_fw:'Firmware top',
-    no_results:'Aucune application trouvée.',
-    all_categories:'Toutes les catégories',
-    step1_body:"Allez sur le dépôt sur GitHub ou Gitea. Appuyez sur le bouton vert Code → HTTPS → copiez l'URL. ex: https://github.com/user/app — doit contenir un fichier application.fam.",
-    step2_body:'Choisissez le firmware de votre Flipper. Pas sûr ? Vérifiez Paramètres → À propos sur votre Flipper.',
-    step3_body:'Appuyez sur Compiler .FAP et attendez ~30–60 secondes. Ensuite appuyez sur ↓ Télécharger .fap.',
-    step4_body:"Transférez le fichier .fap dans le dossier apps/ de la carte SD via qFlipper ou l'appli Flipper.",
+    stat_total:'Compilé', stat_month:'Ce mois', stat_today:"Aujourd'hui", stat_fw:'Firmware top',
+    no_results:'Aucune application trouvée.', all_categories:'Toutes les catégories',
   },
   de: {
     compile_fap:'⚙ .FAP kompilieren', triggering:'Auslösen…', finding:'Suchen…',
@@ -941,23 +974,18 @@ const I18N = {
     ch_stable:'Stabil — für die meisten empfohlen.', ch_dev:'Dev-Build — kann instabil sein.',
     notice_url:'Unterstützt jedes GitHub- oder Gitea-Repository. Muss eine application.fam-Datei enthalten.',
     step1_title:'App auf GitHub oder Gitea finden',
-    step1_body:'Zur Repository-Seite gehen. Code → HTTPS → URL kopieren.',
+    step1_body:'Gehen Sie zur Repo-Seite auf GitHub oder Gitea. Tippen Sie auf den grünen Code-Button → HTTPS → URL kopieren.',
     step2_title:'Firmware auswählen',
-    step2_body:'Wähle die Firmware deines Flippers. Unsicher? Überprüfe Einstellungen → Info.',
+    step2_body:'Wählen Sie die Firmware Ihres Flippers. Nicht sicher? Prüfen Sie Einstellungen → Info auf Ihrem Flipper.',
     step3_title:'.FAP kompilieren',
-    step3_body:'~30–60 Sekunden warten. Dann ↓ Download .fap tippen.',
+    step3_body:'Tippen Sie auf .FAP kompilieren und warten Sie ~30–60 Sekunden. Danach tippen Sie auf ↓ .fap herunterladen.',
     step4_title:'Auf Flipper kopieren',
-    step4_body:'Die .fap-Datei in den apps/-Ordner auf der Flipper-SD-Karte über qFlipper übertragen.',
+    step4_body:'Übertragen Sie die .fap-Datei in den Ordner apps/ der SD-Karte via qFlipper oder der Flipper-App.',
     support_text:'FlipperFAP ist kostenlos — wenn es geholfen hat, bitte unterstützen:',
     share_btn:'Teilen', quick_compile:'⚙ Kompilieren', github_btn:'GitHub',
     copy_url:'📋 URL kopieren', copied:'✓ Kopiert!', recompile:'↻ Neu kompilieren',
     stat_total:'Kompiliert', stat_month:'Diesen Monat', stat_today:'Heute', stat_fw:'Top Firmware',
-    no_results:'Keine Apps gefunden.',
-    step1_body:'Gehen Sie zur Repo-Seite auf GitHub oder Gitea. Tippen Sie auf den grünen Code-Button → HTTPS → URL kopieren. z.B. https://github.com/user/app — muss eine application.fam-Datei enthalten.',
-    step2_body:'Wählen Sie die Firmware Ihres Flippers. Nicht sicher? Prüfen Sie Einstellungen → Info auf Ihrem Flipper.',
-    step3_body:'Tippen Sie auf .FAP kompilieren und warten Sie ~30–60 Sekunden. Danach tippen Sie auf ↓ .fap herunterladen.',
-    step4_body:'Übertragen Sie die .fap-Datei in den Ordner apps/ der SD-Karte via qFlipper oder der Flipper-App.',
-    all_categories:'Alle Kategorien',
+    no_results:'Keine Apps gefunden.', all_categories:'Alle Kategorien',
   },
   es: {
     compile_fap:'⚙ Compilar .FAP', triggering:'Activando…', finding:'Buscando…',
@@ -968,23 +996,18 @@ const I18N = {
     ch_stable:'Estable — recomendado.', ch_dev:'Dev — puede ser inestable.',
     notice_url:'Compatible con cualquier repositorio GitHub o Gitea. Debe contener application.fam.',
     step1_title:'Encontrar la app en GitHub o Gitea',
-    step1_body:'Ir a la página del repositorio. Pulsar Code → HTTPS → copiar la URL.',
+    step1_body:'Ve al repositorio en GitHub o Gitea. Pulsa el botón verde Code → HTTPS → copia la URL.',
     step2_title:'Elegir el firmware',
-    step2_body:'Elige el firmware de tu Flipper. ¿No sabes? Comprueba Ajustes → Información.',
+    step2_body:'Elige el firmware de tu Flipper. ¿No sabes cuál? Comprueba Ajustes → Acerca de en tu Flipper.',
     step3_title:'Pulsar Compilar .FAP',
-    step3_body:'Esperar ~30–60 segundos. Luego pulsar ↓ Download .fap para guardar.',
+    step3_body:'Pulsa Compilar .FAP y espera ~30–60 segundos. Luego pulsa ↓ Descargar .fap para guardar.',
     step4_title:'Copiar al Flipper',
-    step4_body:'Transferir el archivo .fap a la carpeta apps/ de la tarjeta SD del Flipper.',
+    step4_body:'Transfiere el .fap a la carpeta apps/ de la SD de tu Flipper usando qFlipper o la app móvil.',
     support_text:'FlipperFAP es gratuito — si te ha ayudado, considera apoyar:',
     share_btn:'Compartir', quick_compile:'⚙ Compilar', github_btn:'GitHub',
     copy_url:'📋 Copiar URL', copied:'✓ Copiado!', recompile:'↻ Recompilar',
     stat_total:'Compilado', stat_month:'Este mes', stat_today:'Hoy', stat_fw:'Firmware top',
-    no_results:'No se encontraron apps.',
-    step1_body:'Ve al repositorio en GitHub o Gitea. Pulsa el botón verde Code → HTTPS → copia la URL. ej: https://github.com/user/app — debe contener application.fam.',
-    step2_body:'Elige el firmware de tu Flipper. ¿No sabes cuál? Comprueba Ajustes → Acerca de en tu Flipper.',
-    step3_body:'Pulsa Compilar .FAP y espera ~30–60 segundos. Luego pulsa ↓ Descargar .fap para guardar.',
-    step4_body:'Transfiere el .fap a la carpeta apps/ de la SD de tu Flipper usando qFlipper o la app móvil.',
-    all_categories:'Todas las categorías',
+    no_results:'No se encontraron apps.', all_categories:'Todas las categorías',
   },
   ru: {
     compile_fap:'⚙ Скомпилировать', triggering:'Запуск…', finding:'Поиск…',
@@ -1006,8 +1029,7 @@ const I18N = {
     share_btn:'Поделиться', quick_compile:'⚙ Компилировать', github_btn:'GitHub',
     copy_url:'📋 Копировать', copied:'✓ Скопировано!', recompile:'↻ Перекомпилировать',
     stat_total:'Скомпилировано', stat_month:'В этом месяце', stat_today:'Сегодня', stat_fw:'Топ прошивка',
-    no_results:'Приложения не найдены.',
-    all_categories:'Все категории',
+    no_results:'Приложения не найдены.', all_categories:'Все категории',
   },
   zh: {
     compile_fap:'⚙ 编译 .FAP', triggering:'触发中…', finding:'查找中…',
@@ -1029,31 +1051,22 @@ const I18N = {
     share_btn:'分享', quick_compile:'⚙ 快速编译', github_btn:'GitHub',
     copy_url:'📋 复制链接', copied:'✓ 已复制!', recompile:'↻ 重新编译',
     stat_total:'已编译', stat_month:'本月', stat_today:'今天', stat_fw:'热门固件',
-    no_results:'未找到应用。',
-    all_categories:'所有分类',
+    no_results:'未找到应用。', all_categories:'所有分类',
   },
 };
 const t = key => (I18N[currentLang]||I18N.en)[key] || (I18N.en[key]||key);
-function setLang(lang) { currentLang=lang; localStorage.setItem('fap_lang',lang); applyLang(); }
+function setLang(lang) { currentLang=lang; lsSet('fap_lang',lang); applyLang(); }
 function applyLang() {
   document.querySelectorAll('[data-i18n]').forEach(el => { const v=t(el.getAttribute('data-i18n')); if(v) el.textContent=v; });
-  // Channel button labels (use data-i18n-ch)
   document.querySelectorAll('[data-i18n-ch]').forEach(el => {
-    const key = el.getAttribute('data-i18n-ch');
-    const v = key==='release' ? t('ch_release') : t('ch_dev_btn');
-    if(v) el.textContent=v;
+    const key=el.getAttribute('data-i18n-ch');
+    const v=key==='release'?t('ch_release'):t('ch_dev_btn'); if(v) el.textContent=v;
   });
-  // App card buttons - update Quick Compile and GitHub text
   document.querySelectorAll('.app-card-cta').forEach(el => { if(el.textContent.includes('Compile')) el.textContent=t('quick_compile'); });
-  document.querySelectorAll('.app-gh-link').forEach(el => { if(el.textContent.trim()==='⧉ GitHub' || el.textContent.trim()==='GitHub') el.textContent='⧉ '+t('github_btn'); });
-  // All Categories dropdown
-  const catSel = document.getElementById('app-category');
-  if(catSel && catSel.options[0]) catSel.options[0].text = t('all_categories');
-  // Step body texts (plain text only, no HTML)
-  ['step1','step2','step3','step4'].forEach(s => {
-    const el = document.getElementById(s+'-body');
-    if(el) el.textContent = t(s+'_body');
-  });
+  document.querySelectorAll('.app-gh-link').forEach(el => { if(el.textContent.trim()==='⧉ GitHub'||el.textContent.trim()==='GitHub') el.textContent='⧉ '+t('github_btn'); });
+  const catSel=document.getElementById('app-category');
+  if(catSel&&catSel.options[0]) catSel.options[0].text=t('all_categories');
+  ['step1','step2','step3','step4'].forEach(s=>{const el=document.getElementById(s+'-body');if(el)el.textContent=t(s+'_body');});
   const sel=document.getElementById('lang-select'); if(sel) sel.value=currentLang;
   const btn=document.getElementById('btn-text');
   if(btn&&!document.getElementById('compile-btn').disabled) btn.textContent=t('compile_fap');
@@ -1067,7 +1080,7 @@ function applyTheme() {
   document.body.classList.toggle('light',!isDark);
   const btn=document.getElementById('theme-toggle'); if(btn) btn.textContent=isDark?'🌙':'☀️';
 }
-function toggleTheme() { isDark=!isDark; localStorage.setItem('fap_theme',isDark?'dark':'light'); applyTheme(); }
+function toggleTheme() { isDark=!isDark; lsSet('fap_theme',isDark?'dark':'light'); applyTheme(); }
 
 // ── Debug ─────────────────────────────────────────────────────────────────────
 function applyDebug() {}
@@ -1075,8 +1088,71 @@ function toggleDebugBar() {
   const bar=document.getElementById('debug-bar'); if(!bar) return;
   const showing=bar.style.display!=='none';
   bar.style.display=showing?'none':'block';
-  debugMode=!showing; localStorage.setItem('fap_debug',String(debugMode));
+  debugMode=!showing; lsSet('fap_debug',String(debugMode));
 }
+
+// ── What's New modal ──────────────────────────────────────────────────────────
+function checkWhatsNew() {
+  if(!lsGet('fap_v2_seen','')) {
+    const el=document.getElementById('wn-overlay');
+    if(el) el.classList.remove('hidden');
+  }
+}
+function closeWhatsNew() {
+  lsSet('fap_v2_seen','1');
+  const el=document.getElementById('wn-overlay');
+  if(el) el.classList.add('hidden');
+}
+
+// ── Feedback ──────────────────────────────────────────────────────────────────
+let fbType = '🐛 Bug report';
+function openFeedback(prefill) {
+  document.getElementById('fb-overlay').classList.remove('hidden');
+  document.getElementById('fb-form-area').style.display='block';
+  document.getElementById('fb-success').style.display='none';
+  const btn=document.getElementById('fb-send-btn');
+  if(btn){btn.disabled=false;btn.textContent='Send →';}
+  if(prefill) {
+    const ta=document.getElementById('fb-msg');
+    if(ta) ta.value=prefill;
+  }
+}
+function closeFeedback() {
+  document.getElementById('fb-overlay').classList.add('hidden');
+  const ta=document.getElementById('fb-msg'); if(ta) ta.value='';
+  document.querySelectorAll('.fb-type-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
+  fbType='🐛 Bug report';
+}
+function selectFbType(btn, type) {
+  fbType=type;
+  document.querySelectorAll('.fb-type-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+async function sendFeedback() {
+  const msg=document.getElementById('fb-msg').value.trim();
+  if(!msg){document.getElementById('fb-msg').focus();return;}
+  const btn=document.getElementById('fb-send-btn');
+  btn.disabled=true; btn.textContent='Sending…';
+  try {
+    const res=await fetch('https://formspree.io/f/xyklebql',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Accept':'application/json'},
+      body:JSON.stringify({type:fbType,message:msg,_subject:`FlipperFAP Feedback — ${fbType}`}),
+    });
+    if(res.ok){
+      document.getElementById('fb-form-area').style.display='none';
+      document.getElementById('fb-success').style.display='block';
+      setTimeout(closeFeedback,2500);
+    } else {
+      btn.textContent='❌ Failed — try again';
+      setTimeout(()=>{btn.disabled=false;btn.textContent='Send →';},3000);
+    }
+  } catch(_) {
+    btn.textContent='❌ Network error';
+    setTimeout(()=>{btn.disabled=false;btn.textContent='Send →';},3000);
+  }
+}
+document.getElementById('fb-overlay').addEventListener('click',function(e){if(e.target===this)closeFeedback();});
 
 // ── Popups ────────────────────────────────────────────────────────────────────
 function showToast(msg) {
@@ -1087,9 +1163,10 @@ function showToast(msg) {
 function showError(title,detail) {
   const FRIENDLY=[
     [/rate limit/i,'Too many compiles!','Max 5 compiles per hour.'],
-    [/404/,'Repo not found','Make sure the repo is public.'],
-    [/422/,'Workflow error','Make sure GitHub Actions is enabled.'],
+    [/404/,'Repo not found','Make sure the repo is public and the URL is correct.'],
+    [/422/,'Workflow error','Make sure GitHub Actions is enabled in your fork.'],
     [/403/,'Permission denied','The worker token may need refreshing.'],
+    [/not.*github|not.*gitea|invalid url/i,'Invalid URL','Please enter a valid GitHub or Gitea repository URL.'],
     [/KV put.*limit/i,'Daily write limit hit','Cloudflare KV limit reached. Try again after midnight UTC.'],
   ];
   const msg=title+' '+(detail||'');
@@ -1119,7 +1196,7 @@ function loadFromParams() {
 // ── Recent repos ──────────────────────────────────────────────────────────────
 function saveRecent(url) {
   recentRepos=[url,...recentRepos.filter(r=>r!==url)].slice(0,6);
-  localStorage.setItem('fap_recent',JSON.stringify(recentRepos)); renderRecent();
+  lsSetJson('fap_recent',recentRepos); renderRecent();
 }
 function renderRecent() {
   const el=document.getElementById('recent-repos'); if(!el) return;
@@ -1129,123 +1206,87 @@ function renderRecent() {
 }
 function useRecent(url){const el=document.getElementById('repo-url');if(el)el.value=url;checkRepoForApps(url);}
 
+// ── URL validation ────────────────────────────────────────────────────────────
+function isValidRepoUrl(url) {
+  if(!url||!/^https?:\/\/.+\/.+\/.+/.test(url)) return false;
+  try {
+    const u=new URL(url);
+    const parts=u.pathname.split('/').filter(Boolean);
+    if(parts.length<2) return false;
+    // Must be github.com, gitea instance, or similar
+    return true;
+  } catch(_) { return false; }
+}
+
 // ── App detection ─────────────────────────────────────────────────────────────
 async function checkRepoForApps(url) {
-  if(!url||!/^https?:\/\/.+\/.+/.test(url)) return;
+  if(!url||!isValidRepoUrl(url)) return;
   const nameBar=document.getElementById('app-name-bar'), selDiv=document.getElementById('app-selector');
-  if(nameBar){nameBar.style.display='none';nameBar.className='app-name-bar';}
+  if(nameBar){nameBar.style.display='none';}
   if(selDiv) selDiv.style.display='none';
   detectedApps=[];
-
   const showBar=(msg,type='ok')=>{
     if(!nameBar) return;
-    nameBar.textContent=msg;
-    nameBar.style.display='block';
+    nameBar.textContent=msg; nameBar.style.display='block';
     if(type==='ok')    { nameBar.style.background='rgba(57,255,20,0.07)'; nameBar.style.borderColor='rgba(57,255,20,0.3)'; nameBar.style.color='var(--green)'; }
     if(type==='warn')  { nameBar.style.background='rgba(255,165,0,0.07)'; nameBar.style.borderColor='rgba(255,165,0,0.3)'; nameBar.style.color='var(--orange)'; }
     if(type==='error') { nameBar.style.background='rgba(255,50,50,0.07)'; nameBar.style.borderColor='rgba(255,50,50,0.3)'; nameBar.style.color='var(--red)'; }
   };
-
   try {
     const u=new URL(url.replace(/\.git$/,'')); const [owner,repo]=u.pathname.split('/').filter(Boolean);
     if(!owner||!repo) return;
-
-    // Gitea — can't validate, just show info
     if(u.hostname!=='github.com'){showBar('📦 Gitea repo — will validate on compile','warn');return;}
-
-    // Check repo exists
     showBar('🔍 Checking repo…','warn');
     const refRes=await fetch(`https://api.github.com/repos/${owner}/${repo}`);
     if(!refRes.ok){
       if(refRes.status===404) showBar('❌ Repo not found — check the URL','error');
-      else showBar(`⚠️ Could not reach GitHub (${refRes.status})`, 'warn');
+      else showBar(`⚠️ Could not reach GitHub (${refRes.status})`,'warn');
       return;
     }
     const repoData=await refRes.json();
     if(repoData.private){showBar('❌ Repo is private — must be public','error');return;}
     const branch=repoData.default_branch||'main';
-
-    // Check for application.fam
     const treeRes=await fetch(`https://api.github.com/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`);
     if(!treeRes.ok){showBar(`⚠️ ${repoData.name} — could not scan files`,'warn');return;}
     const files=((await treeRes.json()).tree||[]).filter(f=>f.path.endsWith('application.fam'));
-
-    if(!files.length){
-      showBar(`⚠️ ${repoData.name} — no application.fam found. May not compile`,'warn');
-      return;
-    }
-
-    // Read app names from application.fam files
+    if(!files.length){showBar(`⚠️ ${repoData.name} — no application.fam found. May not compile`,'warn');return;}
     for(const file of files.slice(0,8)){
       const raw=await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${file.path}`);
       if(!raw.ok) continue;
       const text=await raw.text(); const nm=text.match(/name\s*=\s*["']([^"']+)["']/);
       detectedApps.push({name:nm?nm[1]:file.path.split('/').slice(-2)[0],path:file.path,dir:file.path.replace('/application.fam','')});
     }
-
-    if(!detectedApps.length){
-      showBar(`✓ ${repoData.name} — valid repo`,'ok');
-      return;
-    }
-    if(detectedApps.length===1){
-      showBar(`✓ ${detectedApps[0].name}`,'ok');
-    } else {
+    if(!detectedApps.length){showBar(`✓ ${repoData.name} — valid repo`,'ok');return;}
+    if(detectedApps.length===1){showBar(`✓ ${detectedApps[0].name}`,'ok');}
+    else {
       const sel=document.getElementById('app-select');
-      if(sel)sel.innerHTML=detectedApps.map((a,i)=>`<option value="${i}">${esc(a.name)} (${esc(a.dir||'root')})</option>`).join('');
-      if(selDiv)selDiv.style.display='block';
-      showBar(`⚠ ${detectedApps.length} apps found — only the first will compile. Select one below or use a subfolder URL.`,'warn');
+      if(sel) sel.innerHTML=detectedApps.map((a,i)=>`<option value="${i}">${esc(a.name)} (${esc(a.dir||'root')})</option>`).join('');
+      if(selDiv) selDiv.style.display='block';
+      showBar(`⚠ ${detectedApps.length} apps found — select one below`,'warn');
     }
-  } catch(_){
-    showBar('⚠️ Could not validate URL','warn');
-  }
+  } catch(_){showBar('⚠️ Could not validate URL','warn');}
 }
 
 // ── Firmware versions ─────────────────────────────────────────────────────────
 async function fetchFirmwareVersions() {
   for (const [fw, repo] of Object.entries(FW_REPOS)) {
     try {
-      // Fetch latest release
-      const relRes = await fetch(`https://api.github.com/repos/${repo}/releases/latest`);
-      if (relRes.ok) {
-        const d = await relRes.json();
-        if (d.tag_name) {
-          fwVersions[fw] = d.tag_name;
-          const el = document.getElementById('fw-ver-'+fw);
-          if (el) el.textContent = d.tag_name;
-        }
-      }
-      // Fetch latest dev/pre-release build
-      const devRes = await fetch(`https://api.github.com/repos/${repo}/releases?per_page=10`);
-      if (devRes.ok) {
-        const releases = await devRes.json();
-        // Try pre-release first, then look for dev-tagged releases
-        const prerelease = releases.find(r => r.prerelease) ||
-                           releases.find(r => /dev|rc|beta|alpha/i.test(r.tag_name));
-        if (prerelease) fwVersionsDev[fw] = prerelease.tag_name;
-      }
+      const relRes=await fetch(`https://api.github.com/repos/${repo}/releases/latest`);
+      if(relRes.ok){const d=await relRes.json();if(d.tag_name){fwVersions[fw]=d.tag_name;const el=document.getElementById('fw-ver-'+fw);if(el)el.textContent=d.tag_name;}}
+      const devRes=await fetch(`https://api.github.com/repos/${repo}/releases?per_page=10`);
+      if(devRes.ok){const releases=await devRes.json();const pre=releases.find(r=>r.prerelease)||releases.find(r=>/dev|rc|beta|alpha/i.test(r.tag_name));if(pre)fwVersionsDev[fw]=pre.tag_name;}
     } catch(_) {}
   }
-  // Update display based on current selection
-  const fw = document.querySelector('input[name="fw"]:checked')?.value || 'official';
-  const ch = document.querySelector('input[name="ch"]:checked')?.value || 'release';
-  const el = document.getElementById('out-fw');
-  if (el) el.textContent = fwLabelForChannel(fw, ch);
+  const fw=document.querySelector('input[name="fw"]:checked')?.value||'official';
+  const ch=document.querySelector('input[name="ch"]:checked')?.value||'release';
+  const el=document.getElementById('out-fw');
+  if(el) el.textContent=fwLabelForChannel(fw,ch);
 }
-
-function fwLabelForChannel(fw, ch) {
-  if (ch === 'dev') {
-    const devVer = fwVersionsDev[fw];
-    if (devVer) return `${FW_NAMES[fw]||fw} ${devVer}`;
-    // No dedicated dev release found — show release version with (dev branch) note
-    const relVer = fwVersions[fw];
-    return relVer ? `${FW_NAMES[fw]||fw} ${relVer} (dev branch)` : `${FW_NAMES[fw]||fw} dev branch`;
-  }
-  return fwVersions[fw] ? `${FW_NAMES[fw]||fw} ${fwVersions[fw]}` : (FW_NAMES[fw]||fw);
+function fwLabelForChannel(fw,ch) {
+  if(ch==='dev'){const dv=fwVersionsDev[fw];if(dv)return`${FW_NAMES[fw]||fw} ${dv}`;const rv=fwVersions[fw];return rv?`${FW_NAMES[fw]||fw} ${rv} (dev branch)`:`${FW_NAMES[fw]||fw} dev branch`;}
+  return fwVersions[fw]?`${FW_NAMES[fw]||fw} ${fwVersions[fw]}`:(FW_NAMES[fw]||fw);
 }
-function fwLabel(fw) {
-  const ch = document.querySelector('input[name="ch"]:checked')?.value || 'release';
-  return fwLabelForChannel(fw, ch);
-}
+function fwLabel(fw) { return fwLabelForChannel(fw,document.querySelector('input[name="ch"]:checked')?.value||'release'); }
 
 async function showChangelog(fw) {
   const modal=document.getElementById('changelog-modal'); if(!modal) return;
@@ -1254,42 +1295,19 @@ async function showChangelog(fw) {
   const body=document.getElementById('cl-body');
   if(body) body.innerHTML='<div style="text-align:center;padding:20px;font-family:var(--mono);color:var(--muted)">Loading…</div>';
   try {
-    // Fetch more releases to show both release and dev builds
-    const res = await fetch(`https://api.github.com/repos/${FW_REPOS[fw]}/releases?per_page=10`);
+    const res=await fetch(`https://api.github.com/repos/${FW_REPOS[fw]}/releases?per_page=10`);
     if(!res.ok) throw new Error(`GitHub returned ${res.status}`);
-    const releases = await res.json();
-    if(!releases.length) throw new Error('No releases found');
-    // Show only latest release + latest dev
-    const latestRelease = releases.find(r => !r.prerelease);
-    const latestDev     = releases.find(r => r.prerelease);
-    const toShow = [latestRelease, latestDev].filter(Boolean);
-    if (!toShow.length) throw new Error('No releases found');
-    if(body) body.innerHTML = toShow.map(r => {
-      const isPrerelease = r.prerelease;
-      const badge = isPrerelease
-        ? `<span style="font-family:var(--mono);font-size:0.6rem;background:rgba(0,229,255,0.15);color:var(--cyan);border:1px solid var(--cyan);border-radius:3px;padding:2px 7px;margin-left:6px;">DEV</span>`
-        : `<span style="font-family:var(--mono);font-size:0.6rem;background:rgba(57,255,20,0.12);color:var(--green);border:1px solid var(--green);border-radius:3px;padding:2px 7px;margin-left:6px;">RELEASE</span>`;
-      const notes = (r.body||'')
-        .split('\n')
-        .filter(l => l.trim() && !l.startsWith('##') && !l.startsWith('**Full') && !l.startsWith('http'))
-        .slice(0,8)
-        .join('\n')
-        .replace(/#{1,3} /g,'')
-        .replace(/\*\*/g,'')
-        .replace(/\[([^\]]+)\]\([^)]+\)/g,'$1')
-        .replace(/\*/g,'•')
-        .trim();
-      return `<div class="cl-entry">
-        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:6px;">
-          <span class="cl-ver">${esc(r.tag_name)}</span>${badge}
-          <span class="cl-date" style="margin-left:auto;">${new Date(r.published_at).toLocaleDateString()}</span>
-        </div>
-        ${notes ? `<div class="cl-body">${esc(notes)}</div>` : '<div class="cl-body" style="color:var(--muted);">No release notes.</div>'}
-      </div>`;
+    const releases=await res.json(); if(!releases.length) throw new Error('No releases found');
+    const latestRelease=releases.find(r=>!r.prerelease), latestDev=releases.find(r=>r.prerelease);
+    const toShow=[latestRelease,latestDev].filter(Boolean); if(!toShow.length) throw new Error('No releases found');
+    if(body) body.innerHTML=toShow.map(r=>{
+      const badge=r.prerelease
+        ?`<span style="font-family:var(--mono);font-size:0.6rem;background:rgba(0,229,255,0.15);color:var(--cyan);border:1px solid var(--cyan);border-radius:3px;padding:2px 7px;margin-left:6px;">DEV</span>`
+        :`<span style="font-family:var(--mono);font-size:0.6rem;background:rgba(57,255,20,0.12);color:var(--green);border:1px solid var(--green);border-radius:3px;padding:2px 7px;margin-left:6px;">RELEASE</span>`;
+      const notes=(r.body||'').split('\n').filter(l=>l.trim()&&!l.startsWith('##')&&!l.startsWith('**Full')&&!l.startsWith('http')).slice(0,8).join('\n').replace(/#{1,3} /g,'').replace(/\*\*/g,'').replace(/\[([^\]]+)\]\([^)]+\)/g,'$1').replace(/\*/g,'•').trim();
+      return `<div class="cl-entry"><div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:6px;"><span class="cl-ver">${esc(r.tag_name)}</span>${badge}<span class="cl-date" style="margin-left:auto;">${new Date(r.published_at).toLocaleDateString()}</span></div>${notes?`<div class="cl-body">${esc(notes)}</div>`:'<div class="cl-body" style="color:var(--muted);">No release notes.</div>'}</div>`;
     }).join('');
-  } catch(e) {
-    if(body) body.innerHTML=`<div style="font-family:var(--mono);color:var(--red);text-align:center;padding:20px;">❌ ${esc(e.message)}</div>`;
-  }
+  } catch(e) { if(body) body.innerHTML=`<div style="font-family:var(--mono);color:var(--red);text-align:center;padding:20px;">❌ ${esc(e.message)}</div>`; }
 }
 function closeChangelog(){const m=document.getElementById('changelog-modal');if(m)m.style.display='none';}
 
@@ -1305,7 +1323,7 @@ function isFav(idx){const a=APP_DIR[idx];return a&&favourites.includes(a.repo+a.
 function toggleFav(idx){
   const a=APP_DIR[idx];if(!a)return;const key=a.repo+a.recommended;
   favourites=favourites.includes(key)?favourites.filter(f=>f!==key):[...favourites,key];
-  localStorage.setItem('fap_favs',JSON.stringify(favourites));renderAppDir();
+  lsSetJson('fap_favs',favourites);renderAppDir();
 }
 
 // ── App directory ─────────────────────────────────────────────────────────────
@@ -1324,14 +1342,20 @@ function renderAppDir(){
   const filtered=getFilteredApps(), totalPages=Math.max(1,Math.ceil(filtered.length/APP_PER_PAGE));
   const slice=filtered.slice((appDirPage-1)*APP_PER_PAGE,appDirPage*APP_PER_PAGE);
   const activeFw=document.querySelector('input[name="fw"]:checked')?.value||'';
-  if(!slice.length){grid.innerHTML=`<div style="font-family:var(--mono);font-size:0.75rem;color:var(--muted);grid-column:1/-1;text-align:center;padding:20px;">No apps match your search.</div>`;if(pages)pages.innerHTML='';return;}
+  if(!slice.length){grid.innerHTML=`<div style="font-family:var(--mono);font-size:0.75rem;color:var(--muted);grid-column:1/-1;text-align:center;padding:20px;">${t('no_results')}</div>`;if(pages)pages.innerHTML='';return;}
   grid.innerHTML=slice.map(app=>{
     const starred=isFav(app.idx),compatible=activeFw?app.compatible.includes(activeFw):true,isRec=app.recommended===activeFw;
     const badge=activeFw?(isRec?'<span class="compat-badge compat-rec">✓ Recommended</span>':compatible?'<span class="compat-badge compat-ok">✓ Compatible</span>':'<span class="compat-badge compat-warn">⚠ May not compile</span>'):'';
     const note=app.note?`<div class="app-note">⚠ ${esc(app.note)}</div>`:'';
     const chips=app.compatible.map(f=>`<span class="fw-chip">${esc(FW_NAMES[f]||f)}</span>`).join('');
     return `<div class="app-card" onclick="quickCompile(${app.idx})">
-      <div class="app-card-header"><span class="app-icon">${app.icon||'📦'}</span><button class="fav-btn" onclick="event.stopPropagation();toggleFav(${app.idx})">${starred?'⭐':'☆'}</button></div>
+      <div class="app-card-header">
+        <span class="app-icon">${app.icon||'📦'}</span>
+        <div style="display:flex;gap:2px;align-items:center;">
+          <button class="fav-btn" onclick="event.stopPropagation();toggleFav(${app.idx})" title="${starred?'Remove from favourites':'Add to favourites'}">${starred?'⭐':'☆'}</button>
+          <button class="report-btn" onclick="event.stopPropagation();reportApp('${esc(app.name)}')" title="Report broken app">🚩</button>
+        </div>
+      </div>
       <div class="app-card-name">${esc(app.name)}</div>
       <div class="app-card-desc">${esc(app.desc)}</div>
       <div class="fw-chips">${chips}</div>
@@ -1348,6 +1372,9 @@ function quickCompile(idx){
   document.getElementById('compile-btn')?.scrollIntoView({behavior:'smooth',block:'center'});
   showToast(`⚙ ${app.name} loaded — tap Compile!`);
 }
+function reportApp(name) {
+  openFeedback(`🚩 Broken app report: ${name}\n\nDetails: `);
+}
 
 // ── UI listeners ──────────────────────────────────────────────────────────────
 document.querySelectorAll('input[name="fw"]').forEach(r=>{r.addEventListener('change',()=>{
@@ -1359,31 +1386,32 @@ document.querySelectorAll('input[name="fw"]').forEach(r=>{r.addEventListener('ch
 document.querySelectorAll('input[name="ch"]').forEach(r=>{r.addEventListener('change',()=>{
   const cn=document.getElementById('ch-note');if(cn)cn.textContent=r.value==='release'?t('ch_stable'):t('ch_dev');
   const oc=document.getElementById('out-ch');if(oc)oc.textContent=r.value;
-  // Update build info box
   const fw=document.querySelector('input[name="fw"]:checked')?.value||'official';
-  const of=document.getElementById('out-fw');
-  if(of) of.textContent=fwLabelForChannel(fw, r.value);
-  // Update all fw-ver badges to show release or dev version
+  const of=document.getElementById('out-fw');if(of)of.textContent=fwLabelForChannel(fw,r.value);
   for(const [fwKey] of Object.entries(FW_REPOS)){
-    const badge=document.getElementById('fw-ver-'+fwKey);
-    if(!badge) continue;
-    if(r.value==='dev' && fwVersionsDev[fwKey]) badge.textContent=fwVersionsDev[fwKey];
-    else if(r.value==='release' && fwVersions[fwKey]) badge.textContent=fwVersions[fwKey];
+    const badge=document.getElementById('fw-ver-'+fwKey); if(!badge) continue;
+    if(r.value==='dev'&&fwVersionsDev[fwKey]) badge.textContent=fwVersionsDev[fwKey];
+    else if(r.value==='release'&&fwVersions[fwKey]) badge.textContent=fwVersions[fwKey];
   }
 });});
 const repoInputEl=document.getElementById('repo-url');
 if(repoInputEl){
   repoInputEl.addEventListener('keydown',e=>{if(e.key==='Enter')submitCompile();});
-  repoInputEl.addEventListener('input',()=>{clearTimeout(appCheckTimer);const url=repoInputEl.value.trim();if(url.length>15)appCheckTimer=setTimeout(()=>checkRepoForApps(url),800);});
+  repoInputEl.addEventListener('input',()=>{
+    clearTimeout(appCheckTimer);
+    const url=repoInputEl.value.trim();
+    if(url.length>15) appCheckTimer=setTimeout(()=>checkRepoForApps(url),800);
+  });
 }
 
 // ── Compile submit ────────────────────────────────────────────────────────────
 async function submitCompile() {
   const urlInput=document.getElementById('repo-url');
   const url=urlInput?.value.trim()||'';
-  if(!url||!/^https?:\/\/.+\/.+/.test(url)){
-    if(urlInput){urlInput.classList.add('err');setTimeout(()=>urlInput.classList.remove('err'),1500);}
-    showError('Invalid URL','Please enter a valid GitHub or Gitea repo URL.');return;
+  if(!url||!isValidRepoUrl(url)){
+    if(urlInput){urlInput.classList.add('error');setTimeout(()=>urlInput.classList.remove('error'),1500);}
+    showError('Invalid URL','Please enter a valid GitHub or Gitea repository URL (e.g. https://github.com/user/app).');
+    return;
   }
   const btn=document.getElementById('compile-btn'),spinner=document.getElementById('btn-spinner'),btnText=document.getElementById('btn-text');
   btn.disabled=true;spinner.style.display='block';btnText.textContent=t('triggering');
@@ -1399,8 +1427,10 @@ async function submitCompile() {
     saveRecent(url);showNotifPrompt();btnText.textContent=t('finding');
     await sleep(4000);
     const runId=await findLatestRunId();
+    const appName=url.replace(/\/$/,'').replace(/\.git$/,'').split('/').pop().replace(/-/g,' ').replace(/_/g,' ');
     activeJob={runId,repoUrl:url,firmware,fwLabel:fwLabel(firmware),channel,status:'queued',message:'Queued — waiting for runner…',artifactId:null,artifactName:null,createdAt:new Date().toISOString(),startedAt:Date.now()};
     showActiveCompile(activeJob);
+    startDolphinAnimation(appName, firmware, activeJob.startedAt);
     startPolling(activeJob);
     urlInput.value='';
     const nb=document.getElementById('app-name-bar');if(nb)nb.style.display='none';
@@ -1417,27 +1447,148 @@ async function findLatestRunId(){
   throw new Error('Run not found after 20s — check GitHub Actions tab.');
 }
 
-// ── Active compile status bar ─────────────────────────────────────────────────
+// ── Active compile bar ────────────────────────────────────────────────────────
 function showActiveCompile(job){
-  const bar=document.getElementById('active-compile-bar');
-  const name=document.getElementById('active-compile-name');
-  const status=document.getElementById('active-compile-status');
-  const msg=document.getElementById('active-compile-msg');
+  const bar=document.getElementById('active-compile-bar'),name=document.getElementById('active-compile-name'),status=document.getElementById('active-compile-status'),msg=document.getElementById('active-compile-msg');
   if(!bar)return;
   const appName=job.repoUrl.replace(/^https?:\/\//,'').replace(/\.git$/,'').replace(/\/$/,'').split('/').pop().replace(/-/g,' ').replace(/_/g,' ');
-  if(name)   name.textContent=appName;
+  if(name) name.textContent=appName;
   if(status) status.textContent=mapStatus(job.status).toUpperCase();
-  if(msg)    msg.textContent=job.message||'';
+  if(msg) msg.textContent=job.message||'';
   bar.style.display='block';
 }
-function hideActiveCompile(){const bar=document.getElementById('active-compile-bar');if(bar)bar.style.display='none';}
-
-// ── Polling ───────────────────────────────────────────────────────────────────
-function startPolling(job){
-  if(!job.runId||polls[job.runId])return;
-  polls[job.runId]=setInterval(()=>pollJob(job),8000);
+function hideActiveCompile(){
+  const bar=document.getElementById('active-compile-bar');if(bar)bar.style.display='none';
+  stopDolphinAnimation();
 }
 
+// ── Dolphin animation ─────────────────────────────────────────────────────────
+function startDolphinAnimation(appName, firmware, startedAt) {
+  const canvas=document.getElementById('dolphin-canvas'); if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  dolphinTick=0;
+  function tick(){
+    dolphinTick++;
+    const elapsed=startedAt?Math.round((Date.now()-startedAt)/1000):0;
+    drawFlipperScreen(ctx, dolphinTick, elapsed, appName, firmware);
+  }
+  tick();
+  dolphinTimer=setInterval(tick,120);
+}
+function stopDolphinAnimation(){
+  if(dolphinTimer){clearInterval(dolphinTimer);dolphinTimer=null;}
+  dolphinTick=0;
+}
+
+function drawFlipperScreen(ctx, tick, elapsed, appName, firmware) {
+  const W=256, H=128;
+  // Background — Flipper screen colour
+  ctx.fillStyle='#0d1117';
+  ctx.fillRect(0,0,W,H);
+
+  // Scanlines
+  ctx.fillStyle='rgba(0,0,0,0.12)';
+  for(let y=0;y<H;y+=2) ctx.fillRect(0,y,W,1);
+
+  // Dolphin position — bouncing swim
+  const swimY=Math.sin(tick*0.25)*10;
+  const swimX=W/2;
+  drawDolphin(ctx, swimX, H/2-4+swimY, tick);
+
+  // Top bar — "COMPILING"
+  ctx.fillStyle='#FF6B00';
+  ctx.font='bold 8px monospace';
+  ctx.textAlign='left';
+  ctx.fillText('⚙ COMPILING', 6, 11);
+
+  // Firmware badge
+  const fwNames={official:'OFW',momentum:'MNTM',unleashed:'UNLSH'};
+  const fwLabel=fwNames[firmware]||firmware.toUpperCase();
+  ctx.fillStyle='rgba(255,107,0,0.2)';
+  ctx.fillRect(W-42,2,40,13);
+  ctx.fillStyle='#FF6B00';
+  ctx.font='7px monospace';
+  ctx.textAlign='right';
+  ctx.fillText(fwLabel, W-4, 11);
+
+  // App name (bottom)
+  ctx.fillStyle='#e8e8f0';
+  ctx.font='7px monospace';
+  ctx.textAlign='left';
+  const displayName=(appName||'app').substring(0,26);
+  ctx.fillText(displayName, 6, H-20);
+
+  // Elapsed time
+  ctx.fillStyle='#5a5a6e';
+  ctx.font='6px monospace';
+  ctx.fillText(`${elapsed}s elapsed`, 6, H-10);
+
+  // Progress bar
+  const est=90, pct=Math.min(0.95,elapsed/est);
+  ctx.fillStyle='#1a1a2e';
+  ctx.fillRect(6,H-6,W-12,4);
+  const grad=ctx.createLinearGradient(6,0,W-12,0);
+  grad.addColorStop(0,'#FF6B00');
+  grad.addColorStop(1,'#39ff14');
+  ctx.fillStyle=grad;
+  ctx.fillRect(6,H-6,Math.floor((W-12)*pct),4);
+
+  // Separator lines
+  ctx.strokeStyle='#2a2a35';
+  ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(0,16);ctx.lineTo(W,16);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(0,H-26);ctx.lineTo(W,H-26);ctx.stroke();
+
+  // Bubble particles
+  const bubbles=[[0.15,0.4],[0.3,0.2],[0.5,0.35],[0.7,0.25],[0.85,0.4]];
+  bubbles.forEach(([px,py])=>{
+    const bx=swimX-20+px*40,by=H/2-10+swimY+Math.sin(tick*0.3+px*3)*py*12;
+    if(bx>0&&bx<W&&by>16&&by<H-28){
+      ctx.strokeStyle='rgba(0,229,255,0.3)';ctx.lineWidth=1;
+      ctx.beginPath();ctx.arc(bx,by,1.5,0,Math.PI*2);ctx.stroke();
+    }
+  });
+}
+
+function drawDolphin(ctx, cx, cy, tick) {
+  ctx.save();
+  // Tail wave
+  const tailAngle=Math.sin(tick*0.4)*0.3;
+  // Shadow
+  ctx.fillStyle='rgba(0,229,255,0.08)';
+  ctx.beginPath();ctx.ellipse(cx,cy+12,20,4,0,0,Math.PI*2);ctx.fill();
+  // Body
+  ctx.fillStyle='#00bcd4';
+  ctx.beginPath();ctx.ellipse(cx,cy,20,10,0,0,Math.PI*2);ctx.fill();
+  // Belly
+  ctx.fillStyle='#e0f7fa';
+  ctx.beginPath();ctx.ellipse(cx+4,cy+2,12,6,0.2,0,Math.PI*2);ctx.fill();
+  // Dorsal fin
+  ctx.fillStyle='#0097a7';
+  ctx.beginPath();ctx.moveTo(cx-2,cy-10);ctx.bezierCurveTo(cx,cy-22,cx+10,cy-18,cx+8,cy-10);ctx.fill();
+  // Snout
+  ctx.fillStyle='#00bcd4';
+  ctx.beginPath();ctx.moveTo(cx+18,cy-2);ctx.lineTo(cx+30,cy+1);ctx.lineTo(cx+18,cy+5);ctx.closePath();ctx.fill();
+  // Tail
+  ctx.fillStyle='#0097a7';
+  ctx.save();ctx.translate(cx-20,cy);ctx.rotate(tailAngle);
+  ctx.beginPath();ctx.moveTo(0,-2);ctx.lineTo(-14,-10);ctx.lineTo(-12,0);ctx.closePath();ctx.fill();
+  ctx.beginPath();ctx.moveTo(0,2);ctx.lineTo(-14,10);ctx.lineTo(-12,0);ctx.closePath();ctx.fill();
+  ctx.restore();
+  // Flipper
+  ctx.fillStyle='#0097a7';
+  ctx.beginPath();ctx.moveTo(cx,cy+4);ctx.lineTo(cx+8,cy+14);ctx.lineTo(cx-4,cy+10);ctx.closePath();ctx.fill();
+  // Eye
+  ctx.fillStyle='#0a0a0b';ctx.beginPath();ctx.arc(cx+12,cy-3,3,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#ffffff';ctx.beginPath();ctx.arc(cx+13,cy-4,1,0,Math.PI*2);ctx.fill();
+  // Smile
+  ctx.strokeStyle='#004d5e';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.arc(cx+22,cy+3,4,Math.PI*1.1,Math.PI*1.9);ctx.stroke();
+  ctx.restore();
+}
+
+// ── Polling ───────────────────────────────────────────────────────────────────
+function startPolling(job){if(!job.runId||polls[job.runId])return;polls[job.runId]=setInterval(()=>pollJob(job),8000);}
 async function pollJob(job){
   try{
     const res=await api(`/api/run/${job.runId}`);if(!res.ok)return;
@@ -1460,7 +1611,7 @@ async function pollJob(job){
   }catch(e){console.error('pollJob error:',e);}
 }
 
-// ── Save job to KV ────────────────────────────────────────────────────────────
+// ── Save to KV ────────────────────────────────────────────────────────────────
 async function saveJobToKV(job){
   try{
     const res=await api('/api/jobs/complete',{method:'POST',body:JSON.stringify({
@@ -1470,22 +1621,23 @@ async function saveJobToKV(job){
       artifactId:job.artifactId?String(job.artifactId):null,
     })});
     const data=await res.json().catch(()=>({}));
-    if(!res.ok){showToast(`⚠️ Save failed: ${data.error||res.status}`);}
+    if(!res.ok)showToast(`⚠️ Save failed: ${data.error||res.status}`);
     else{await sleep(1500);loadCompiledApps(1);}
   }catch(e){showToast('⚠️ Could not save: '+(e.message||e));}
 }
 
-// ── Compiled applications list (KV source of truth) ───────────────────────────
+// ── Compiled apps list ────────────────────────────────────────────────────────
 async function loadCompiledApps(page=1){
   const list=document.getElementById('compiled-list');if(!list)return;
-  if(page===1)list.innerHTML='<div style="font-family:var(--mono);font-size:0.75rem;color:var(--muted);text-align:center;padding:20px;">Loading…</div>';
+  if(page===1) list.innerHTML='<div style="font-family:var(--mono);font-size:0.75rem;color:var(--muted);text-align:center;padding:20px;">Loading…</div>';
   try{
     const res=await api(`/api/jobs?page=${page}`);
-    if(!res.ok)throw new Error(`Worker returned ${res.status}`);
+    if(!res.ok) throw new Error(`Worker returned ${res.status}`);
     const data=await res.json();
-    compiledTotal=data.total||0;compiledPages=data.pages||1;compiledPage=data.page||1;
-    const countEl=document.getElementById('jobs-count');if(countEl)countEl.textContent=compiledTotal?`${compiledTotal} total`:'';
+    compiledPages=data.pages||1; compiledPage=data.page||1;
     const jobs=data.jobs||[];
+    // Weekly most compiled (client-side, zero extra worker calls)
+    if(page===1) updateWeeklyMost(jobs);
     if(!jobs.length){list.innerHTML='<div class="empty-state"><div class="big">📦</div>No compilations yet — be the first!</div>';renderCompiledPagination();return;}
     list.innerHTML=jobs.map(job=>{
       const ds=job.status==='success'?'success':job.status==='failure'?'failure':'queued';
@@ -1507,7 +1659,7 @@ async function loadCompiledApps(page=1){
           </div>
           <div class="job-url" title="https://${esc(repoUrl)}">${esc(repoUrl)}</div>
         </div>
-        <div class="job-status" style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;">
+        <div class="job-status">
           <span class="status-badge badge-${ds}">${ds.toUpperCase()}</span>
           ${dlBtn}
           <a class="gh-link" href="https://${esc(repoUrl)}" target="_blank">⧉ View Repo</a>
@@ -1523,6 +1675,28 @@ async function loadCompiledApps(page=1){
   }catch(e){console.error('loadCompiledApps:',e);if(list)list.innerHTML=`<div style="font-family:var(--mono);font-size:0.75rem;color:var(--red);text-align:center;padding:20px;">Error: ${e.message}</div>`;}
 }
 
+// ── Weekly most compiled (client-side) ────────────────────────────────────────
+function updateWeeklyMost(jobs) {
+  const weekAgo=Date.now()-7*24*60*60*1000;
+  const counts={};
+  jobs.filter(j=>j.status==='success'&&j.createdAt&&new Date(j.createdAt).getTime()>weekAgo)
+      .forEach(j=>{
+        const key=(j.repoUrl||'').replace(/\/$/,'').replace(/\.git$/,'');
+        counts[key]=(counts[key]||0)+1;
+      });
+  const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  const wrap=document.getElementById('weekly-wrap');
+  if(!sorted.length||sorted[0][1]<2){if(wrap)wrap.style.display='none';return;}
+  const [url,count]=sorted[0];
+  const name=url.split('/').pop().replace(/-/g,' ').replace(/_/g,' ');
+  const fullUrl='https://'+url;
+  document.getElementById('weekly-name').textContent=name;
+  document.getElementById('weekly-count').textContent=`× ${count} compiles this week`;
+  const btn=document.getElementById('weekly-btn');
+  if(btn) btn.onclick=()=>quickCompileUrl(fullUrl,'official');
+  if(wrap) wrap.style.display='block';
+}
+
 function renderCompiledPagination(){
   const el=document.getElementById('jobs-pages');if(!el)return;
   if(compiledPages<=1){el.innerHTML='';return;}
@@ -1531,7 +1705,6 @@ function renderCompiledPagination(){
   for(const p of sorted){if(p-prev>1)parts.push('<span style="color:var(--muted);font-family:var(--mono);">…</span>');parts.push(`<button class="page-btn${p===compiledPage?' active':''}" onclick="loadCompiledApps(${p})">${p}</button>`);prev=p;}
   el.innerHTML=parts.join('');
 }
-
 
 // ── Download ──────────────────────────────────────────────────────────────────
 async function downloadArtifact(artifactId,artifactName,btnEl){
@@ -1640,8 +1813,6 @@ async function testConnection(){
   catch(e){el.style.color='var(--red)';el.textContent='❌ '+e.message;}
 }
 
-// Online counter removed — feature disabled to preserve KV quota
-
 // ── Worker status ─────────────────────────────────────────────────────────────
 async function checkWorkerStatus(){
   const dot=document.getElementById('worker-dot'),label=document.getElementById('worker-label');
@@ -1653,14 +1824,14 @@ async function checkWorkerStatus(){
 }
 
 // ── Notifications ─────────────────────────────────────────────────────────────
-function showNotifPrompt(){if(!('Notification'in window)||Notification.permission!=='default'||localStorage.getItem('fap_notif_dismissed'))return;const el=document.getElementById('notif-prompt');if(el)el.style.display='flex';}
-function dismissNotifPrompt(){localStorage.setItem('fap_notif_dismissed','1');const el=document.getElementById('notif-prompt');if(el)el.style.display='none';}
+function showNotifPrompt(){if(!('Notification'in window)||Notification.permission!=='default'||lsGet('fap_notif_dismissed',''))return;const el=document.getElementById('notif-prompt');if(el)el.style.display='flex';}
+function dismissNotifPrompt(){lsSet('fap_notif_dismissed','1');const el=document.getElementById('notif-prompt');if(el)el.style.display='none';}
 async function requestNotifPermission(){const el=document.getElementById('notif-prompt');if(el)el.style.display='none';try{const p=await Notification.requestPermission();if(p==='granted')showToast('🔔 Notifications enabled!');}catch(_){}}
 async function sendPushNotification(job){if(!('serviceWorker'in navigator))return;try{const reg=await navigator.serviceWorker.ready;reg.active?.postMessage({type:'COMPILE_DONE',success:job.status==='success',repoUrl:job.repoUrl,firmware:job.firmware});}catch(_){}}
 
 // ── Install banner ────────────────────────────────────────────────────────────
-function checkInstallBanner(){const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);if(isIOS&&!window.navigator.standalone&&!localStorage.getItem('fap_install_dismissed'))setTimeout(()=>{const b=document.getElementById('install-banner');if(b)b.style.display='flex';},4000);}
-function dismissInstall(){localStorage.setItem('fap_install_dismissed','1');const b=document.getElementById('install-banner');if(b)b.style.display='none';}
+function checkInstallBanner(){const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);if(isIOS&&!window.navigator.standalone&&!lsGet('fap_install_dismissed',''))setTimeout(()=>{const b=document.getElementById('install-banner');if(b)b.style.display='flex';},4000);}
+function dismissInstall(){lsSet('fap_install_dismissed','1');const b=document.getElementById('install-banner');if(b)b.style.display='none';}
 
 // ── Service worker ────────────────────────────────────────────────────────────
 async function registerSW(){if(!('serviceWorker'in navigator))return;try{await navigator.serviceWorker.register('/flipper-fap-actions/sw.js');}catch(_){}}
@@ -1688,50 +1859,11 @@ updateETA();
 checkInstallBanner();
 registerSW();
 checkWorkerStatus();
+checkWhatsNew();
 
 setInterval(fetchStats,        300000);
 setInterval(fetchPopularApps,  600000);
-// Auto-refresh compiled list but stay on whatever page the user is viewing
 setInterval(()=>loadCompiledApps(compiledPage), 30000);
-
 </script>
-
-
-
-<div id="share-toast" class="ok-popup" style="display:none;">🔗 Link copied to clipboard!</div>
-<div id="err-popup" class="err-popup" style="display:none;"><span class="err-close" onclick="document.getElementById('err-popup').style.display='none'">✕</span><div class="err-title" id="err-title">Error</div><div id="err-body"></div></div>
-
-<div id="changelog-modal" class="cl-overlay" style="display:none;" onclick="if(event.target===this)closeChangelog()">
-  <div class="cl-box">
-    <button class="cl-close" onclick="closeChangelog()">✕</button>
-    <h2>Firmware <span id="cl-fw-name">Changelog</span></h2>
-    <div id="cl-body"><div style="font-family:var(--mono);font-size:0.76rem;color:var(--muted);text-align:center;padding:20px;">Loading…</div></div>
-  </div>
-</div>
-
-
-
-<!-- Install banner (shown on mobile Safari) -->
-<div id="install-banner" style="display:none;" class="install-banner">
-  <div class="install-banner-text">
-    <strong>📱 Add FlipperFAP to Home Screen</strong><br>
-    Tap Share → Add to Home Screen for the best experience
-  </div>
-  <button class="install-btn-yes" onclick="dismissInstall(true)">Got it!</button>
-  <button class="install-btn-no"  onclick="dismissInstall(false)">✕</button>
-</div>
-
-
-
-<div id="notif-prompt" style="display:none;position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--orange);border-radius:10px;padding:14px 18px;display:none;align-items:center;gap:12px;z-index:9000;box-shadow:0 4px 24px rgba(0,0,0,0.5);max-width:340px;width:90%;">
-  <span style="font-size:1.3rem;">🔔</span>
-  <div style="font-family:var(--mono);font-size:0.75rem;color:var(--text);flex:1;line-height:1.4;">Get notified when your .fap is ready?</div>
-  <button onclick="requestNotifPermission()" style="background:var(--orange);border:none;border-radius:6px;color:#000;font-weight:700;font-size:0.75rem;padding:7px 14px;cursor:pointer;white-space:nowrap;">Allow</button>
-  <button onclick="dismissNotifPrompt()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;padding:2px 6px;">✕</button>
-</div>
-<div style="text-align:center;padding:4px 0 16px;">
-  <button onclick="toggleDebugBar()" style="background:none;border:none;color:var(--border);cursor:pointer;font-family:var(--mono);font-size:0.62rem;">debug</button>
-</div>
-
 </body>
 </html>
