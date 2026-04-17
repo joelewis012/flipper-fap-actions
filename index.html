@@ -617,8 +617,9 @@ footer a:hover { text-decoration:underline; }
       </div>
       <div id="app-name-bar" style="display:none;margin-top:8px;padding:7px 12px;background:rgba(57,255,20,0.05);border:1px solid rgba(57,255,20,0.2);border-radius:6px;font-family:var(--mono);font-size:0.72rem;color:var(--green);"></div>
       <div id="app-selector" style="display:none;margin-top:10px;">
-        <label style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;display:block;">Select App to Compile</label>
-        <select id="app-select" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:0.85rem;padding:10px 12px;outline:none;"></select>
+        <label style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;display:block;">⚠ Multi-app repo — select which app to compile</label>
+        <div id="app-select-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+        <input type="hidden" id="app-select" value="0"/>
       </div>
       <div id="recent-repos" style="display:none;flex-wrap:wrap;gap:6px;margin-top:6px;"></div>
       <div class="notice mt">
@@ -1289,8 +1290,17 @@ async function checkRepoForApps(url) {
     if(!detectedApps.length){showBar(`✓ ${repoData.name} — valid repo`,'ok');return;}
     if(detectedApps.length===1){showBar(`✓ ${detectedApps[0].name}`,'ok');}
     else {
-      const sel=document.getElementById('app-select');
-      if(sel) sel.innerHTML=detectedApps.map((a,i)=>`<option value="${i}">${esc(a.name)} (${esc(a.dir||'root')})</option>`).join('');
+      const list=document.getElementById('app-select-list');
+      const hidden=document.getElementById('app-select');
+      if(list) {
+        list.innerHTML=detectedApps.map((a,i)=>`
+          <div onclick="selectApp(${i})" id="app-opt-${i}" style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg3);border:1px solid ${i===0?'var(--green)':'var(--border)'};border-radius:6px;cursor:pointer;transition:all 0.15s;">
+            <span style="width:10px;height:10px;border-radius:50%;border:2px solid ${i===0?'var(--green)':'var(--muted)'};background:${i===0?'var(--green)':'transparent'};flex-shrink:0;transition:all 0.15s;" id="app-dot-${i}"></span>
+            <span style="font-family:var(--mono);font-size:0.78rem;color:${i===0?'var(--text)':'var(--muted)'};" id="app-label-${i}">${esc(a.name)}</span>
+            <span style="font-family:var(--mono);font-size:0.62rem;color:var(--muted);margin-left:auto;">${esc(a.dir||'root')}</span>
+          </div>`).join('');
+        if(hidden) hidden.value='0';
+      }
       if(selDiv) selDiv.style.display='block';
       showBar(`⚠ ${detectedApps.length} apps found — select one below`,'warn');
     }
@@ -1402,6 +1412,22 @@ function quickCompile(idx){
   document.getElementById('compile-btn')?.scrollIntoView({behavior:'smooth',block:'center'});
   showToast(`⚙ ${app.name} loaded — tap Compile!`);
 }
+function selectApp(idx) {
+  const hidden = document.getElementById('app-select');
+  if(hidden) hidden.value = String(idx);
+  detectedApps.forEach((_,i) => {
+    const opt  = document.getElementById(`app-opt-${i}`);
+    const dot  = document.getElementById(`app-dot-${i}`);
+    const lbl  = document.getElementById(`app-label-${i}`);
+    const sel  = i === idx;
+    if(opt) opt.style.borderColor  = sel ? 'var(--green)' : 'var(--border)';
+    if(dot) { dot.style.borderColor = sel ? 'var(--green)' : 'var(--muted)'; dot.style.background = sel ? 'var(--green)' : 'transparent'; }
+    if(lbl) lbl.style.color = sel ? 'var(--text)' : 'var(--muted)';
+  });
+  const app = detectedApps[idx];
+  if(app) showToast(`✓ Selected: ${app.name}`);
+}
+
 function reportApp(name) {
   openFeedback(`🚩 Broken app report: ${name}\n\nDetails: `);
 }
@@ -1458,7 +1484,7 @@ async function submitCompile() {
     await sleep(4000);
     const runId=await findLatestRunId();
     const appName=url.replace(/\/$/,'').replace(/\.git$/,'').split('/').pop().replace(/-/g,' ').replace(/_/g,' ');
-    activeJob={runId,repoUrl:url,firmware,fwLabel:fwLabel(firmware),channel,status:'queued',message:'Queued — waiting for runner…',artifactId:null,artifactName:null,createdAt:new Date().toISOString(),startedAt:Date.now()};
+    activeJob={runId,repoUrl:url,firmware,fwLabel:fwLabel(firmware),channel,status:'queued',message:'Queued — waiting for runner…',artifactId:null,artifactName:null,createdAt:new Date().toISOString(),startedAt:Date.now()};lsSetJson('fap_active_job',activeJob);
     showActiveCompile(activeJob);
     startDolphinAnimation(appName, firmware, activeJob.startedAt);
     startPolling(activeJob);
@@ -1635,6 +1661,7 @@ async function pollJob(job){
       await saveJobToKV(job);
       hideActiveCompile();
       activeJob=null;
+      lsSetJson('fap_active_job', null);
       fetchStats();
       sendPushNotification(job);
     }
@@ -1915,6 +1942,20 @@ checkInstallBanner();
 registerSW();
 checkWorkerStatus();
 checkWhatsNew();
+
+// ── Restore active compile if page was refreshed mid-compile ──────────────────
+(function restoreActiveJob(){
+  const saved = lsGetJson('fap_active_job', null);
+  if(!saved || !saved.runId) return;
+  // Only restore if job was created less than 15 minutes ago
+  const age = Date.now() - (saved.startedAt || 0);
+  if(age > 15 * 60 * 1000) { lsSetJson('fap_active_job', null); return; }
+  activeJob = saved;
+  showActiveCompile(activeJob);
+  const appName = (saved.repoUrl||'').split('/').pop().replace(/-/g,' ').replace(/_/g,' ');
+  startDolphinAnimation(appName, saved.firmware, saved.startedAt);
+  startPolling(activeJob);
+})();
 
 setInterval(fetchStats,        300000);
 setInterval(fetchPopularApps,  600000);
