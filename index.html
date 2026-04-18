@@ -253,8 +253,8 @@ input.error { border-color: var(--red) !important; }
 .app-card-name { font-weight:700;font-size:0.83rem;color:var(--text); }
 .app-card-desc { font-family:var(--mono);font-size:0.63rem;color:var(--muted);line-height:1.4; }
 .app-card-footer { display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:8px; }
-.app-gh-link { font-family:var(--mono);font-size:0.63rem;color:var(--muted);text-decoration:none;border:1px solid var(--border);border-radius:4px;padding:3px 8px;white-space:nowrap;flex-shrink:0; }
-.app-gh-link:hover { color:var(--orange);border-color:var(--orange); }
+.app-gh-link { font-family:var(--mono);font-size:0.63rem;color:var(--orange);text-decoration:none;border:1px solid rgba(255,107,0,0.4);border-radius:4px;padding:3px 8px;white-space:nowrap;flex-shrink:0;background:rgba(255,107,0,0.07); }
+.app-gh-link:hover { background:rgba(255,107,0,0.15);border-color:var(--orange); }
 .app-card-fw { font-family:var(--mono);font-size:0.62rem;color:var(--green);background:rgba(57,255,20,0.07);border:1px solid rgba(57,255,20,0.15);border-radius:4px;padding:2px 7px;display:inline-block;margin-top:4px; }
 .app-card-fw strong { color:var(--green); }
 .app-card-cta { font-family:var(--mono);font-size:0.63rem;color:var(--green);background:rgba(57,255,20,0.07);border:1px solid rgba(57,255,20,0.2);border-radius:4px;padding:3px 8px;text-align:center;white-space:nowrap;flex-shrink:0; }
@@ -1400,7 +1400,7 @@ function renderAppDir(){
       <div class="app-card-desc">${esc(app.desc)}</div>
       <div class="fw-chips">${chips}</div>
       ${badge}${note}
-      <div class="app-card-footer"><div class="app-card-cta">⚙ Quick Compile</div><a href="${esc(app.repo)}" target="_blank" onclick="event.stopPropagation()" class="app-gh-link">⧉ GitHub</a></div>
+      <div class="app-card-footer"><div class="app-card-cta">⚙ Quick Compile</div><a href="${esc(app.repo)}" target="_blank" onclick="event.stopPropagation()" class="app-gh-link">⧉ Repo</a></div>
     </div>`;
   }).join('');
   if(pages){if(totalPages<=1){pages.innerHTML='';return;}pages.innerHTML=Array.from({length:totalPages},(_,i)=>i+1).map(p=>`<button class="page-btn${p===appDirPage?' active':''}" onclick="appDirPage=${p};renderAppDir()">${p}</button>`).join('');}
@@ -1693,8 +1693,7 @@ async function loadCompiledApps(page=1){
     const data=await res.json();
     compiledPages=data.pages||1; compiledPage=data.page||1;
     const jobs=data.jobs||[];
-    // Weekly most compiled (client-side, zero extra worker calls)
-    if(page===1) updateWeeklyMost(jobs);
+    if(page===1) updateWeeklyMost(); // fetch all jobs separately for accurate weekly stats
     if(!jobs.length){list.innerHTML='<div class="empty-state"><div class="big">📦</div>No compilations yet — be the first!</div>';renderCompiledPagination();return;}
     list.innerHTML=jobs.map(job=>{
       const ds=job.status==='success'?'success':job.status==='failure'?'failure':'queued';
@@ -1733,25 +1732,32 @@ async function loadCompiledApps(page=1){
 }
 
 // ── Weekly most compiled (client-side) ────────────────────────────────────────
-function updateWeeklyMost(jobs) {
-  const weekAgo=Date.now()-7*24*60*60*1000;
-  const counts={};
-  jobs.filter(j=>j.status==='success'&&j.createdAt&&new Date(j.createdAt).getTime()>weekAgo)
-      .forEach(j=>{
-        const key=(j.repoUrl||'').replace(/\/$/,'').replace(/\.git$/,'');
-        counts[key]=(counts[key]||0)+1;
-      });
-  const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
-  const wrap=document.getElementById('weekly-wrap');
-  if(!sorted.length||sorted[0][1]<2){if(wrap)wrap.style.display='none';return;}
-  const [url,count]=sorted[0];
-  const name=url.split('/').pop().replace(/-/g,' ').replace(/_/g,' ');
-  const fullUrl='https://'+url;
-  document.getElementById('weekly-name').textContent=name;
-  document.getElementById('weekly-count').textContent=`× ${count} compiles this week`;
-  const btn=document.getElementById('weekly-btn');
-  if(btn) btn.onclick=()=>quickCompileUrl(fullUrl,'official');
-  if(wrap) wrap.style.display='block';
+async function updateWeeklyMost() {
+  // Fetch all jobs (up to 500) to get accurate weekly stats
+  try {
+    const res = await api('/api/jobs?page=1&per_page=500');
+    if(!res.ok) return;
+    const data = await res.json();
+    const jobs = data.jobs || [];
+    const weekAgo = Date.now() - 7*24*60*60*1000;
+    const counts = {};
+    jobs.filter(j=>j.status==='success'&&j.createdAt&&new Date(j.createdAt).getTime()>weekAgo)
+        .forEach(j=>{
+          const key=(j.repoUrl||'').replace(/\/$/,'').replace(/\.git$/,'');
+          counts[key]=(counts[key]||0)+1;
+        });
+    const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+    const wrap = document.getElementById('weekly-wrap');
+    if(!sorted.length||sorted[0][1]<2){if(wrap)wrap.style.display='none';return;}
+    const [url,count] = sorted[0];
+    const name = url.split('/').pop().replace(/-/g,' ').replace(/_/g,' ');
+    const fullUrl = 'https://'+url;
+    document.getElementById('weekly-name').textContent=name;
+    document.getElementById('weekly-count').textContent=`× ${count} compiles this week`;
+    const btn=document.getElementById('weekly-btn');
+    if(btn) btn.onclick=()=>quickCompileUrl(fullUrl,'official');
+    if(wrap) wrap.style.display='block';
+  } catch(_) {}
 }
 
 function renderCompiledPagination(){
@@ -1935,6 +1941,7 @@ loadCompiledApps(1);
 renderAppDir();
 fetchStats();
 fetchPopularApps();
+updateWeeklyMost();
 loadFromParams();
 fetchFirmwareVersions();
 updateETA();
@@ -1959,6 +1966,7 @@ checkWhatsNew();
 
 setInterval(fetchStats,        300000);
 setInterval(fetchPopularApps,  600000);
+setInterval(updateWeeklyMost,  600000);
 setInterval(()=>loadCompiledApps(compiledPage), 30000);
 </script>
 </body>
