@@ -250,19 +250,19 @@ input.error { border-color: var(--red) !important; }
 .app-card { background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;cursor:pointer;transition:all 0.15s;display:flex;flex-direction:column;gap:5px;overflow:hidden;min-width:0; }
 .app-card:hover { border-color:var(--orange);transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,0.2); }
 .app-card-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:8px; }
-.app-icon { font-size:1.6rem;line-height:1; }
-.app-card-name { font-weight:700;font-size:0.83rem;color:var(--text); }
-.app-card-desc { font-family:var(--mono);font-size:0.63rem;color:var(--muted);line-height:1.4; }
-.app-card-footer { display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:8px;flex-wrap:nowrap; }
-.app-gh-link { font-family:var(--mono);font-size:0.63rem;color:var(--orange);text-decoration:none;border:1px solid rgba(255,107,0,0.4);border-radius:4px;padding:3px 8px;white-space:nowrap;flex-shrink:0;background:rgba(255,107,0,0.07); }
+.app-icon { font-size:1.2rem;line-height:1; }
+.app-card-name { font-weight:700;font-size:0.76rem;color:var(--text); }
+.app-card-desc { font-family:var(--mono);font-size:0.58rem;color:var(--muted);line-height:1.35; }
+.app-card-footer { display:flex;align-items:center;justify-content:space-between;gap:4px;margin-top:6px;flex-wrap:nowrap; }
+.app-gh-link { font-family:var(--mono);font-size:0.55rem;color:var(--orange);text-decoration:none;border:1px solid rgba(255,107,0,0.4);border-radius:4px;padding:3px 5px;white-space:nowrap;flex-shrink:0;background:rgba(255,107,0,0.07); }
 .app-gh-link:hover { background:rgba(255,107,0,0.15);border-color:var(--orange); }
 .app-card-fw { font-family:var(--mono);font-size:0.62rem;color:var(--green);background:rgba(57,255,20,0.07);border:1px solid rgba(57,255,20,0.15);border-radius:4px;padding:2px 7px;display:inline-block;margin-top:4px; }
 .app-card-fw strong { color:var(--green); }
-.app-card-cta { font-family:var(--mono);font-size:0.63rem;color:var(--green);background:rgba(57,255,20,0.07);border:1px solid rgba(57,255,20,0.2);border-radius:4px;padding:3px 8px;text-align:center;white-space:nowrap;flex-shrink:0; }
+.app-card-cta { font-family:var(--mono);font-size:0.55rem;color:var(--green);background:rgba(57,255,20,0.07);border:1px solid rgba(57,255,20,0.2);border-radius:4px;padding:3px 5px;text-align:center;white-space:nowrap;flex-shrink:1;overflow:hidden;text-overflow:ellipsis; }
 
 /* ── Compat badges ── */
 .fw-chips { display:flex;flex-wrap:wrap;gap:3px;margin:6px 0 4px; }
-.fw-chip  { font-family:var(--mono);font-size:0.56rem;background:var(--bg2);border:1px solid var(--border);border-radius:3px;padding:1px 5px;color:var(--muted); }
+.fw-chip  { font-family:var(--mono);font-size:0.52rem;background:var(--bg2);border:1px solid var(--border);border-radius:3px;padding:1px 4px;color:var(--muted); }
 .compat-badge { font-family:var(--mono);font-size:0.58rem;border-radius:3px;padding:2px 6px;display:inline-block;margin-top:2px; }
 .compat-rec  { background:rgba(57,255,20,0.15);color:var(--green); }
 .compat-ok   { background:rgba(0,229,255,0.12);color:var(--cyan); }
@@ -543,8 +543,9 @@ footer a:hover { text-decoration:underline; }
       </span>
     </div>
     <div class="status-bar">
-      <div class="stat"><span class="stat-num" id="stat-today">—</span><span class="stat-label" data-i18n="stat_today">Today</span></div>
+      <div class="stat"><span class="stat-num" id="stat-total">—</span><span class="stat-label" data-i18n="stat_total">Compiled</span></div>
       <div class="stat"><span class="stat-num" id="stat-month">—</span><span class="stat-label" data-i18n="stat_month">This Month</span></div>
+      <div class="stat"><span class="stat-num" id="stat-today">—</span><span class="stat-label" data-i18n="stat_today">Today</span></div>
       <div class="stat"><span class="stat-num" id="stat-fw">—</span><span class="stat-label" data-i18n="stat_fw">Top Firmware</span></div>
     </div>
   </header>
@@ -701,7 +702,7 @@ footer a:hover { text-decoration:underline; }
       <div class="card-title" style="margin:0;" data-i18n="popular_apps">Popular Apps</div>
       <span style="font-family:var(--mono);font-size:0.65rem;color:var(--muted);" data-i18n="community_compiled">All-time community compiled</span>
     </div>
-    <div id="popular-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;min-width:0;">
+    <div id="popular-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;min-width:0;">
       <div style="font-family:var(--mono);font-size:0.75rem;color:var(--muted);grid-column:1/-1;text-align:center;padding:14px;">Loading…</div>
     </div>
   </div>
@@ -723,7 +724,7 @@ footer a:hover { text-decoration:underline; }
         <option value="IR">Infrared</option>
       </select>
     </div>
-    <div id="app-dir-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;min-width:0;"></div>
+    <div id="app-dir-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;min-width:0;"></div>
     <div id="app-dir-pages" style="display:flex;justify-content:center;gap:6px;margin-top:12px;flex-wrap:wrap;"></div>
   </div>
 
