@@ -1,107 +1,136 @@
-<div align="center">
+# 🐬 FlipperFAP — Online .FAP Compiler
 
-<img src="icon512.png" width="120" alt="FlipperFAP"/>
+> Compile Flipper Zero apps from any GitHub or Gitea repo — straight from your phone. No toolchain, no PC required.
 
-# FlipperFAP
-
-**Compile Flipper Zero `.fap` apps from any GitHub or Gitea URL**
-
-Free · Works on iPhone · No server needed · Supports all major firmware
-
-[![Live Site](https://img.shields.io/badge/Live%20Site-joelewis012.github.io%2Fflipper--fap--actions-FF6B00?style=for-the-badge)](https://joelewis012.github.io/flipper-fap-actions/)
-[![GitHub Actions](https://img.shields.io/badge/Powered%20by-GitHub%20Actions-2088FF?style=for-the-badge&logo=github-actions)](https://github.com/features/actions)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
-
-### Support the project
-
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/YOUR_BMC_USERNAME)
-[![Ko-fi](https://img.shields.io/badge/Ko--fi-29ABE0?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/joelewis012)
-
-</div>
+**[▶ Open FlipperFAP](https://joelewis012.github.io/flipper-fap-actions/)**
 
 ---
 
-## ✨ Features
+## What is it?
 
-- 🦊 **Gitea support** — compile from any Gitea or GitHub repo URL
-- ⚡ **4 firmware targets** — Official, Momentum, Unleashed, Xtreme
-- 🔄 **Auto firmware versions** — always fetches the latest release
-- 📦 **Direct .fap download** — straight to your device, no zip files
-- 📱 **iPhone home screen app** — works as a PWA
-- 🌍 **6 languages** — EN, FR, DE, ES, RU, ZH
-- 🔔 **Push notifications** — notified when your compile finishes
-- 📚 **App directory** — curated apps with firmware compatibility badges
-- 🔥 **Community popular apps** — auto-ranked from compile history
-- 📜 **Live compile feed** — see what the community is building in real time
-- 🔍 **Debug mode** — view raw build logs with colour-coded output
+FlipperFAP is a free web app that compiles Flipper Zero `.fap` application files using GitHub Actions as a backend. Paste a repo URL, pick your firmware, tap compile — done. Works on iPhone, Android, and desktop.
+
+No coding knowledge needed. No software to install.
+
+---
+
+## How to use
+
+**1. Find a Flipper app on GitHub or Gitea**
+Copy the full repo URL (e.g. `https://github.com/user/app`)
+
+**2. Paste it into FlipperFAP**
+Open the app, paste the URL into the repo field
+
+**3. Pick your firmware**
+Choose the firmware running on your Flipper — Official, Momentum, or Unleashed. Not sure? Check **Settings → About** on your Flipper.
+
+**4. Tap Compile .FAP**
+Wait ~30–60 seconds while GitHub Actions builds the file. A dolphin will keep you company. 🐬
+
+**5. Download and copy to your Flipper**
+Tap **↓ Download .fap** and transfer the file to the `apps/` folder on your Flipper SD card using [qFlipper](https://flipperzero.one/update) or the Flipper mobile app.
+
+---
+
+## Features
+
+- ⚙️ **Compile any public GitHub or Gitea repo** — just paste the URL
+- 📱 **Works on iPhone and Android** — installable as a PWA (Add to Home Screen)
+- 🐬 **Dolphin compile animation** — pixel-art Flipper screen while your build runs
+- 📚 **App Directory** — 35+ curated apps with one-tap quick compile
+- 🔥 **Daily most compiled** — see what the community is building today
 - 🌙 **Dark & light mode**
+- 🌍 **6 languages** — English, French, German, Spanish, Russian, Chinese
+- 🔔 **Push notifications** — get notified when your .fap is ready
+- 💬 **Feedback button** — report bugs or suggest features directly to the dev
+- 🚩 **Report broken apps** — flag any app directory entry that won't compile
+- 🔗 **Shareable links** — share a pre-filled compile URL with anyone
 
 ---
 
-## 🚀 How it works
+## Supported firmware
+
+| Firmware | Channel |
+|---|---|
+| [Official](https://github.com/flipperdevices/flipperzero-firmware) | Release / Dev |
+| [Momentum](https://github.com/Next-Flip/Momentum-Firmware) | Release / Dev |
+| [Unleashed](https://github.com/DarkFlippers/unleashed-firmware) | Release / Dev |
+
+---
+
+## Self-hosting / Running your own instance
+
+FlipperFAP needs three things to work:
+
+### 1. Fork this repo
+Fork `flipper-fap-actions` to your own GitHub account. Make sure **GitHub Actions** is enabled (Settings → Actions → Allow all actions).
+
+### 2. Deploy the Cloudflare Worker
+- Go to [workers.cloudflare.com](https://workers.cloudflare.com) and create a new Worker
+- Paste the contents of `worker.js` and deploy
+- Create a **KV namespace** (Workers & Pages → KV → Create namespace)
+- Bind it to your worker: Settings → Variables → KV Namespace Bindings → Variable name: `KV`
+- Add your GitHub token as a secret: Settings → Variables → Secrets → Name: `GH_TOKEN`, Value: your `ghp_...` token (needs `repo` + `workflow` scopes)
+
+### 3. Update the worker URL in index.html
+Open `index.html` and update line 844:
+```js
+const WORKER_URL = 'https://your-worker.your-subdomain.workers.dev';
+```
+Then push to GitHub Pages.
+
+### GitHub token scopes needed
+- `repo` — read repo info and artifacts
+- `workflow` — trigger workflow dispatches
+
+---
+
+## Project structure
 
 ```
-You (GitHub Pages site)
-    │
-    │  Cloudflare Worker (holds your token securely)
-    │
-    ▼
-GitHub Actions (free Ubuntu runner)
-    ├─ 1. git clone your app repo
-    ├─ 2. ufbt downloads the firmware SDK
-    ├─ 3. Compiles your .fap
-    └─ 4. Uploads artifact
-    │
-    ▼
-Your .fap downloads directly to your device
-```
-
-- **Free** — GitHub gives 2,000 Actions minutes/month (~600 compiles)
-- **Secure** — your GitHub token lives in Cloudflare, never exposed in the browser
-- **Persistent** — compile history saved in Cloudflare KV, visible to everyone
-
----
-
-## 🛠️ Supported Firmware
-
-| Firmware | Release | Dev |
-|----------|:-------:|:---:|
-| **Official** | ✅ | ✅ |
-| **Momentum** | ✅ | ✅ |
-| **Unleashed** | ✅ | ✅ |
-| **Xtreme** | ✅ | ✅ |
-
----
-
-## 🐛 Troubleshooting
-
-| Problem | Fix |
-|---------|-----|
-| Compile fails immediately | Check the Actions run log — usually a missing `application.fam` |
-| "Worker error" on site | Your GitHub token has expired — regenerate at github.com/settings/tokens and update in Cloudflare Worker → Settings → Variables → `GH_TOKEN` |
-| GitHub Pages shows README | Settings → Pages → make sure it's set to `main` branch, `/ (root)` |
-| Workflow not triggering | Actions tab → make sure workflows are enabled |
-| Download fails | Try again — GitHub artifact downloads occasionally time out |
-
----
-
-## 📁 Files
-
-```
-├── index.html          # Web app frontend
-├── worker.js           # Cloudflare Worker (secure API proxy)
-├── sw.js               # Service worker (push notifications)
+flipper-fap-actions/
+├── index.html          # Frontend — single file app
 ├── manifest.json       # PWA manifest
-├── icon.png / icon512.png
-└── .github/workflows/compile.yml
+├── sw.js               # Service worker (push notifications, offline)
+├── worker.js           # Cloudflare Worker (GitHub API proxy + KV store)
+├── icon.png            # 192×192 PWA icon
+├── icon512.png         # 512×512 PWA icon
+└── .github/
+    └── workflows/
+        └── compile.yml # GitHub Actions workflow — the actual compiler
 ```
 
 ---
 
-## 📜 License
+## How it works under the hood
 
-MIT — free to use, modify, self-host. Credit appreciated but not required.
+1. You paste a repo URL and tap Compile
+2. The frontend calls the **Cloudflare Worker** (`/api/trigger`)
+3. The worker validates the request and calls the **GitHub Actions API** to trigger `compile.yml`
+4. `compile.yml` clones your repo, finds `application.fam`, and builds the `.fap` using [ufbt](https://github.com/flipperdevices/flipperzero-ufbt)
+5. The built `.fap` is uploaded as a GitHub Actions artifact (kept for 30 days)
+6. The frontend polls the worker every 8 seconds until the build finishes
+7. When done, you tap Download — the worker proxies the artifact zip, and JSZip extracts the `.fap` in your browser
+
+All compile history and stats are stored in **Cloudflare KV** with minimal reads/writes.
 
 ---
 
-<div align="center"><sub>Built for the Flipper Zero community 🐬</sub></div>
+## Support
+
+FlipperFAP is free and always will be. If it saves you time, consider buying me a coffee:
+
+☕ [Buy Me a Coffee](https://buymeacoffee.com/Joelewis012) &nbsp;|&nbsp; ❤️ [Ko-fi](https://ko-fi.com/joelewis012)
+
+---
+
+## Disclaimer
+
+This tool compiles third-party Flipper Zero apps. Always check what an app does before installing it on your Flipper. The author is not responsible for how compiled apps are used.
+
+Some apps (e.g. RF Jammer) only work on custom firmware like Unleashed. Using certain radio features may be restricted in your region — use responsibly.
+
+---
+
+*Built with 🧡 for the Flipper Zero community*
