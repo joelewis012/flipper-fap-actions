@@ -9,7 +9,8 @@
 <meta name="apple-mobile-web-app-title" content="FlipperFAP"/>
 <meta name="theme-color" content="#0a0a0b"/>
 <meta name="mobile-web-app-capable" content="yes"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="application-name" content="FlipperFAP"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <link rel="apple-touch-icon" id="touch-icon" href="icon.png"/>
 <link rel="manifest" href="manifest.json"/>
 
@@ -252,7 +253,7 @@ input.error { border-color: var(--red) !important; }
 .app-icon { font-size:1.6rem;line-height:1; }
 .app-card-name { font-weight:700;font-size:0.83rem;color:var(--text); }
 .app-card-desc { font-family:var(--mono);font-size:0.63rem;color:var(--muted);line-height:1.4; }
-.app-card-footer { display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:8px; }
+.app-card-footer { display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:8px;flex-wrap:nowrap; }
 .app-gh-link { font-family:var(--mono);font-size:0.63rem;color:var(--orange);text-decoration:none;border:1px solid rgba(255,107,0,0.4);border-radius:4px;padding:3px 8px;white-space:nowrap;flex-shrink:0;background:rgba(255,107,0,0.07); }
 .app-gh-link:hover { background:rgba(255,107,0,0.15);border-color:var(--orange); }
 .app-card-fw { font-family:var(--mono);font-size:0.62rem;color:var(--green);background:rgba(57,255,20,0.07);border:1px solid rgba(57,255,20,0.15);border-radius:4px;padding:2px 7px;display:inline-block;margin-top:4px; }
@@ -688,7 +689,7 @@ footer a:hover { text-decoration:underline; }
   <!-- ── Weekly Most Compiled ── -->
   <div id="weekly-wrap" style="display:none;">
     <div class="weekly-banner">
-      <span class="weekly-label">🔥 THIS WEEK'S MOST COMPILED</span>
+      <span class="weekly-label">🔥 TODAY'S TOP COMPILED</span>
       <span class="weekly-name" id="weekly-name">—</span>
       <span class="weekly-count" id="weekly-count"></span>
       <button class="weekly-btn" id="weekly-btn" onclick="">⚙ Quick Compile</button>
@@ -699,9 +700,9 @@ footer a:hover { text-decoration:underline; }
   <div class="card" style="margin-bottom:20px;" id="popular-apps-card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
       <div class="card-title" style="margin:0;" data-i18n="popular_apps">Popular Apps</div>
-      <span style="font-family:var(--mono);font-size:0.65rem;color:var(--muted);" data-i18n="community_compiled">Community compiled</span>
+      <span style="font-family:var(--mono);font-size:0.65rem;color:var(--muted);" data-i18n="community_compiled">All-time community compiled</span>
     </div>
-    <div id="popular-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px;min-width:0;">
+    <div id="popular-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;min-width:0;">
       <div style="font-family:var(--mono);font-size:0.75rem;color:var(--muted);grid-column:1/-1;text-align:center;padding:14px;">Loading…</div>
     </div>
   </div>
@@ -723,7 +724,7 @@ footer a:hover { text-decoration:underline; }
         <option value="IR">Infrared</option>
       </select>
     </div>
-    <div id="app-dir-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px;min-width:0;"></div>
+    <div id="app-dir-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;min-width:0;"></div>
     <div id="app-dir-pages" style="display:flex;justify-content:center;gap:6px;margin-top:12px;flex-wrap:wrap;"></div>
   </div>
 
@@ -946,7 +947,7 @@ let dolphinTick  = 0;
 const api = (path, opts={}) => {
   const isGet = !opts.method || opts.method === 'GET';
   const headers = isGet ? {} : { 'Content-Type':'application/json', ...(opts.headers||{}) };
-  return fetch(WORKER_URL + path, { ...opts, headers });
+  return fetch(WORKER_URL + path, { ...opts, headers, mode:'cors', credentials:'omit' });
 };
 
 // ── i18n ──────────────────────────────────────────────────────────────────────
@@ -1491,7 +1492,14 @@ async function submitCompile() {
     urlInput.value='';
     const nb=document.getElementById('app-name-bar');if(nb)nb.style.display='none';
     if(selDiv)selDiv.style.display='none';detectedApps=[];
-  }catch(e){showError('Compile failed',e?.message||String(e));}
+  }catch(e){
+    let msg = e?.message || String(e) || 'Unknown error';
+    // TypeError with no message = network/CORS block
+    if(!msg || msg === '{}' || msg === 'TypeError' || msg.includes('Failed to fetch') || msg.includes('Load failed') || msg.includes('NetworkError')) {
+      msg = 'Network error — could not reach the worker. Check your connection and try again. If on Android, try Chrome browser.';
+    }
+    showError('Compile failed', msg);
+  }
   finally{btn.disabled=false;spinner.style.display='none';btnText.textContent=t('compile_fap');}
 }
 
@@ -1733,29 +1741,17 @@ async function loadCompiledApps(page=1){
 
 // ── Weekly most compiled (client-side) ────────────────────────────────────────
 async function updateWeeklyMost() {
-  // Fetch all jobs (up to 500) to get accurate weekly stats
   try {
-    const res = await api('/api/jobs?page=1&per_page=500');
+    const res = await api('/api/daily');
     if(!res.ok) return;
     const data = await res.json();
-    const jobs = data.jobs || [];
-    const weekAgo = Date.now() - 7*24*60*60*1000;
-    const counts = {};
-    jobs.filter(j=>j.status==='success'&&j.createdAt&&new Date(j.createdAt).getTime()>weekAgo)
-        .forEach(j=>{
-          const key=(j.repoUrl||'').replace(/\/$/,'').replace(/\.git$/,'');
-          counts[key]=(counts[key]||0)+1;
-        });
-    const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
     const wrap = document.getElementById('weekly-wrap');
-    if(!sorted.length||sorted[0][1]<2){if(wrap)wrap.style.display='none';return;}
-    const [url,count] = sorted[0];
-    const name = url.split('/').pop().replace(/-/g,' ').replace(/_/g,' ');
-    const fullUrl = 'https://'+url;
+    if(!data.app){if(wrap)wrap.style.display='none';return;}
+    const name = data.app.url.split('/').pop().replace(/-/g,' ').replace(/_/g,' ');
     document.getElementById('weekly-name').textContent=name;
-    document.getElementById('weekly-count').textContent=`× ${count} compiles this week`;
+    document.getElementById('weekly-count').textContent=`× ${data.app.count} compiles today`;
     const btn=document.getElementById('weekly-btn');
-    if(btn) btn.onclick=()=>quickCompileUrl(fullUrl,'official');
+    if(btn) btn.onclick=()=>quickCompileUrl(data.app.fullUrl,'official');
     if(wrap) wrap.style.display='block';
   } catch(_) {}
 }
@@ -1849,7 +1845,7 @@ async function fetchPopularApps(){
         ${app.lastSeen?`<div style="font-family:var(--mono);font-size:0.58rem;color:var(--muted);">🕐 Last compiled ${timeAgo(app.lastSeen)}</div>`:''}
         <div style="display:flex;align-items:center;gap:6px;margin-top:8px;">
           <div class="app-card-cta" style="white-space:nowrap;">⚙ Quick Compile</div>
-          <a href="${esc(fullUrl)}" target="_blank" onclick="event.stopPropagation()" style="font-family:var(--mono);font-size:0.63rem;color:var(--orange);text-decoration:none;border:1px solid rgba(255,107,0,0.4);border-radius:4px;padding:3px 8px;background:rgba(255,107,0,0.07);white-space:nowrap;">⧉ Repo</a>
+          <a href="${esc(fullUrl)}" target="_blank" onclick="event.stopPropagation()" class="app-gh-link">⧉ Repo</a>
         </div>
       </div>`;
     }).join('');
@@ -1882,7 +1878,16 @@ function setWorkerOffline(msg){
   const banner=document.getElementById('offline-banner');
   if(dot)dot.className='status-dot dot-offline';
   if(label)label.textContent=msg||'worker offline';
-  if(banner){banner.style.display='block';document.body.style.paddingTop='44px';}
+  if(banner){
+    // If it looks like a browser compatibility issue, show a more helpful message
+    if(msg&&msg.includes('network blocked')){
+      banner.innerHTML='⚠ &nbsp;WORKER BLOCKED BY BROWSER — PLEASE USE <strong>CHROME</strong> OR <strong>FIREFOX</strong>&nbsp; ⚠';
+    } else {
+      banner.innerHTML='⚠ &nbsp;WORKER OFFLINE — COMPILE UNAVAILABLE — BE BACK SOON&nbsp; ⚠';
+    }
+    banner.style.display='block';
+    document.body.style.paddingTop='44px';
+  }
 }
 function setWorkerOnline(){
   const dot=document.getElementById('worker-dot'),label=document.getElementById('worker-label');
@@ -1899,10 +1904,19 @@ function toggleOfflineBanner(){
 }
 async function checkWorkerStatus(){
   try{
-    const res=await Promise.race([api('/api/repo-info'),new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),5000))]);
+    const res=await Promise.race([api('/api/repo-info'),new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),8000))]);
     if(res.ok){setWorkerOnline();}
     else{setWorkerOffline('worker error HTTP '+res.status);}
-  }catch(e){setWorkerOffline('offline: '+(e&&e.message?e.message:JSON.stringify(e)));}
+  }catch(e){
+    const msg = e?.message||'';
+    // Detect network/CORS block (Samsung Internet, old Android browsers)
+    if(!msg||msg==='Failed to fetch'||msg==='Load failed'||msg.includes('NetworkError')||msg==='timeout'||msg==='{}'){
+      setWorkerOffline('offline: network blocked — try Chrome');
+    } else {
+      setWorkerOffline('offline: '+msg);
+    }
+  }
+}
 }
 
 // ── Notifications ─────────────────────────────────────────────────────────────
