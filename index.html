@@ -543,9 +543,8 @@ footer a:hover { text-decoration:underline; }
       </span>
     </div>
     <div class="status-bar">
-      <div class="stat"><span class="stat-num" id="stat-total">—</span><span class="stat-label" data-i18n="stat_total">Compiled</span></div>
-      <div class="stat"><span class="stat-num" id="stat-month">—</span><span class="stat-label" data-i18n="stat_month">This Month</span></div>
       <div class="stat"><span class="stat-num" id="stat-today">—</span><span class="stat-label" data-i18n="stat_today">Today</span></div>
+      <div class="stat"><span class="stat-num" id="stat-month">—</span><span class="stat-label" data-i18n="stat_month">This Month</span></div>
       <div class="stat"><span class="stat-num" id="stat-fw">—</span><span class="stat-label" data-i18n="stat_fw">Top Firmware</span></div>
     </div>
   </header>
@@ -702,7 +701,7 @@ footer a:hover { text-decoration:underline; }
       <div class="card-title" style="margin:0;" data-i18n="popular_apps">Popular Apps</div>
       <span style="font-family:var(--mono);font-size:0.65rem;color:var(--muted);" data-i18n="community_compiled">All-time community compiled</span>
     </div>
-    <div id="popular-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;min-width:0;">
+    <div id="popular-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;min-width:0;">
       <div style="font-family:var(--mono);font-size:0.75rem;color:var(--muted);grid-column:1/-1;text-align:center;padding:14px;">Loading…</div>
     </div>
   </div>
@@ -724,7 +723,7 @@ footer a:hover { text-decoration:underline; }
         <option value="IR">Infrared</option>
       </select>
     </div>
-    <div id="app-dir-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;min-width:0;"></div>
+    <div id="app-dir-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;min-width:0;"></div>
     <div id="app-dir-pages" style="display:flex;justify-content:center;gap:6px;margin-top:12px;flex-wrap:wrap;"></div>
   </div>
 
@@ -1519,10 +1518,7 @@ function showActiveCompile(job){
   if(name) name.textContent=appName;
   if(status) status.textContent=mapStatus(job.status).toUpperCase();
   if(msg) msg.textContent=job.message||'';
-  const wasHidden = bar.style.display==='none';
   bar.style.display='block';
-  // Scroll to dolphin only when first shown, not on every status update
-  if(wasHidden) setTimeout(()=>bar.scrollIntoView({behavior:'smooth',block:'center'}),100);
 }
 function hideActiveCompile(){
   const bar=document.getElementById('active-compile-bar');if(bar)bar.style.display='none';
@@ -1983,13 +1979,7 @@ checkWhatsNew();
 setInterval(fetchStats,        300000);
 setInterval(fetchPopularApps,  600000);
 setInterval(updateWeeklyMost,  600000);
-// Only auto-refresh compiled list when there's an active compile running,
-// or if the user is near the top of the page — prevents page jumping
-setInterval(()=>{
-  if(activeJob || window.scrollY < 400) {
-    loadCompiledApps(compiledPage);
-  }
-}, 30000);
+setInterval(()=>loadCompiledApps(compiledPage), 30000);
 </script>
 </body>
 </html>
