@@ -2063,6 +2063,7 @@ async function downloadArtifact(artifactId,artifactName,btnEl){
     document.body.appendChild(a);a.click();document.body.removeChild(a);
     setTimeout(()=>URL.revokeObjectURL(url),60000);
     if(btnEl){btnEl.textContent='✅ Check Downloads!';btnEl.disabled=false;}
+    awardXP(10,'download');
     setTimeout(()=>{if(btnEl)btnEl.textContent=orig;},5000);
   }catch(e){if(btnEl){btnEl.textContent='❌ Error';btnEl.disabled=false;}setTimeout(()=>{if(btnEl)btnEl.textContent=orig;},3000);showError('Download failed',e.message||String(e));}
 }
@@ -2554,7 +2555,6 @@ const ACHIEVEMENTS = [
   {id:'nightowl',   label:'Night Owl',         icon:'🦉', xp:5,   check:s=>s.nightOwl},
   {id:'polyglot',   label:'All 3 Firmware',    icon:'🌐', xp:10,  check:s=>s.firmware&&Object.keys(s.firmware).length>=3},
   {id:'explorer',   label:'Explorer',          icon:'🎲', xp:5,   check:s=>s.roulette>=1},
-  {id:'voter',      label:'Voter',             icon:'👍', xp:5,   check:s=>s.votes>=1},
   {id:'level10',    label:'Level 10',          icon:'⚡', xp:0,   check:s=>s.level>=10},
   {id:'level25',    label:'Level 25',          icon:'🏆', xp:0,   check:s=>s.level>=25},
   {id:'level50',    label:'Legend Status',     icon:'🐬', xp:0,   check:s=>s.level>=50},
@@ -2578,15 +2578,13 @@ function awardXP(amount, reason){
     if(h>=0&&h<5)s.nightOwl=true;
     // First compile of day bonus
     const today=new Date().toISOString().slice(0,10);
-    if(s.lastCompileDate!==today){s.xp+=50;s.lastCompileDate=today;showXpToast(`+${amount} XP compile  +50 XP daily bonus!`);}
+    if(s.lastCompileDate!==today){s.xp+=50;s.lastCompileDate=today;showXpToast(`+${amount} XP  +50 XP daily bonus!`);}
     else showXpToast(`+${amount} XP`);
-  } else if(reason==='roulette'){
-    s.roulette=(s.roulette||0)+1;
-    showXpToast(`+${amount} XP`);
-  } else if(reason==='vote'){
-    s.votes=(s.votes||0)+1;
+  } else if(reason==='download'){
+    // Downloading a pre-existing compiled .fap
     showXpToast(`+${amount} XP`);
   } else if(reason==='release_dl'){
+    // Downloading a pre-built .fap from GitHub Releases
     showXpToast(`+${amount} XP`);
   }
   const newLevel=levelFromXp(s.xp);
@@ -2654,7 +2652,6 @@ function rouletteCompile(){
   if(fwEl){fwEl.checked=true;fwEl.dispatchEvent(new Event('change'));}
   showToast(`🎲 Roulette picked: ${pick.repoUrl.split('/').pop()}!`);
   document.getElementById('compile-btn')?.scrollIntoView({behavior:'smooth',block:'center'});
-  awardXP(10,'roulette');
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -2727,7 +2724,6 @@ async function togglePopularVote(btn,key){
   const countEl=btn.querySelector('.pop-vote-count');
   if(countEl)countEl.textContent=popularVoteCounts[key]||'';
   localStorage.setItem('fap_pop_voted',JSON.stringify([...popularVoted]));
-  if(!isVoted)awardXP(10,'vote');
   try{
     await api('/api/vote',{method:'POST',body:JSON.stringify({appKey:key,delta})});
   }catch(_){}
