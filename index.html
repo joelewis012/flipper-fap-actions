@@ -562,6 +562,43 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
 /* ── Wait time ── */
 .wait-bar { font-family:var(--mono);font-size:0.68rem;color:var(--cyan);text-align:center;margin-bottom:6px;min-height:16px; }
 
+/* ── XP / Rank widget ── */
+#xp-widget { margin:14px 0 0;border:1px solid var(--border);border-radius:10px;background:var(--bg3);padding:12px 14px;transition:all 0.2s; }
+#xp-widget:hover { border-color:var(--orange); }
+.xp-header { display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none; }
+.xp-emblem { font-size:1.4rem;line-height:1;flex-shrink:0; }
+.xp-info { flex:1;min-width:0; }
+.xp-level-line { display:flex;align-items:center;justify-content:space-between;margin-bottom:4px; }
+.xp-level-label { font-family:var(--mono);font-size:0.65rem;color:var(--orange);font-weight:700;letter-spacing:0.08em; }
+.xp-rank-name { font-family:var(--mono);font-size:0.65rem;color:var(--text); }
+.xp-bar-wrap { background:var(--bg);border-radius:4px;height:5px;overflow:hidden; }
+.xp-bar-fill { height:100%;background:linear-gradient(90deg,var(--orange),#ffaa44);border-radius:4px;transition:width 0.6s ease; }
+.xp-sub { font-family:var(--mono);font-size:0.58rem;color:var(--muted);margin-top:3px; }
+.xp-achievements { border-top:1px solid var(--border);margin-top:10px;padding-top:10px;display:none;flex-wrap:wrap;gap:6px; }
+.xp-achievements.open { display:flex; }
+.xp-badge { display:flex;align-items:center;gap:5px;padding:4px 8px;border-radius:6px;font-family:var(--mono);font-size:0.6rem;border:1px solid; }
+.xp-badge.earned { border-color:var(--orange);color:var(--orange);background:rgba(255,107,0,0.1); }
+.xp-badge.locked { border-color:var(--border);color:var(--muted);opacity:0.5; }
+.xp-toast { position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--orange);color:#000;font-family:var(--mono);font-size:0.75rem;font-weight:700;padding:8px 16px;border-radius:8px;z-index:9999;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity 0.3s; }
+.xp-toast.show { opacity:1; }
+
+/* ── Branch selector ── */
+#branch-wrap { margin-top:10px;display:none; }
+#branch-selector { width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:0.75rem;padding:7px 10px;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none; }
+#branch-selector:focus { border-color:var(--orange); }
+.branch-label { font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;display:block; }
+
+/* ── Release detection banner ── */
+#release-banner { display:none;margin-top:8px;padding:10px 12px;background:rgba(0,229,255,0.07);border:1px solid rgba(0,229,255,0.3);border-radius:6px;font-family:var(--mono);font-size:0.72rem;color:var(--cyan); }
+#release-banner .rb-row { display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap; }
+#release-banner a.rb-dl { background:var(--cyan);color:#000;font-weight:700;border-radius:4px;padding:4px 10px;text-decoration:none;font-size:0.68rem;white-space:nowrap; }
+#release-banner a.rb-dl:hover { opacity:0.85; }
+
+/* ── Changelog diff ── */
+.cl-diff-new  { color:var(--green);background:rgba(57,255,20,0.07);display:block;padding:1px 4px;border-radius:2px; }
+.cl-diff-old  { color:var(--muted);text-decoration:line-through;display:block;padding:1px 4px; }
+.cl-diff-same { color:var(--muted);display:block;padding:1px 4px; }
+
 </style>
 </head>
 <body>
@@ -733,7 +770,10 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
     <div class="form-group">
       <div class="repo-field-label" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;">
         <label style="margin:0;" data-i18n="label_repo">Git Repository URL</label>
-        <button onclick="shareLink()" id="share-btn" style="font-family:var(--mono);font-size:0.66rem;background:none;border:1px solid var(--border);border-radius:4px;padding:3px 9px;cursor:pointer;color:var(--muted);transition:all 0.15s;" onmouseover="this.style.color='var(--orange)';this.style.borderColor='var(--orange)'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border)'" data-i18n="share_btn">🔗 Share</button>
+        <div style="display:flex;gap:6px;">
+          <button onclick="rouletteCompile()" title="Pick a random compiled app" style="font-family:var(--mono);font-size:0.66rem;background:none;border:1px solid var(--border);border-radius:4px;padding:3px 9px;cursor:pointer;color:var(--muted);transition:all 0.15s;" onmouseover="this.style.color='var(--orange)';this.style.borderColor='var(--orange)'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border)'">🎲 Roulette</button>
+          <button onclick="shareLink()" id="share-btn" style="font-family:var(--mono);font-size:0.66rem;background:none;border:1px solid var(--border);border-radius:4px;padding:3px 9px;cursor:pointer;color:var(--muted);transition:all 0.15s;" onmouseover="this.style.color='var(--orange)';this.style.borderColor='var(--orange)'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border)'" data-i18n="share_btn">🔗 Share</button>
+        </div>
       </div>
       <div class="input-wrap">
         <span class="prefix">$</span>
@@ -744,6 +784,19 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
         <label style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;display:block;">⚠ Multi-app repo — select which app to compile</label>
         <div id="app-select-list" style="display:flex;flex-direction:column;gap:6px;"></div>
         <input type="hidden" id="app-select" value="0"/>
+      </div>
+      <div id="release-banner">
+        <div class="rb-row">
+          <span id="release-banner-text">⬇ Pre-built .fap found in releases</span>
+          <a id="release-dl-btn" href="#" target="_blank" class="rb-dl" onclick="awardXP(10,'release_dl')">⬇ Download Direct</a>
+        </div>
+        <div style="font-size:0.62rem;color:var(--cyan);opacity:0.7;margin-top:4px;">Skip the build queue — use the developer's own compiled file</div>
+      </div>
+      <div id="branch-wrap">
+        <span class="branch-label">🌿 Branch / Tag</span>
+        <select id="branch-selector" onchange="onBranchChange()">
+          <option value="">Default branch</option>
+        </select>
       </div>
       <div id="recent-repos" style="display:none;flex-wrap:wrap;gap:6px;margin-top:6px;"></div>
       <div class="notice mt">
@@ -803,6 +856,25 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
       </div>
     </button>
   </div>
+
+  <!-- ── XP Rank Widget ── -->
+  <div id="xp-widget">
+    <div class="xp-header" onclick="toggleXpPanel()">
+      <div class="xp-emblem" id="xp-emblem">🐣</div>
+      <div class="xp-info">
+        <div class="xp-level-line">
+          <span class="xp-level-label" id="xp-level-label">LVL 1</span>
+          <span class="xp-rank-name" id="xp-rank-name">Newbie</span>
+          <span style="font-family:var(--mono);font-size:0.58rem;color:var(--muted);" id="xp-count-label">0 / 100 XP</span>
+        </div>
+        <div class="xp-bar-wrap"><div class="xp-bar-fill" id="xp-bar" style="width:0%"></div></div>
+        <div class="xp-sub" id="xp-sub">Compile your first app to earn XP ↓</div>
+      </div>
+      <span style="font-family:var(--mono);font-size:0.65rem;color:var(--muted);">▾</span>
+    </div>
+    <div class="xp-achievements" id="xp-achievements-panel"></div>
+  </div>
+  <div class="xp-toast" id="xp-toast"></div>
 
   <!-- ── Support bar ── -->
   <div class="support-bar">
@@ -1473,6 +1545,14 @@ async function checkRepoForApps(url) {
       showBar(`⚠ ${detectedApps.length} apps found — select one below`,'warn');
     }
   } catch(_){showBar('⚠️ Could not validate URL','warn');}
+  // After main validation, fire branch + release checks in parallel for GitHub repos
+  try {
+    const u2=new URL(url.replace(/\.git$/,''));
+    if(u2.hostname==='github.com'){
+      const [ow,rp]=u2.pathname.split('/').filter(Boolean);
+      if(ow&&rp){ fetchBranches(ow,rp); checkGitHubRelease(ow,rp); }
+    }
+  } catch(_) {}
 }
 
 // ── Firmware versions ─────────────────────────────────────────────────────────
@@ -1496,6 +1576,11 @@ function fwLabelForChannel(fw,ch) {
 }
 function fwLabel(fw) { return fwLabelForChannel(fw,document.querySelector('input[name="ch"]:checked')?.value||'release'); }
 
+function cleanNotes(body) {
+  return (body||'').split('\n')
+    .map(l=>l.replace(/#{1,3} /g,'').replace(/\*\*/g,'').replace(/\[([^\]]+)\]\([^)]+\)/g,'$1').replace(/\*/g,'•').trim())
+    .filter(l=>l&&!l.startsWith('**Full')&&!l.startsWith('http')&&l.length>2);
+}
 async function showChangelog(fw) {
   const modal=document.getElementById('changelog-modal'); if(!modal) return;
   modal.style.display='flex';
@@ -1506,14 +1591,30 @@ async function showChangelog(fw) {
     const res=await fetch(`https://api.github.com/repos/${FW_REPOS[fw]}/releases?per_page=10`);
     if(!res.ok) throw new Error(`GitHub returned ${res.status}`);
     const releases=await res.json(); if(!releases.length) throw new Error('No releases found');
-    const latestRelease=releases.find(r=>!r.prerelease), latestDev=releases.find(r=>r.prerelease);
-    const toShow=[latestRelease,latestDev].filter(Boolean); if(!toShow.length) throw new Error('No releases found');
-    if(body) body.innerHTML=toShow.map(r=>{
+    // Get up to 3 releases to show diffs
+    const stable=releases.filter(r=>!r.prerelease).slice(0,2);
+    const dev=releases.find(r=>r.prerelease);
+    const toShow=[...(dev?[dev]:[]),...stable].filter(Boolean).slice(0,3);
+    if(!toShow.length) throw new Error('No releases found');
+    if(body) body.innerHTML=toShow.map((r,idx)=>{
       const badge=r.prerelease
         ?`<span style="font-family:var(--mono);font-size:0.6rem;background:rgba(0,229,255,0.15);color:var(--cyan);border:1px solid var(--cyan);border-radius:3px;padding:2px 7px;margin-left:6px;">DEV</span>`
         :`<span style="font-family:var(--mono);font-size:0.6rem;background:rgba(57,255,20,0.12);color:var(--green);border:1px solid var(--green);border-radius:3px;padding:2px 7px;margin-left:6px;">RELEASE</span>`;
-      const notes=(r.body||'').split('\n').filter(l=>l.trim()&&!l.startsWith('##')&&!l.startsWith('**Full')&&!l.startsWith('http')).slice(0,8).join('\n').replace(/#{1,3} /g,'').replace(/\*\*/g,'').replace(/\[([^\]]+)\]\([^)]+\)/g,'$1').replace(/\*/g,'•').trim();
-      return `<div class="cl-entry"><div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:6px;"><span class="cl-ver">${esc(r.tag_name)}</span>${badge}<span class="cl-date" style="margin-left:auto;">${new Date(r.published_at).toLocaleDateString()}</span></div>${notes?`<div class="cl-body">${esc(notes)}</div>`:'<div class="cl-body" style="color:var(--muted);">No release notes.</div>'}</div>`;
+      const lines=cleanNotes(r.body).slice(0,12);
+      // For the newest stable release, diff against the previous stable
+      const prevLines=idx===0&&!r.prerelease&&stable[1]?new Set(cleanNotes(stable[1].body)):null;
+      const prevLinesForDev=idx===0&&r.prerelease&&stable[0]?new Set(cleanNotes(stable[0].body)):null;
+      const diffSet=prevLines||prevLinesForDev;
+      let notesHtml='';
+      if(lines.length){
+        notesHtml=`<div class="cl-body" style="font-size:0.72rem;">`+lines.map(l=>{
+          if(!diffSet) return `<span class="cl-diff-same">${esc(l)}</span>`;
+          const isNew=!diffSet.has(l);
+          return isNew?`<span class="cl-diff-new">+ ${esc(l)}</span>`:`<span class="cl-diff-same">  ${esc(l)}</span>`;
+        }).join('')+`</div>`;
+        if(diffSet){const newCount=lines.filter(l=>!diffSet.has(l)).length;if(newCount>0)notesHtml=`<div style="font-family:var(--mono);font-size:0.58rem;color:var(--green);margin-bottom:4px;">▲ ${newCount} new change${newCount>1?'s':''} since last release</div>`+notesHtml;}
+      } else { notesHtml='<div class="cl-body" style="color:var(--muted);">No release notes.</div>'; }
+      return `<div class="cl-entry"><div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:6px;"><span class="cl-ver">${esc(r.tag_name)}</span>${badge}<span class="cl-date" style="margin-left:auto;">${new Date(r.published_at).toLocaleDateString()}</span></div>${notesHtml}</div>`;
     }).join('');
   } catch(e) { if(body) body.innerHTML=`<div style="font-family:var(--mono);color:var(--red);text-align:center;padding:20px;">❌ ${esc(e.message)}</div>`; }
 }
@@ -1632,7 +1733,11 @@ if(repoInputEl){
     // Check already-compiled whenever URL changes
     const fw=document.querySelector('input[name="fw"]:checked')?.value||'official';
     if(url&&allLoadedJobs.length) checkAlreadyCompiled(url,fw,allLoadedJobs);
-    else { const b=document.getElementById('already-compiled-bar');if(b)b.style.display='none'; }
+    else {
+      const b=document.getElementById('already-compiled-bar');if(b)b.style.display='none';
+      const bw=document.getElementById('branch-wrap');if(bw)bw.style.display='none';
+      const rb=document.getElementById('release-banner');if(rb)rb.style.display='none';
+    }
   });
 }
 // Also check when firmware changes
@@ -1664,6 +1769,8 @@ async function submitCompile() {
   if(selDiv&&selDiv.style.display!=='none'&&detectedApps.length>1){const idx=parseInt(document.getElementById('app-select')?.value||'0');if(detectedApps[idx])appDir=detectedApps[idx].dir;}
   try{
     const body={repo_url:url,firmware,channel};if(appDir)body.app_dir=appDir;
+    const repoBranch=document.getElementById('branch-selector')?.value||'';
+    if(repoBranch)body.repo_branch=repoBranch;
     const tr=await api('/api/trigger',{method:'POST',body:JSON.stringify(body)});
     const td=await tr.json();if(!tr.ok)throw new Error(td.error||`Worker error ${tr.status}`);
     saveRecent(url);showNotifPrompt();btnText.textContent=t('finding');
@@ -1676,6 +1783,8 @@ async function submitCompile() {
     startPolling(activeJob);
     urlInput.value='';
     const nb=document.getElementById('app-name-bar');if(nb)nb.style.display='none';
+    const bw=document.getElementById('branch-wrap');if(bw)bw.style.display='none';
+    const rb=document.getElementById('release-banner');if(rb)rb.style.display='none';
     if(selDiv)selDiv.style.display='none';detectedApps=[];
   }catch(e){
     let msg = e?.message || String(e) || 'Unknown error';
@@ -1857,6 +1966,7 @@ async function pollJob(job){
       hideActiveCompile();
       activeJob=null;
       lsSetJson('fap_active_job', null);
+      if(job.status==='success') awardXP(100,'compile');
       fetchStats();
       sendPushNotification(job);
     }
@@ -1899,7 +2009,7 @@ async function loadCompiledApps(page=1){
     const badge=document.getElementById('compiled-total-badge');
     if(badge&&data.total){badge.textContent=`${data.total} total`;badge.style.display='inline';}
     const jobs=data.jobs||[];
-    if(page===1){ allLoadedJobs=jobs; updateWeeklyMost(); renderStreak(jobs); }
+    if(page===1){ updateWeeklyMost(); renderStreak(jobs); }
     // check already compiled on firmware/url change
     const curUrl=(document.getElementById('repo-url')?.value||'').trim();
     const curFw=document.querySelector('input[name="fw"]:checked')?.value||'official';
@@ -1995,6 +2105,8 @@ async function fetchStats(){
 }
 
 // ── Popular apps ──────────────────────────────────────────────────────────────
+let popularVoted = new Set(JSON.parse(localStorage.getItem('fap_pop_voted')||'[]'));
+let popularVoteCounts = {};
 async function fetchPopularApps(){
   const grid=document.getElementById('popular-grid'),card=document.getElementById('popular-apps-card');if(!grid)return;
   try{
@@ -2009,7 +2121,11 @@ async function fetchPopularApps(){
       return `<div class="app-card" onclick="quickCompileUrl('${esc(fullUrl)}','${esc(app.topFw||'official')}')">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:4px;min-width:0;">
           <div class="app-card-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(repoName)}</div>
-          <span style="font-family:var(--mono);font-size:0.6rem;color:var(--orange);flex-shrink:0;">×${app.count}</span>
+          <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+            <span style="font-family:var(--mono);font-size:0.6rem;color:var(--orange);">×${app.count}</span>
+            <button class="upvote-btn pop-vote-btn${popularVoted.has(short)?' voted':''}" data-key="${esc(short)}" style="padding:1px 4px;font-size:0.62rem;" onclick="event.stopPropagation();togglePopularVote(this,'${esc(short)}')" title="Upvote">👍<span class="pop-vote-count" style="font-size:0.52rem;margin-left:2px;">${popularVoteCounts[short]||''}</span></button>
+            <button class="upvote-btn" style="padding:1px 4px;font-size:0.62rem;" onclick="event.stopPropagation();showToast('🚩 Thanks for reporting!')" title="Report broken app">🚩</button>
+          </div>
         </div>
         <div style="font-family:var(--mono);font-size:0.6rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(short)}</div>
         <div class="app-card-fw">✅ Best on <strong>${esc(FW_NAMES[app.topFw]||app.topFw)}</strong></div>
@@ -2017,7 +2133,6 @@ async function fetchPopularApps(){
         <div style="display:flex;align-items:center;gap:5px;margin-top:8px;">
           <div class="app-card-cta" style="white-space:nowrap;">⚙ Quick Compile</div>
           <a href="${esc(fullUrl)}" target="_blank" onclick="event.stopPropagation()" class="app-gh-link">⧉ Repo</a>
-          <button class="upvote-btn" onclick="event.stopPropagation();this.classList.toggle('voted');showToast('👍 Upvoted!')" title="Upvote">👍</button>
         </div>
       </div>`;
     }).join('');
@@ -2414,7 +2529,228 @@ checkWhatsNew();
   startPolling(activeJob);
 })();
 
-setInterval(fetchStats,        300000);
+
+// ══════════════════════════════════════════════════════════════════════════════
+// XP / RANK SYSTEM
+// ══════════════════════════════════════════════════════════════════════════════
+const XP_RANKS = [
+  {min:1,  max:5,  name:'Newbie',     emblem:'🐣'},
+  {min:6,  max:10, name:'Tinkerer',   emblem:'🔧'},
+  {min:11, max:15, name:'Hacker',     emblem:'💻'},
+  {min:16, max:20, name:'Builder',    emblem:'🏗️'},
+  {min:21, max:25, name:'Engineer',   emblem:'⚙️'},
+  {min:26, max:30, name:'Specialist', emblem:'🎯'},
+  {min:31, max:35, name:'Expert',     emblem:'🧠'},
+  {min:36, max:40, name:'Veteran',    emblem:'🏆'},
+  {min:41, max:45, name:'Elite',      emblem:'⚡'},
+  {min:46, max:50, name:'Legend',     emblem:'🐬'},
+];
+const ACHIEVEMENTS = [
+  {id:'first',      label:'First Compile',    icon:'🎉', xp:1,   check:s=>s.compiles>=1},
+  {id:'five',       label:'5 Compiles',        icon:'✌️', xp:5,   check:s=>s.compiles>=5},
+  {id:'ten',        label:'10 Compiles',       icon:'🔟', xp:10,  check:s=>s.compiles>=10},
+  {id:'twentyfive', label:'25 Compiles',       icon:'💪', xp:25,  check:s=>s.compiles>=25},
+  {id:'fifty',      label:'50 Compiles',       icon:'🔥', xp:50,  check:s=>s.compiles>=50},
+  {id:'nightowl',   label:'Night Owl',         icon:'🦉', xp:5,   check:s=>s.nightOwl},
+  {id:'polyglot',   label:'All 3 Firmware',    icon:'🌐', xp:10,  check:s=>s.firmware&&Object.keys(s.firmware).length>=3},
+  {id:'explorer',   label:'Explorer',          icon:'🎲', xp:5,   check:s=>s.roulette>=1},
+  {id:'voter',      label:'Voter',             icon:'👍', xp:5,   check:s=>s.votes>=1},
+  {id:'level10',    label:'Level 10',          icon:'⚡', xp:0,   check:s=>s.level>=10},
+  {id:'level25',    label:'Level 25',          icon:'🏆', xp:0,   check:s=>s.level>=25},
+  {id:'level50',    label:'Legend Status',     icon:'🐬', xp:0,   check:s=>s.level>=50},
+];
+function xpForLevel(n){return n*100;} // XP needed to go from level n-1 to n
+function totalXpForLevel(n){return n*(n+1)/2*100;} // cumulative XP to reach level n
+function levelFromXp(xp){let l=1;while(l<50&&xp>=totalXpForLevel(l+1))l++;return l;}
+function getXpState(){return lsGetJson('fap_xp_state',{xp:0,level:1,compiles:0,firmware:{},roulette:0,votes:0,nightOwl:false,earned:[]});}
+function saveXpState(s){lsSetJson('fap_xp_state',s);}
+function getRankForLevel(l){return XP_RANKS.find(r=>l>=r.min&&l<=r.max)||XP_RANKS[0];}
+
+function awardXP(amount, reason){
+  const s=getXpState();
+  s.xp=(s.xp||0)+amount;
+  if(reason==='compile'){
+    s.compiles=(s.compiles||0)+1;
+    if(!s.firmware)s.firmware={};
+    const fw=document.querySelector('input[name="fw"]:checked')?.value||'official';
+    s.firmware[fw]=(s.firmware[fw]||0)+1;
+    const h=new Date().getHours();
+    if(h>=0&&h<5)s.nightOwl=true;
+    // First compile of day bonus
+    const today=new Date().toISOString().slice(0,10);
+    if(s.lastCompileDate!==today){s.xp+=50;s.lastCompileDate=today;showXpToast(`+${amount} XP compile  +50 XP daily bonus!`);}
+    else showXpToast(`+${amount} XP`);
+  } else if(reason==='roulette'){
+    s.roulette=(s.roulette||0)+1;
+    showXpToast(`+${amount} XP`);
+  } else if(reason==='vote'){
+    s.votes=(s.votes||0)+1;
+    showXpToast(`+${amount} XP`);
+  } else if(reason==='release_dl'){
+    showXpToast(`+${amount} XP`);
+  }
+  const newLevel=levelFromXp(s.xp);
+  const oldLevel=s.level||1;
+  s.level=newLevel;
+  if(newLevel>oldLevel) showXpToast(`🎉 LEVEL UP! You are now Level ${newLevel}!`);
+  // Check achievement unlocks
+  const prevEarned=new Set(s.earned||[]);
+  ACHIEVEMENTS.forEach(a=>{
+    if(!prevEarned.has(a.id)&&a.check(s)){
+      s.earned=[...(s.earned||[]),a.id];
+      if(a.xp>0){s.xp+=a.xp;showXpToast(`🏅 Achievement: ${a.icon} ${a.label}  +${a.xp} XP`);}
+      else showXpToast(`🏅 Achievement: ${a.icon} ${a.label}`);
+    }
+  });
+  saveXpState(s);
+  renderXP();
+}
+
+function renderXP(){
+  const s=getXpState();
+  const level=s.level||1;
+  const rank=getRankForLevel(level);
+  const xpThisLevel=s.xp-totalXpForLevel(level-1);
+  const xpNeeded=xpForLevel(level);
+  const pct=Math.min(100,Math.round(xpThisLevel/xpNeeded*100));
+  const el=(id)=>document.getElementById(id);
+  if(el('xp-emblem'))   el('xp-emblem').textContent=rank.emblem;
+  if(el('xp-level-label'))  el('xp-level-label').textContent=`LVL ${level}`;
+  if(el('xp-rank-name')) el('xp-rank-name').textContent=rank.name;
+  if(el('xp-count-label'))  el('xp-count-label').textContent=`${xpThisLevel} / ${xpNeeded} XP`;
+  if(el('xp-bar'))      el('xp-bar').style.width=pct+'%';
+  if(el('xp-sub'))      el('xp-sub').textContent=level>=50?'Maximum level reached — Legend status! 🐬':`${s.compiles||0} compile${s.compiles!==1?'s':''} · ${s.xp||0} total XP`;
+  // Achievements panel
+  const panel=el('xp-achievements-panel');
+  if(panel){
+    const earned=new Set(s.earned||[]);
+    panel.innerHTML=ACHIEVEMENTS.map(a=>`<div class="xp-badge ${earned.has(a.id)?'earned':'locked'}" title="${a.label}">${a.icon} <span>${a.label}</span></div>`).join('');
+  }
+}
+function toggleXpPanel(){
+  const p=document.getElementById('xp-achievements-panel');
+  if(p)p.classList.toggle('open');
+}
+let xpToastTimer=null;
+function showXpToast(msg){
+  const t=document.getElementById('xp-toast');if(!t)return;
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(xpToastTimer);
+  xpToastTimer=setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// APP ROULETTE — pick random from already-compiled successful apps
+// ══════════════════════════════════════════════════════════════════════════════
+function rouletteCompile(){
+  const pool=allLoadedJobs.filter(j=>j.status==='success'&&j.repoUrl);
+  if(!pool.length){showToast('🎲 No compiled apps yet — compile something first!');return;}
+  const pick=pool[Math.floor(Math.random()*pool.length)];
+  const fullUrl='https://'+pick.repoUrl.replace(/^https?:\/\//,'');
+  const el=document.getElementById('repo-url');
+  if(el){el.value=fullUrl;checkRepoForApps(fullUrl);}
+  // Set firmware to match the pick
+  const fwEl=document.getElementById('fw-'+(pick.firmware||'official'));
+  if(fwEl){fwEl.checked=true;fwEl.dispatchEvent(new Event('change'));}
+  showToast(`🎲 Roulette picked: ${pick.repoUrl.split('/').pop()}!`);
+  document.getElementById('compile-btn')?.scrollIntoView({behavior:'smooth',block:'center'});
+  awardXP(10,'roulette');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// BRANCH / TAG SELECTOR
+// ══════════════════════════════════════════════════════════════════════════════
+async function fetchBranches(owner,repo){
+  const sel=document.getElementById('branch-selector');
+  const wrap=document.getElementById('branch-wrap');
+  if(!sel||!wrap)return;
+  sel.innerHTML='<option value="">Default branch</option>';
+  wrap.style.display='none';
+  try{
+    const [brRes,tagRes]=await Promise.all([
+      fetch(`https://api.github.com/repos/${owner}/${repo}/branches?per_page=30`),
+      fetch(`https://api.github.com/repos/${owner}/${repo}/tags?per_page=20`),
+    ]);
+    const branches=brRes.ok?await brRes.json():[];
+    const tags=tagRes.ok?await tagRes.json():[];
+    if(branches.length<=1&&!tags.length)return; // only default — no point showing
+    const opts=['<option value="">Default branch</option>'];
+    branches.forEach(b=>opts.push(`<option value="${esc(b.name)}">🌿 ${esc(b.name)}</option>`));
+    if(tags.length){
+      opts.push('<option disabled>── Tags ──</option>');
+      tags.forEach(t=>opts.push(`<option value="${esc(t.name)}">🏷 ${esc(t.name)}</option>`));
+    }
+    sel.innerHTML=opts.join('');
+    wrap.style.display='block';
+  }catch(_){}
+}
+function onBranchChange(){
+  const val=document.getElementById('branch-selector')?.value||'';
+  if(val) showToast(`🌿 Will compile from: ${val}`);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// RELEASE DETECTION — check GitHub Releases for a pre-built .fap
+// ══════════════════════════════════════════════════════════════════════════════
+async function checkGitHubRelease(owner,repo){
+  const banner=document.getElementById('release-banner');
+  const btnEl=document.getElementById('release-dl-btn');
+  const textEl=document.getElementById('release-banner-text');
+  if(!banner)return;
+  banner.style.display='none';
+  try{
+    const res=await fetch(`https://api.github.com/repos/${owner}/${repo}/releases?per_page=5`);
+    if(!res.ok)return;
+    const releases=await res.json();
+    for(const rel of releases){
+      const fapAsset=(rel.assets||[]).find(a=>a.name.endsWith('.fap'));
+      if(fapAsset){
+        if(textEl) textEl.textContent=`⬇ Pre-built .fap found in releases — ${esc(rel.tag_name)}`;
+        if(btnEl){btnEl.href=fapAsset.browser_download_url;btnEl.download=fapAsset.name;}
+        banner.style.display='block';
+        return;
+      }
+    }
+  }catch(_){}
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// POPULAR APPS VOTE — wired to real /api/vote endpoint
+// ══════════════════════════════════════════════════════════════════════════════
+async function togglePopularVote(btn,key){
+  const isVoted=popularVoted.has(key);
+  const delta=isVoted?-1:1;
+  // Optimistic UI
+  if(isVoted){popularVoted.delete(key);}else{popularVoted.add(key);}
+  popularVoteCounts[key]=Math.max(0,(popularVoteCounts[key]||0)+delta);
+  btn.classList.toggle('voted',!isVoted);
+  const countEl=btn.querySelector('.pop-vote-count');
+  if(countEl)countEl.textContent=popularVoteCounts[key]||'';
+  localStorage.setItem('fap_pop_voted',JSON.stringify([...popularVoted]));
+  if(!isVoted)awardXP(10,'vote');
+  try{
+    await api('/api/vote',{method:'POST',body:JSON.stringify({appKey:key,delta})});
+  }catch(_){}
+}
+// Load vote counts when fetching popular apps — patch into fetchPopularApps result
+const _origFetchPopular=fetchPopularApps;
+// Extend: after popular apps load, fetch vote counts
+(async()=>{
+  try{
+    const res=await api('/api/votes');
+    if(res.ok){const d=await res.json();Object.assign(popularVoteCounts,d.votes||{});}
+  }catch(_){}
+})();
+
+// ══════════════════════════════════════════════════════════════════════════════
+// HOOK checkRepoForApps to also trigger branch fetch + release check
+// ══════════════════════════════════════════════════════════════════════════════
+
+
+// ── Init XP on load ──────────────────────────────────────────────────────────
+renderXP();
+
+
 setInterval(fetchPopularApps,  600000);
 setInterval(updateWeeklyMost,  600000);
 fetchFirmwareNews();
