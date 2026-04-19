@@ -38,14 +38,22 @@ Tap **↓ Download .fap** and transfer the file to the `apps/` folder on your Fl
 - ⚙️ **Compile any public GitHub or Gitea repo** — just paste the URL
 - 📱 **Works on iPhone and Android** — installable as a PWA (Add to Home Screen)
 - 🐬 **Dolphin compile animation** — pixel-art Flipper screen while your build runs
-- 📚 **App Directory** — 35+ curated apps with one-tap quick compile
+- 📚 **App Directory** — curated apps with one-tap quick compile and upvotes
 - 🔥 **Daily most compiled** — see what the community is building today
+- 🔥 **Compile streak** — tracks consecutive days the community keeps building
+- ✅ **Already compiled detection** — warns if the same app + firmware was recently compiled
+- 🔍 **Compile history search** — search through all past compiled apps instantly
+- 📡 **Firmware news feed** — latest releases from Official, Momentum and Unleashed
+- 👍 **App upvotes** — upvote your favourite apps in the directory
+- 🔗 **Share compiled app link** — one tap to copy a pre-filled compile link
+- ⏳ **Estimated wait time** — shows queue depth before you compile
 - 🌙 **Dark & light mode**
 - 🌍 **6 languages** — English, French, German, Spanish, Russian, Chinese
 - 🔔 **Push notifications** — get notified when your .fap is ready
 - 💬 **Feedback button** — report bugs or suggest features directly to the dev
 - 🚩 **Report broken apps** — flag any app directory entry that won't compile
 - 🔗 **Shareable links** — share a pre-filled compile URL with anyone
+- 🪩 **Secret easter egg** — something happens when you tap the logo…
 
 ---
 
@@ -132,5 +140,7 @@ This tool compiles third-party Flipper Zero apps. Always check what an app does 
 Some apps (e.g. RF Jammer) only work on custom firmware like Unleashed. Using certain radio features may be restricted in your region — use responsibly.
 
 ---
+
+> 💡 **Psst** — try tapping the FlipperFAP logo a few times.
 
 *Built with 🧡 for the Flipper Zero community*

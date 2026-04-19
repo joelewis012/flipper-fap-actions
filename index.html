@@ -451,10 +451,114 @@ footer a:hover { text-decoration:underline; }
 
 /* ── Grid overflow fix ── */
 #popular-grid > div, #app-dir-grid > div { min-width:0; }
+/* ── Light mode app card polish ── */
+body.light .app-card { background:#ffffff;border-color:#d0d0dc; }
+body.light .app-card:hover { border-color:var(--orange);box-shadow:0 4px 14px rgba(0,0,0,0.1); }
+body.light .app-card-name { color:#1a1a2e; }
+body.light .app-card-desc { color:#55556a; }
+body.light .fw-chip { background:#f0f0f6;border-color:#c8c8d8;color:#55556a; }
+body.light .app-card-cta { background:rgba(20,120,0,0.08);border-color:rgba(20,120,0,0.3);color:#1a8800; }
+body.light .app-gh-link { background:rgba(180,80,0,0.07);border-color:rgba(180,80,0,0.3);color:#b85000; }
+
+/* ── Disco Easter egg ── */
+#disco-overlay {
+  position:fixed;inset:0;z-index:99999;pointer-events:none;
+  background:rgba(0,0,0,0);transition:background 0.5s;
+  display:none;overflow:hidden;
+}
+#disco-overlay.active { display:block;pointer-events:all; }
+#disco-overlay.lit { background:rgba(0,0,0,0.7); }
+#disco-ball-wrap {
+  position:absolute;top:-180px;left:50%;transform:translateX(-50%);
+  transition:top 0.8s cubic-bezier(0.22,1,0.36,1);
+  text-align:center;
+}
+#disco-ball-wrap.dropped { top:20px; }
+#disco-ball {
+  width:120px;height:120px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%, #ffffff, #aaaaaa 40%, #555555);
+  box-shadow:0 0 0 4px rgba(255,255,255,0.2);
+  animation:discospin 2s linear infinite;
+  position:relative;margin:0 auto;
+}
+#disco-ball::before {
+  content:'';position:absolute;inset:0;border-radius:50%;
+  background:repeating-conic-gradient(rgba(255,255,255,0.15) 0deg 10deg, transparent 10deg 20deg);
+}
+@keyframes discospin { to { transform:rotate(360deg); } }
+.disco-beam {
+  position:fixed;width:3px;border-radius:3px;opacity:0;
+  transform-origin:top center;
+  animation:beamflash 0.4s ease-out forwards;
+  pointer-events:none;
+}
+@keyframes beamflash { 0%{opacity:0.9;height:60vh} 100%{opacity:0;height:30vh} }
+.disco-hint {
+  position:absolute;bottom:-36px;left:50%;transform:translateX(-50%);
+  font-family:var(--mono);font-size:0.65rem;color:rgba(255,255,255,0.6);
+  white-space:nowrap;
+}
+body.disco-mode { animation:discoflash 0.6s linear infinite; }
+@keyframes discoflash {
+  0%  { filter:hue-rotate(0deg); }
+  100%{ filter:hue-rotate(360deg); }
+}
+
+/* ── Already compiled banner ── */
+#already-compiled-bar {
+  display:none;background:rgba(57,255,20,0.06);border:1px solid rgba(57,255,20,0.3);
+  border-radius:6px;padding:12px 14px;margin-top:12px;
+  font-family:var(--mono);font-size:0.74rem;
+}
+#already-compiled-bar .ac-title { color:var(--green);font-weight:700;margin-bottom:6px; }
+#already-compiled-bar .ac-meta  { color:var(--muted);font-size:0.68rem;margin-bottom:10px; }
+.ac-btn { font-family:var(--mono);font-size:0.7rem;padding:5px 12px;border-radius:5px;cursor:pointer;border:1px solid;transition:all 0.15s; }
+.ac-btn-go   { background:rgba(57,255,20,0.1);border-color:var(--green);color:var(--green); }
+.ac-btn-go:hover { background:rgba(57,255,20,0.2); }
+.ac-btn-any  { background:rgba(255,255,255,0.04);border-color:var(--border);color:var(--muted); }
+.ac-btn-any:hover { color:var(--text);border-color:var(--muted); }
+
+/* ── Compile streak ── */
+.streak-badge {
+  display:inline-flex;align-items:center;gap:5px;
+  background:rgba(255,107,0,0.1);border:1px solid rgba(255,107,0,0.3);
+  border-radius:20px;padding:3px 11px;font-family:var(--mono);font-size:0.68rem;color:var(--orange);
+}
+
+/* ── History search ── */
+#history-search-wrap { margin-bottom:10px; }
+#history-search { width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:0.78rem;padding:8px 12px;outline:none;transition:border-color 0.2s; }
+#history-search:focus { border-color:var(--orange); }
+#history-search::placeholder { color:var(--muted); }
+
+/* ── News feed ── */
+.news-card { background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;gap:12px;align-items:flex-start;transition:border-color 0.15s; }
+.news-card:hover { border-color:var(--orange); }
+.news-fw-badge { font-family:var(--mono);font-size:0.6rem;background:rgba(255,107,0,0.12);color:var(--orange);border:1px solid rgba(255,107,0,0.3);border-radius:4px;padding:2px 7px;white-space:nowrap;flex-shrink:0;margin-top:2px; }
+.news-tag { font-weight:700;font-size:0.82rem;color:var(--text); }
+.news-date { font-family:var(--mono);font-size:0.62rem;color:var(--muted);margin-top:2px; }
+.news-body { font-family:var(--mono);font-size:0.66rem;color:var(--muted);margin-top:4px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden; }
+
+/* ── Upvote button ── */
+.upvote-btn { background:none;border:1px solid var(--border);border-radius:4px;cursor:pointer;font-family:var(--mono);font-size:0.58rem;color:var(--muted);padding:2px 6px;transition:all 0.15s;display:flex;align-items:center;gap:3px;flex-shrink:0; }
+.upvote-btn:hover { border-color:var(--orange);color:var(--orange); }
+.upvote-btn.voted { border-color:var(--orange);color:var(--orange);background:rgba(255,107,0,0.1); }
+
+/* ── Wait time ── */
+.wait-bar { font-family:var(--mono);font-size:0.68rem;color:var(--cyan);text-align:center;margin-bottom:6px;min-height:16px; }
+
 </style>
 </head>
 <body>
 
+
+<!-- ── Disco Easter egg overlay ──────────────────────────────────────────── -->
+<div id="disco-overlay" onclick="if(event.target===this)dismissDisco()">
+  <div id="disco-ball-wrap">
+    <div id="disco-ball"></div>
+    <div class="disco-hint">🎵 triple-tap logo to dismiss</div>
+  </div>
+</div>
 <!-- ── Worker Offline Banner ─────────────────────────────────────────────── -->
 <div id="offline-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:repeating-linear-gradient(90deg,#1a0000,#2a0800 40px,#1a0000 80px);border-bottom:2px solid var(--red);padding:8px 16px;text-align:center;font-family:var(--mono);font-size:0.72rem;color:var(--red);letter-spacing:0.04em;box-shadow:0 0 20px rgba(255,0,0,0.3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
   ⚠ &nbsp;WORKER OFFLINE — COMPILE UNAVAILABLE — BE BACK SOON&nbsp; ⚠
@@ -486,12 +590,16 @@ footer a:hover { text-decoration:underline; }
     <h2>FlipperFAP <span>v2.0</span></h2>
     <p class="wn-sub">A big update for the Flipper community 🐬</p>
     <div class="wn-list">
-      <div class="wn-item"><span class="wn-icon">🐬</span><div class="wn-text"><strong>Dolphin compile animation</strong><span>Watch your Flipper compile in real-time, pixel by pixel.</span></div></div>
-      <div class="wn-item"><span class="wn-icon">📚</span><div class="wn-text"><strong>Updated App Directory</strong><span>Duplicate entries removed, stale repos replaced, new apps added.</span></div></div>
-      <div class="wn-item"><span class="wn-icon">🔥</span><div class="wn-text"><strong>Daily Most Compiled</strong><span>See what the community is building most today.</span></div></div>
-      <div class="wn-item"><span class="wn-icon">💬</span><div class="wn-text"><strong>Feedback button</strong><span>Bug reports and ideas go straight to the dev.</span></div></div>
-      <div class="wn-item"><span class="wn-icon">🚩</span><div class="wn-text"><strong>Report broken apps</strong><span>Flag any app directory entry that won't compile.</span></div></div>
-      <div class="wn-item"><span class="wn-icon">🌙</span><div class="wn-text"><strong>Cleaner UI</strong><span>Consolidated styles, better light mode, bug fixes throughout.</span></div></div>
+      <div class="wn-item"><span class="wn-icon">🐬</span><div class="wn-text"><strong>Dolphin compile animation</strong><span>Pixel-art Flipper screen animates while your build runs.</span></div></div>
+      <div class="wn-item"><span class="wn-icon">🪩</span><div class="wn-text"><strong>Easter egg</strong><span>Find it yourself… hint: try tapping the logo.</span></div></div>
+      <div class="wn-item"><span class="wn-icon">✅</span><div class="wn-text"><strong>Already compiled detection</strong><span>Warns you if the same app + firmware was recently compiled.</span></div></div>
+      <div class="wn-item"><span class="wn-icon">🔍</span><div class="wn-text"><strong>Compile history search</strong><span>Search through your past compiled apps instantly.</span></div></div>
+      <div class="wn-item"><span class="wn-icon">🔥</span><div class="wn-text"><strong>Daily most compiled</strong><span>See what the community is building most today.</span></div></div>
+      <div class="wn-item"><span class="wn-icon">🔥</span><div class="wn-text"><strong>Compile streak</strong><span>Track consecutive days the community keeps building.</span></div></div>
+      <div class="wn-item"><span class="wn-icon">📡</span><div class="wn-text"><strong>Firmware news feed</strong><span>Latest releases from Official, Momentum and Unleashed.</span></div></div>
+      <div class="wn-item"><span class="wn-icon">👍</span><div class="wn-text"><strong>App upvotes</strong><span>Upvote your favourite apps in the directory.</span></div></div>
+      <div class="wn-item"><span class="wn-icon">📚</span><div class="wn-text"><strong>Updated app directory</strong><span>Stale repos replaced, 3 new apps added.</span></div></div>
+      <div class="wn-item"><span class="wn-icon">🌙</span><div class="wn-text"><strong>Cleaner UI</strong><span>2-column grids, tighter cards, better light mode.</span></div></div>
     </div>
     <button class="wn-close-btn" onclick="closeWhatsNew()">Let's go! 🚀</button>
   </div>
@@ -500,7 +608,7 @@ footer a:hover { text-decoration:underline; }
 <!-- ── Main container ─────────────────────────────────────────────────────── -->
 <div class="container">
   <header>
-    <div class="logo-wrap">
+    <div class="logo-wrap" id="logo-wrap" onclick="logoTap()" style="cursor:pointer;">
       <svg width="52" height="52" viewBox="0 0 52 52" fill="none">
         <rect x="4" y="12" width="44" height="28" rx="6" stroke="#FF6B00" stroke-width="2.5" fill="none"/>
         <circle cx="38" cy="18" r="4" fill="#FF6B00" opacity="0.9"/>
@@ -542,6 +650,7 @@ footer a:hover { text-decoration:underline; }
         <span id="worker-label">worker loading…</span>
       </span>
     </div>
+    <div style="text-align:center;margin:8px 0;min-height:22px;" id="streak-wrap"></div>
     <div class="status-bar">
       <div class="stat"><span class="stat-num" id="stat-today">—</span><span class="stat-label" data-i18n="stat_today">Today</span></div>
       <div class="stat"><span class="stat-num" id="stat-month">—</span><span class="stat-label" data-i18n="stat_month">This Month</span></div>
@@ -669,6 +778,15 @@ footer a:hover { text-decoration:underline; }
       </div>
     </div>
 
+        <div id="already-compiled-bar">
+      <div class="ac-title">✅ Already compiled recently</div>
+      <div class="ac-meta" id="ac-meta-text"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="ac-btn ac-btn-go" onclick="acGoToResult()">↓ Go to result</button>
+        <button class="ac-btn ac-btn-any" onclick="dismissAlreadyCompiled()">Compile anyway</button>
+      </div>
+    </div>
+    <div class="wait-bar" id="wait-bar"></div>
     <div class="eta-bar" id="eta-display"></div>
     <button class="btn-compile" id="compile-btn" onclick="submitCompile()">
       <div class="btn-inner">
@@ -692,6 +810,18 @@ footer a:hover { text-decoration:underline; }
       <span class="weekly-name" id="weekly-name">—</span>
       <span class="weekly-count" id="weekly-count"></span>
       <button class="weekly-btn" id="weekly-btn" onclick="">⚙ Quick Compile</button>
+    </div>
+  </div>
+
+  
+  <!-- ── Firmware News ── -->
+  <div class="card" style="margin-bottom:20px;" id="news-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div class="card-title" style="margin:0;">Firmware Releases</div>
+      <span style="font-family:var(--mono);font-size:0.65rem;color:var(--muted);">Latest from each firmware</span>
+    </div>
+    <div id="news-grid" style="display:flex;flex-direction:column;gap:8px;">
+      <div style="font-family:var(--mono);font-size:0.75rem;color:var(--muted);text-align:center;padding:10px;">Loading…</div>
     </div>
   </div>
 
@@ -744,6 +874,7 @@ footer a:hover { text-decoration:underline; }
       </div>
       <div id="active-compile-msg" style="color:var(--muted);font-size:0.68rem;margin-top:4px;"></div>
     </div>
+    <div id="history-search-wrap"><input id="history-search" placeholder="🔍 Search compiled apps…" oninput="filterCompiledApps()" autocomplete="off"/></div>
     <div id="compiled-list">
       <div class="empty-state"><div class="big">📦</div>Loading…</div>
     </div>
@@ -1124,13 +1255,13 @@ function toggleDebugBar() {
 
 // ── What's New modal ──────────────────────────────────────────────────────────
 function checkWhatsNew() {
-  if(!lsGet('fap_v2_seen','')) {
+  if(!lsGet('fap_v3_seen','')) {
     const el=document.getElementById('wn-overlay');
     if(el) el.classList.remove('hidden');
   }
 }
 function closeWhatsNew() {
-  lsSet('fap_v2_seen','1');
+  lsSet('fap_v3_seen','1');
   const el=document.getElementById('wn-overlay');
   if(el) el.classList.add('hidden');
 }
@@ -1400,7 +1531,11 @@ function renderAppDir(){
       <div class="app-card-desc">${esc(app.desc)}</div>
       <div class="fw-chips">${chips}</div>
       ${badge}${note}
-      <div class="app-card-footer"><div class="app-card-cta">⚙ Quick Compile</div><a href="${esc(app.repo)}" target="_blank" onclick="event.stopPropagation()" class="app-gh-link">⧉ Repo</a></div>
+      <div class="app-card-footer">
+        <div class="app-card-cta">⚙ Quick Compile</div>
+        <a href="${esc(app.repo)}" target="_blank" onclick="event.stopPropagation()" class="app-gh-link">⧉ Repo</a>
+        <button class="upvote-btn${getUpvoted(app.idx)?' voted':''}" onclick="event.stopPropagation();toggleUpvote(${app.idx},this)" title="Upvote">👍 ${getUpvoteCount(app.idx)||''}</button>
+      </div>
     </div>`;
   }).join('');
   if(pages){if(totalPages<=1){pages.innerHTML='';return;}pages.innerHTML=Array.from({length:totalPages},(_,i)=>i+1).map(p=>`<button class="page-btn${p===appDirPage?' active':''}" onclick="appDirPage=${p};renderAppDir()">${p}</button>`).join('');}
@@ -1457,8 +1592,17 @@ if(repoInputEl){
     clearTimeout(appCheckTimer);
     const url=repoInputEl.value.trim();
     if(url.length>15) appCheckTimer=setTimeout(()=>checkRepoForApps(url),800);
+    // Check already-compiled whenever URL changes
+    const fw=document.querySelector('input[name="fw"]:checked')?.value||'official';
+    if(url&&allLoadedJobs.length) checkAlreadyCompiled(url,fw,allLoadedJobs);
+    else { const b=document.getElementById('already-compiled-bar');if(b)b.style.display='none'; }
   });
 }
+// Also check when firmware changes
+document.querySelectorAll('input[name="fw"]').forEach(r=>r.addEventListener('change',()=>{
+  const url=(document.getElementById('repo-url')?.value||'').trim();
+  if(url&&allLoadedJobs.length) checkAlreadyCompiled(url,r.value,allLoadedJobs);
+}));
 
 // ── Compile submit ────────────────────────────────────────────────────────────
 async function submitCompile() {
@@ -1471,6 +1615,7 @@ async function submitCompile() {
   }
   const btn=document.getElementById('compile-btn'),spinner=document.getElementById('btn-spinner'),btnText=document.getElementById('btn-text');
   btn.disabled=true;spinner.style.display='block';btnText.textContent=t('triggering');
+  fetchWaitTime();
   const firmware=document.querySelector('input[name="fw"]:checked').value;
   const channel=document.querySelector('input[name="ch"]:checked').value;
   let appDir=null;
@@ -1702,40 +1847,13 @@ async function loadCompiledApps(page=1){
     const data=await res.json();
     compiledPages=data.pages||1; compiledPage=data.page||1;
     const jobs=data.jobs||[];
-    if(page===1) updateWeeklyMost(); // fetch all jobs separately for accurate weekly stats
+    if(page===1){ allLoadedJobs=jobs; updateWeeklyMost(); renderStreak(jobs); }
+    // check already compiled on firmware/url change
+    const curUrl=(document.getElementById('repo-url')?.value||'').trim();
+    const curFw=document.querySelector('input[name="fw"]:checked')?.value||'official';
+    if(curUrl) checkAlreadyCompiled(curUrl,curFw,allLoadedJobs);
     if(!jobs.length){list.innerHTML='<div class="empty-state"><div class="big">📦</div>No compilations yet — be the first!</div>';renderCompiledPagination();return;}
-    list.innerHTML=jobs.map(job=>{
-      const ds=job.status==='success'?'success':job.status==='failure'?'failure':'queued';
-      const repoUrl=(job.repoUrl||'').replace(/\/$/,'').replace(/\.git$/,'');
-      const appName=repoUrl.split('/').pop().replace(/-/g,' ').replace(/_/g,' ')||'Unknown';
-      const ts=job.createdAt?timeAgo(new Date(job.createdAt).getTime()):'';
-      const fw=esc(job.fwLabel||job.firmware||'?');
-      const ch=esc(job.channel||'release');
-      const ghUrl=job.runId?`https://github.com/joelewis012/flipper-fap-actions/actions/runs/${job.runId}`:null;
-      const dlBtn=job.artifactId?`<button class="download-btn" onclick="downloadArtifact('${esc(String(job.artifactId))}','${esc(appName)}',this)">↓ Download .fap</button>`:'';
-      const ghBtn=(ghUrl&&debugMode)?`<a class="gh-link" href="${ghUrl}" target="_blank">Actions</a>`:'';
-      return `<div class="job-card status-${ds}">
-        <div style="min-width:0;overflow:hidden;">
-          <div style="font-weight:700;font-size:0.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(appName)}</div>
-          <div class="job-meta-row" style="margin-top:3px;">
-            <span class="job-meta-chip">⚡ ${fw}</span>
-            <span class="job-meta-chip">📦 ${ch}</span>
-            <span class="job-meta-chip">🕐 ${ts}</span>
-          </div>
-          <div class="job-url" title="https://${esc(repoUrl)}">${esc(repoUrl)}</div>
-        </div>
-        <div class="job-status">
-          <span class="status-badge badge-${ds}">${ds.toUpperCase()}</span>
-          ${dlBtn}
-          <a class="gh-link" href="https://${esc(repoUrl)}" target="_blank">⧉ View Repo</a>
-          ${ghBtn}
-        </div>
-        <div style="grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;border-top:1px solid var(--border);padding-top:8px;">
-          <button class="job-action-btn" onclick="copyJobUrl('https://${esc(repoUrl)}',this)">📋 Copy URL</button>
-          <button class="job-action-btn" onclick="recompileJob('https://${esc(repoUrl)}','${esc(job.firmware||'official')}','${esc(job.channel||'release')}')">↻ Recompile</button>
-        </div>
-      </div>`;
-    }).join('');
+    renderJobCards(jobs);
     renderCompiledPagination();
   }catch(e){console.error('loadCompiledApps:',e);if(list)list.innerHTML=`<div style="font-family:var(--mono);font-size:0.75rem;color:var(--red);text-align:center;padding:20px;">Error: ${e.message}</div>`;}
 }
@@ -1938,6 +2056,238 @@ function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').repl
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 function timeAgo(ts){const s=Math.round((Date.now()-ts)/1000);if(s<60)return`${s}s ago`;if(s<3600)return`${Math.round(s/60)}m ago`;if(s<86400)return`${Math.round(s/3600)}h ago`;return`${Math.round(s/86400)}d ago`;}
 
+
+// ── Easter egg — Disco mode ───────────────────────────────────────────────────
+let logoTapCount = 0, logoTapTimer = null, discoActive = false, discoBeamTimer = null;
+function logoTap() {
+  logoTapCount++;
+  clearTimeout(logoTapTimer);
+  logoTapTimer = setTimeout(() => { logoTapCount = 0; }, 700);
+  if (logoTapCount >= 3) {
+    logoTapCount = 0;
+    if (discoActive) dismissDisco();
+    else activateDisco();
+  }
+}
+function activateDisco() {
+  discoActive = true;
+  const overlay = document.getElementById('disco-overlay');
+  const ballWrap = document.getElementById('disco-ball-wrap');
+  if (!overlay || !ballWrap) return;
+  overlay.classList.add('active');
+  setTimeout(() => { overlay.classList.add('lit'); ballWrap.classList.add('dropped'); }, 50);
+  document.body.classList.add('disco-mode');
+  discoBeamTimer = setInterval(spawnBeams, 350);
+  spawnBeams();
+}
+function dismissDisco() {
+  discoActive = false;
+  const overlay = document.getElementById('disco-overlay');
+  const ballWrap = document.getElementById('disco-ball-wrap');
+  if (!overlay || !ballWrap) return;
+  overlay.classList.remove('lit');
+  ballWrap.classList.remove('dropped');
+  document.body.classList.remove('disco-mode');
+  clearInterval(discoBeamTimer);
+  setTimeout(() => overlay.classList.remove('active'), 600);
+}
+const DISCO_COLOURS = ['#ff3399','#33ccff','#ffff00','#ff6600','#00ff88','#cc44ff','#ff4444','#44ffff'];
+function spawnBeams() {
+  const ball = document.getElementById('disco-ball');
+  if (!ball || !discoActive) return;
+  const rect = ball.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  for (let i = 0; i < 6; i++) {
+    const beam = document.createElement('div');
+    beam.className = 'disco-beam';
+    const angle = Math.random() * 360;
+    const colour = DISCO_COLOURS[Math.floor(Math.random() * DISCO_COLOURS.length)];
+    beam.style.cssText = `left:${cx}px;top:${cy}px;background:${colour};transform:rotate(${angle}deg);box-shadow:0 0 8px ${colour};`;
+    document.body.appendChild(beam);
+    setTimeout(() => beam.remove(), 420);
+  }
+}
+
+// ── Upvotes (localStorage) ───────────────────────────────────────────────────
+let appVotes  = lsGetJson('fap_votes', {});   // { idx: count }
+let userVoted = lsGetJson('fap_voted', []);   // [idx, ...]
+function getUpvoteCount(idx) { return appVotes[idx] || 0; }
+function getUpvoted(idx) { return userVoted.includes(idx); }
+function toggleUpvote(idx, btn) {
+  if (userVoted.includes(idx)) {
+    userVoted = userVoted.filter(i => i !== idx);
+    appVotes[idx] = Math.max(0, (appVotes[idx] || 0) - 1);
+    if (btn) { btn.classList.remove('voted'); btn.textContent = '👍 ' + getUpvoteCount(idx); }
+  } else {
+    userVoted.push(idx);
+    appVotes[idx] = (appVotes[idx] || 0) + 1;
+    if (btn) { btn.classList.add('voted'); btn.textContent = '👍 ' + getUpvoteCount(idx); }
+  }
+  lsSetJson('fap_votes', appVotes);
+  lsSetJson('fap_voted', userVoted);
+}
+
+// ── Compile streak ────────────────────────────────────────────────────────────
+function renderStreak(jobs) {
+  const wrap = document.getElementById('streak-wrap'); if (!wrap) return;
+  const days = new Set(jobs.filter(j=>j.status==='success'&&j.createdAt).map(j=>j.createdAt.slice(0,10)));
+  if (!days.size) { wrap.innerHTML=''; return; }
+  let streak = 0;
+  const d = new Date(); d.setUTCHours(0,0,0,0);
+  while (true) {
+    const key = d.toISOString().slice(0,10);
+    if (!days.has(key)) { if(streak===0&&key===new Date().toISOString().slice(0,10)){d.setDate(d.getDate()-1);continue;} break; }
+    streak++; d.setDate(d.getDate()-1);
+  }
+  if (streak < 2) { wrap.innerHTML=''; return; }
+  wrap.innerHTML = `<span class="streak-badge">🔥 ${streak}-day compile streak</span>`;
+}
+
+// ── Already compiled detection ────────────────────────────────────────────────
+let acMatchJob = null;
+function checkAlreadyCompiled(repoUrl, firmware, jobs) {
+  const bar = document.getElementById('already-compiled-bar');
+  const meta = document.getElementById('ac-meta-text');
+  if (!bar) return;
+  if (!repoUrl || !firmware || !jobs.length) { bar.style.display='none'; return; }
+  const short = repoUrl.replace(/^https?:\/\//,'').replace(/\.git$/,'').replace(/\/$/,'').toLowerCase();
+  const cutoff = Date.now() - 48*60*60*1000; // 48h window
+  const match = jobs.find(j =>
+    j.status==='success' &&
+    j.firmware===firmware &&
+    j.repoUrl && j.repoUrl.toLowerCase().replace(/\/$/,'').replace(/\.git$/,'')===short &&
+    j.createdAt && new Date(j.createdAt).getTime() > cutoff
+  );
+  if (match) {
+    acMatchJob = match;
+    if (meta) meta.textContent = `${match.fwLabel||match.firmware} · compiled ${timeAgo(new Date(match.createdAt).getTime())}${match.artifactId?' · download available':''}`;
+    bar.style.display = 'block';
+  } else {
+    acMatchJob = null;
+    bar.style.display = 'none';
+  }
+}
+function acGoToResult() {
+  const bar = document.getElementById('already-compiled-bar');
+  if (bar) bar.style.display='none';
+  const el = document.getElementById('compiled-list');
+  if (el) el.scrollIntoView({behavior:'smooth',block:'start'});
+  showToast('↓ Scroll down to see your compiled app');
+}
+function dismissAlreadyCompiled() {
+  const bar = document.getElementById('already-compiled-bar');
+  if (bar) bar.style.display='none';
+  acMatchJob = null;
+}
+
+// ── History search ────────────────────────────────────────────────────────────
+let allLoadedJobs = [];
+function filterCompiledApps() {
+  const q = (document.getElementById('history-search')?.value||'').toLowerCase().trim();
+  const list = document.getElementById('compiled-list'); if (!list) return;
+  if (!q) { renderJobCards(allLoadedJobs); return; }
+  const filtered = allLoadedJobs.filter(j =>
+    (j.repoUrl||'').toLowerCase().includes(q) ||
+    (j.firmware||'').toLowerCase().includes(q) ||
+    (j.fwLabel||'').toLowerCase().includes(q)
+  );
+  if (!filtered.length) {
+    list.innerHTML='<div class="empty-state"><div class="big">🔍</div>No results for "'+esc(q)+'"</div>';
+    return;
+  }
+  renderJobCards(filtered);
+}
+function renderJobCards(jobs) {
+  const list = document.getElementById('compiled-list'); if (!list) return;
+  if (!jobs.length) { list.innerHTML='<div class="empty-state"><div class="big">📦</div>No compilations yet — be the first!</div>'; return; }
+  list.innerHTML = jobs.map(job => {
+    const ds=job.status==='success'?'success':job.status==='failure'?'failure':'queued';
+    const repoUrl=(job.repoUrl||'').replace(/\/$/,'').replace(/\.git$/,'');
+    const appName=repoUrl.split('/').pop().replace(/-/g,' ').replace(/_/g,' ')||'Unknown';
+    const ts=job.createdAt?timeAgo(new Date(job.createdAt).getTime()):'';
+    const fw=esc(job.fwLabel||job.firmware||'?');
+    const ch=esc(job.channel||'release');
+    const ghUrl=job.runId?`https://github.com/joelewis012/flipper-fap-actions/actions/runs/${job.runId}`:null;
+    const dlBtn=job.artifactId?`<button class="download-btn" onclick="downloadArtifact('${esc(String(job.artifactId))}','${esc(appName)}',this)">↓ Download .fap</button>`:'';
+    const ghBtn=(ghUrl&&debugMode)?`<a class="gh-link" href="${ghUrl}" target="_blank">Actions</a>`:'';
+    const copyLink=`https://joelewis012.github.io/flipper-fap-actions/?repo=https://${esc(repoUrl)}&fw=${esc(job.firmware||'official')}&ch=${esc(job.channel||'release')}`;
+    return `<div class="job-card status-${ds}">
+      <div style="min-width:0;overflow:hidden;">
+        <div style="font-weight:700;font-size:0.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(appName)}</div>
+        <div class="job-meta-row" style="margin-top:3px;">
+          <span class="job-meta-chip">⚡ ${fw}</span>
+          <span class="job-meta-chip">📦 ${ch}</span>
+          <span class="job-meta-chip">🕐 ${ts}</span>
+        </div>
+        <div class="job-url" title="https://${esc(repoUrl)}">${esc(repoUrl)}</div>
+      </div>
+      <div class="job-status">
+        <span class="status-badge badge-${ds}">${ds.toUpperCase()}</span>
+        ${dlBtn}
+        <a class="gh-link" href="https://${esc(repoUrl)}" target="_blank">⧉ View Repo</a>
+        ${ghBtn}
+      </div>
+      <div style="grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;border-top:1px solid var(--border);padding-top:8px;">
+        <button class="job-action-btn" onclick="copyJobUrl('https://${esc(repoUrl)}',this)">📋 Copy URL</button>
+        <button class="job-action-btn" onclick="navigator.clipboard?.writeText('${copyLink.replace(/'/g,"\\'")}').then(()=>showToast('🔗 Compile link copied!'))">🔗 Share Link</button>
+        <button class="job-action-btn" onclick="recompileJob('https://${esc(repoUrl)}','${esc(job.firmware||'official')}','${esc(job.channel||'release')}')">↻ Recompile</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Firmware news feed ────────────────────────────────────────────────────────
+async function fetchFirmwareNews() {
+  const grid = document.getElementById('news-grid'); if (!grid) return;
+  const FW_RELEASE_REPOS = [
+    { key:'official',  label:'Official',  repo:'flipperdevices/flipperzero-firmware', colour:'#39ff14' },
+    { key:'momentum',  label:'Momentum',  repo:'Next-Flip/Momentum-Firmware',         colour:'#00e5ff' },
+    { key:'unleashed', label:'Unleashed', repo:'DarkFlippers/unleashed-firmware',      colour:'#ff6b00' },
+  ];
+  try {
+    const results = await Promise.allSettled(
+      FW_RELEASE_REPOS.map(fw =>
+        fetch(`https://api.github.com/repos/${fw.repo}/releases/latest`, { headers:{'User-Agent':'FlipperFAP'} })
+          .then(r => r.json())
+          .then(d => ({ ...fw, tag: d.tag_name, date: d.published_at, body: d.body||'', url: d.html_url }))
+      )
+    );
+    const cards = results
+      .filter(r => r.status==='fulfilled' && r.value.tag)
+      .map(r => r.value)
+      .map(fw => {
+        const notes = (fw.body||'').split('\n').filter(l=>l.trim()&&!l.startsWith('#')&&!l.startsWith('**Full')&&!l.startsWith('http')).slice(0,2).join(' ').replace(/\*\*/g,'').replace(/\[([^\]]+)\]\([^)]+\)/g,'$1').replace(/\*/g,'').replace(/#{1,3} /g,'').trim().slice(0,120);
+        const date  = fw.date ? new Date(fw.date).toLocaleDateString() : '';
+        return `<a href="${esc(fw.url)}" target="_blank" style="text-decoration:none;">
+          <div class="news-card">
+            <span class="news-fw-badge" style="border-color:${fw.colour};color:${fw.colour};background:${fw.colour}18;">${esc(fw.label)}</span>
+            <div style="min-width:0;flex:1;">
+              <div class="news-tag">${esc(fw.tag)}</div>
+              <div class="news-date">${date}</div>
+              ${notes?`<div class="news-body">${esc(notes)}</div>`:''}
+            </div>
+          </div>
+        </a>`;
+      });
+    grid.innerHTML = cards.length ? cards.join('') : '<div style="font-family:var(--mono);font-size:0.75rem;color:var(--muted);text-align:center;padding:10px;">Could not load firmware news.</div>';
+  } catch(_) {
+    grid.innerHTML='<div style="font-family:var(--mono);font-size:0.75rem;color:var(--muted);text-align:center;padding:10px;">Could not load firmware news.</div>';
+  }
+}
+
+// ── Estimated wait time ───────────────────────────────────────────────────────
+async function fetchWaitTime() {
+  const bar = document.getElementById('wait-bar'); if (!bar) return;
+  try {
+    const res = await api('/api/runs'); if (!res.ok) return;
+    const runs = ((await res.json()).workflow_runs||[]).filter(r=>r.status==='in_progress'||r.status==='queued');
+    if (!runs.length) { bar.textContent=''; return; }
+    const est = runs.length === 1 ? '~60–90s' : `~${runs.length * 90}s`;
+    bar.textContent = `⏳ ${runs.length} compile${runs.length>1?'s':''} ahead of you — estimated wait ${est}`;
+  } catch(_) { bar.textContent=''; }
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 // saveToken — modal is hidden in v2 (token lives in worker secret, not browser)
 // kept as a stub so the button reference doesn't throw a JS error
@@ -1981,6 +2331,7 @@ checkWhatsNew();
 setInterval(fetchStats,        300000);
 setInterval(fetchPopularApps,  600000);
 setInterval(updateWeeklyMost,  600000);
+fetchFirmwareNews();
 setInterval(()=>{
   if(activeJob || window.scrollY < 400) {
     loadCompiledApps(compiledPage);
