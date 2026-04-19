@@ -24,6 +24,11 @@ on:
         required: false
         type: string
         default: ""
+      repo_branch:
+        description: "Branch or tag to compile (leave blank for default branch)"
+        required: false
+        type: string
+        default: ""
 
 jobs:
   compile:
@@ -33,8 +38,14 @@ jobs:
     steps:
       - name: Clone target app
         run: |
-          git clone --depth 1 --recurse-submodules "${{ inputs.repo_url }}" /tmp/app
-          echo "Cloned ${{ inputs.repo_url }}"
+          BRANCH="${{ inputs.repo_branch }}"
+          if [ -n "$BRANCH" ]; then
+            git clone --depth 1 --branch "$BRANCH" --recurse-submodules "${{ inputs.repo_url }}" /tmp/app
+            echo "Cloned ${{ inputs.repo_url }} @ $BRANCH"
+          else
+            git clone --depth 1 --recurse-submodules "${{ inputs.repo_url }}" /tmp/app
+            echo "Cloned ${{ inputs.repo_url }}"
+          fi
           touch /tmp/clone_done
 
       - name: Find application.fam
