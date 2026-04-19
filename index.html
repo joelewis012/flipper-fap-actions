@@ -505,17 +505,29 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
 }
 
 /* ── Already compiled banner ── */
-#already-compiled-bar {
-  display:none;background:rgba(57,255,20,0.06);border:1px solid rgba(57,255,20,0.3);
-  border-radius:6px;padding:12px 14px;margin-top:12px;
-  font-family:var(--mono);font-size:0.74rem;
+/* already-compiled popup modal */
+#ac-modal-overlay {
+  position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:8800;
+  display:none;align-items:center;justify-content:center;padding:20px;
+  backdrop-filter:blur(4px);
 }
-#already-compiled-bar .ac-title { color:var(--green);font-weight:700;margin-bottom:6px; }
-#already-compiled-bar .ac-meta  { color:var(--muted);font-size:0.68rem;margin-bottom:10px; }
-.ac-btn { font-family:var(--mono);font-size:0.7rem;padding:5px 12px;border-radius:5px;cursor:pointer;border:1px solid;transition:all 0.15s; }
-.ac-btn-go   { background:rgba(57,255,20,0.1);border-color:var(--green);color:var(--green); }
-.ac-btn-go:hover { background:rgba(57,255,20,0.2); }
-.ac-btn-any  { background:rgba(255,255,255,0.04);border-color:var(--border);color:var(--muted); }
+#ac-modal-overlay.open { display:flex; }
+#ac-modal-box {
+  background:var(--bg2);border:1px solid rgba(57,255,20,0.4);border-radius:10px;
+  padding:24px;max-width:400px;width:100%;position:relative;
+  box-shadow:0 0 30px rgba(57,255,20,0.12);
+}
+#ac-modal-box::before {
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--green),transparent);
+  border-radius:10px 10px 0 0;
+}
+.ac-modal-title { color:var(--green);font-weight:800;font-size:0.95rem;margin-bottom:6px; }
+.ac-modal-meta  { color:var(--muted);font-family:var(--mono);font-size:0.7rem;margin-bottom:18px;line-height:1.6; }
+.ac-btn { font-family:var(--mono);font-size:0.72rem;padding:8px 14px;border-radius:6px;cursor:pointer;border:1px solid;transition:all 0.15s;width:100%;margin-bottom:8px;text-align:center; }
+.ac-btn-go   { background:rgba(57,255,20,0.1);border-color:var(--green);color:var(--green);font-weight:700; }
+.ac-btn-go:hover { background:rgba(57,255,20,0.22); }
+.ac-btn-any  { background:rgba(255,255,255,0.03);border-color:var(--border);color:var(--muted); }
 .ac-btn-any:hover { color:var(--text);border-color:var(--muted); }
 
 /* ── Compile streak ── */
@@ -537,7 +549,10 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
 .news-fw-badge { font-family:var(--mono);font-size:0.6rem;background:rgba(255,107,0,0.12);color:var(--orange);border:1px solid rgba(255,107,0,0.3);border-radius:4px;padding:2px 7px;white-space:nowrap;flex-shrink:0;margin-top:2px; }
 .news-tag { font-weight:700;font-size:0.82rem;color:var(--text); }
 .news-date { font-family:var(--mono);font-size:0.62rem;color:var(--muted);margin-top:2px; }
-.news-body { font-family:var(--mono);font-size:0.66rem;color:var(--muted);margin-top:4px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden; }
+.news-body { font-family:var(--mono);font-size:0.66rem;color:var(--muted);margin-top:4px;line-height:1.5;overflow:hidden;white-space:nowrap; }
+.news-body-inner { display:inline-block;animation:newsscroll 14s linear infinite;padding-right:40px; }
+.news-body-inner:hover { animation-play-state:paused; }
+@keyframes newsscroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
 
 /* ── Upvote button ── */
 .upvote-btn { background:none;border:1px solid var(--border);border-radius:4px;cursor:pointer;font-family:var(--mono);font-size:0.58rem;color:var(--muted);padding:2px 6px;transition:all 0.15s;display:flex;align-items:center;gap:3px;flex-shrink:0; }
@@ -778,14 +793,7 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
       </div>
     </div>
 
-        <div id="already-compiled-bar">
-      <div class="ac-title">✅ Already compiled recently</div>
-      <div class="ac-meta" id="ac-meta-text"></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="ac-btn ac-btn-go" onclick="acGoToResult()">↓ Go to result</button>
-        <button class="ac-btn ac-btn-any" onclick="dismissAlreadyCompiled()">Compile anyway</button>
-      </div>
-    </div>
+        <!-- already-compiled modal is in body below, not inline here -->
     <div class="wait-bar" id="wait-bar"></div>
     <div class="eta-bar" id="eta-display"></div>
     <button class="btn-compile" id="compile-btn" onclick="submitCompile()">
@@ -896,6 +904,17 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
     <a class="footer-support-btn footer-kofi" href="https://ko-fi.com/joelewis012" target="_blank">❤ Ko-fi</a>
   </div>
 </footer>
+
+
+<!-- ── Already Compiled Modal ──────────────────────────────────────────────── -->
+<div id="ac-modal-overlay" onclick="if(event.target===this)dismissAlreadyCompiled()">
+  <div id="ac-modal-box">
+    <div class="ac-modal-title">✅ Already compiled recently</div>
+    <div class="ac-modal-meta" id="ac-meta-text">Loading…</div>
+    <button class="ac-btn ac-btn-go" onclick="acGoToResult()">↓ Go to result</button>
+    <button class="ac-btn ac-btn-any" onclick="dismissAlreadyCompiled()">Compile anyway →</button>
+  </div>
+</div>
 
 <!-- ── Feedback FAB ── -->
 <button class="feedback-fab" onclick="openFeedback()" title="Send feedback">
@@ -1613,6 +1632,10 @@ async function submitCompile() {
     showError('Invalid URL','Please enter a valid GitHub or Gitea repository URL (e.g. https://github.com/user/app).');
     return;
   }
+  // Check already compiled — show modal and stop here if match found
+  const _fw=document.querySelector('input[name="fw"]:checked')?.value||'official';
+  checkAlreadyCompiled(url, _fw, allLoadedJobs);
+  if(acMatchJob && showAlreadyCompiledModal()) return;
   const btn=document.getElementById('compile-btn'),spinner=document.getElementById('btn-spinner'),btnText=document.getElementById('btn-text');
   btn.disabled=true;spinner.style.display='block';btnText.textContent=t('triggering');
   fetchWaitTime();
@@ -2147,38 +2170,38 @@ function renderStreak(jobs) {
 // ── Already compiled detection ────────────────────────────────────────────────
 let acMatchJob = null;
 function checkAlreadyCompiled(repoUrl, firmware, jobs) {
-  const bar = document.getElementById('already-compiled-bar');
-  const meta = document.getElementById('ac-meta-text');
-  if (!bar) return;
-  if (!repoUrl || !firmware || !jobs.length) { bar.style.display='none'; return; }
+  // Silent check — stores result but doesn't show popup yet
+  // Popup only shown when user actually presses Compile (see submitCompile)
+  if (!repoUrl || !firmware || !jobs.length) { acMatchJob=null; return; }
   const short = repoUrl.replace(/^https?:\/\//,'').replace(/\.git$/,'').replace(/\/$/,'').toLowerCase();
-  const cutoff = Date.now() - 48*60*60*1000; // 48h window
+  const cutoff = Date.now() - 48*60*60*1000;
   const match = jobs.find(j =>
     j.status==='success' &&
     j.firmware===firmware &&
     j.repoUrl && j.repoUrl.toLowerCase().replace(/\/$/,'').replace(/\.git$/,'')===short &&
     j.createdAt && new Date(j.createdAt).getTime() > cutoff
   );
-  if (match) {
-    acMatchJob = match;
-    if (meta) meta.textContent = `${match.fwLabel||match.firmware} · compiled ${timeAgo(new Date(match.createdAt).getTime())}${match.artifactId?' · download available':''}`;
-    bar.style.display = 'block';
-  } else {
-    acMatchJob = null;
-    bar.style.display = 'none';
-  }
+  acMatchJob = match || null;
+}
+function showAlreadyCompiledModal() {
+  if (!acMatchJob) return false;
+  const meta = document.getElementById('ac-meta-text');
+  const overlay = document.getElementById('ac-modal-overlay');
+  if (meta) meta.textContent = `${acMatchJob.fwLabel||acMatchJob.firmware} · compiled ${timeAgo(new Date(acMatchJob.createdAt).getTime())}${acMatchJob.artifactId?' · download available':''}`;
+  if (overlay) overlay.classList.add('open');
+  return true;
 }
 function acGoToResult() {
-  const bar = document.getElementById('already-compiled-bar');
-  if (bar) bar.style.display='none';
+  const overlay = document.getElementById('ac-modal-overlay');
+  if (overlay) overlay.classList.remove('open');
   const el = document.getElementById('compiled-list');
-  if (el) el.scrollIntoView({behavior:'smooth',block:'start'});
+  if (el) setTimeout(()=>el.scrollIntoView({behavior:'smooth',block:'start'}),100);
   showToast('↓ Scroll down to see your compiled app');
 }
 function dismissAlreadyCompiled() {
-  const bar = document.getElementById('already-compiled-bar');
-  if (bar) bar.style.display='none';
-  acMatchJob = null;
+  const overlay = document.getElementById('ac-modal-overlay');
+  if (overlay) overlay.classList.remove('open');
+  // Don't clear acMatchJob — let them compile anyway
 }
 
 // ── History search ────────────────────────────────────────────────────────────
@@ -2265,7 +2288,7 @@ async function fetchFirmwareNews() {
             <div style="min-width:0;flex:1;">
               <div class="news-tag">${esc(fw.tag)}</div>
               <div class="news-date">${date}</div>
-              ${notes?`<div class="news-body">${esc(notes)}</div>`:''}
+              ${notes?`<div class="news-body"><span class="news-body-inner">${esc(notes)}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${esc(notes)}</span></div>`:''}
             </div>
           </div>
         </a>`;
