@@ -549,7 +549,7 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
 .news-fw-badge { font-family:var(--mono);font-size:0.6rem;background:rgba(255,107,0,0.12);color:var(--orange);border:1px solid rgba(255,107,0,0.3);border-radius:4px;padding:2px 7px;white-space:nowrap;flex-shrink:0;margin-top:2px; }
 .news-tag { font-weight:700;font-size:0.82rem;color:var(--text); }
 .news-date { font-family:var(--mono);font-size:0.62rem;color:var(--muted);margin-top:2px; }
-.news-body { font-family:var(--mono);font-size:0.66rem;color:var(--muted);margin-top:4px;line-height:1.5;overflow:hidden;white-space:nowrap; }
+.news-body { font-family:var(--mono);font-size:0.58rem;color:var(--muted);margin-top:4px;line-height:1.5;overflow:hidden;white-space:nowrap; }
 .news-body-inner { display:inline-block;animation:newsscroll 14s linear infinite;padding-right:40px; }
 .news-body-inner:hover { animation-play-state:paused; }
 @keyframes newsscroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
@@ -568,10 +568,10 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
 
 
 <!-- ── Disco Easter egg overlay ──────────────────────────────────────────── -->
-<div id="disco-overlay" onclick="if(event.target===this)dismissDisco()">
+<div id="disco-overlay" onclick="dismissDisco()">
   <div id="disco-ball-wrap">
     <div id="disco-ball"></div>
-    <div class="disco-hint">🎵 triple-tap logo to dismiss</div>
+    <div class="disco-hint">🎵 tap anywhere to dismiss</div>
   </div>
 </div>
 <!-- ── Worker Offline Banner ─────────────────────────────────────────────── -->
@@ -869,6 +869,7 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
   <div class="jobs-section">
     <div class="section-header">
       <div class="section-title" data-i18n="card_compiled">Compiled Applications</div>
+      <span id="compiled-total-badge" style="font-family:var(--mono);font-size:0.7rem;color:var(--muted);display:none;"></span>
     </div>
     <!-- Active compile status bar -->
     <div id="active-compile-bar" style="display:none;background:var(--bg3);border:1px solid var(--cyan);border-radius:8px;padding:14px 16px;margin-bottom:12px;font-family:var(--mono);font-size:0.78rem;">
@@ -1038,6 +1039,12 @@ const APP_DIR = [
   // ── BLE ────────────────────────────────────────────────────────────────────
   { name:'Apple BLE Spam',     desc:'Spam Apple BLE proximity pairing popups',            repo:'https://github.com/ECTO-1A/AppleJuice',                            cat:'BLE',     compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🍎' },
   { name:'BLE Spam (All)',     desc:'Spam BLE popups on Apple, Android & Windows',        repo:'https://github.com/noproto/ble_spam_ofw',                          cat:'BLE',     compatible:['official','momentum','unleashed'], recommended:'official',  icon:'📲' },
+  { name:'Barcode Generator', desc:'Generate & display barcodes on screen',           repo:'https://github.com/Lucaslhm/flipper-zero-barcode',                cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'▐▌' },
+  { name:'Tetris',            desc:'Classic Tetris block-stacking game',              repo:'https://github.com/jeffplang/flipperzero-tetris',                  cat:'Games',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🟦' },
+  { name:'Bad USB Scripts',   desc:'HID attack scripts — keystroke injection',        repo:'https://github.com/I-Am-Jakoby/Flipper-Zero-BadUSB',               cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'⌨️' },
+  { name:'DTMF Dolphin',      desc:'DTMF tone dialler — phone phreaking tool',        repo:'https://github.com/litui/dtmf-dolphin',                            cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'☎️' },
+  { name:'Pomodoro Timer',    desc:'25-minute focus timer with break reminders',      repo:'https://github.com/leedave/flipper-zero-pomodoro-timer',           cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🍅' },
+  { name:'Password Generator',desc:'Generate secure passwords on your Flipper',       repo:'https://github.com/anakod/flipper_passgen',                        cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🔑' },
   { name:'Bluetooth Remote',   desc:'Control PC media & mouse over Bluetooth',            repo:'https://github.com/flipperdevices/flipperzero-bluetooth-remote',    cat:'BLE',     compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🖱️' },
   // ── IR ─────────────────────────────────────────────────────────────────────
   { name:'Xbox Controller',    desc:'Control Xbox One via infrared',                      repo:'https://github.com/gebeto/flipper-xbox-controller',                 cat:'IR',      compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🎮' },
@@ -1055,6 +1062,17 @@ const APP_DIR = [
   { name:'Matagotchi',         desc:'Tamagotchi-like virtual pet on your Flipper',         repo:'https://github.com/MrModd/Matagotchi',                             cat:'Games',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🐣' },
   { name:'Snake',              desc:'Classic snake game with high score saving',           repo:'https://github.com/flipperdevices/flipperzero-firmware/tree/dev/applications/games/snake_game', cat:'Games', compatible:['official','momentum','unleashed'], recommended:'official', icon:'🐍' },
   { name:'Flappy Bird',        desc:'Flappy Bird clone for Flipper Zero',                  repo:'https://github.com/DroomOne/Flipper-Plugin-Tutorial/tree/main',    cat:'Games',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🐦' },
+  { name:'Flizzer Tracker',    desc:'Chiptune music tracker — compose on your Flipper',   repo:'https://github.com/LTVA1/flizzer_tracker',                         cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🎵' },
+  { name:'UART Terminal',      desc:'Full UART terminal over GPIO pins',                   repo:'https://github.com/cool4uma/UART_Terminal',                         cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'💻' },
+  { name:'XRemote',            desc:'Advanced IR remote — physical buttons mapped to IR',  repo:'https://github.com/kala13x/flipper-xremote',                       cat:'IR',      compatible:['official','momentum','unleashed'], recommended:'official',  icon:'📺' },
+  { name:'MagSpoof',           desc:'Emulate magstripe cards wirelessly via GPIO coil',    repo:'https://github.com/zacharyweiss/magspoof_flipper',                  cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'💳' },
+  { name:'POCSAG Pager',       desc:'Decode POCSAG pager messages via Sub-GHz',            repo:'https://github.com/Shmuma/flipper-zero-pocsag',                    cat:'Sub-GHz', compatible:['official','momentum','unleashed'], recommended:'official',  icon:'📟' },
+  { name:'Pokémon Trade',      desc:'Trade Pokémon from Flipper to Game Boy Gen I & II',   repo:'https://github.com/EstebanFuentealba/Flipper-Zero-Game-Boy-Pokemon-Trading', cat:'Games', compatible:['official','momentum','unleashed'], recommended:'official', icon:'🎮' },
+  { name:'Resistance Calc',    desc:'Resistor colour band calculator for electronics',     repo:'https://github.com/instantiator/flipper-zero-experimental-apps',    cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'⚡', note:'Multi-app repo — select Resistor Calculator' },
+  { name:'iButton Fuzzer',     desc:'Brute-force Dallas/Cyfral iButton contact keys',      repo:'https://github.com/DarkFlippers/unleashed-firmware',               cat:'RFID',    compatible:['unleashed'],                       recommended:'unleashed', icon:'🔑', note:'Unleashed only' },
+  { name:'RFID Fuzzer',        desc:'Brute-force 125kHz RFID card UIDs',                  repo:'https://github.com/DarkFlippers/unleashed-firmware',               cat:'RFID',    compatible:['unleashed'],                       recommended:'unleashed', icon:'📡', note:'Unleashed only' },
+  { name:'Scoreboard',         desc:'Simple sports scoreboard — track game scores',        repo:'https://github.com/jamisonderek/flipper-zero-tutorials',            cat:'Tools',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🏆', note:'Multi-app repo — select Scoreboard' },
+  { name:'Coin Flip',          desc:'Flip a virtual coin — heads or tails',                repo:'https://github.com/Svaarich/flipper-zero-coin-flip',               cat:'Games',   compatible:['official','momentum','unleashed'], recommended:'official',  icon:'🪙' },
 ];
 
 // ── Safe localStorage ─────────────────────────────────────────────────────────
@@ -1541,7 +1559,8 @@ function renderAppDir(){
     return `<div class="app-card" onclick="quickCompile(${app.idx})">
       <div class="app-card-header">
         <span class="app-icon">${app.icon||'📦'}</span>
-        <div style="display:flex;gap:2px;align-items:center;">
+        <div style="display:flex;gap:4px;align-items:center;">
+          <button class="upvote-btn${getUpvoted(app.idx)?' voted':''}" onclick="event.stopPropagation();toggleUpvote(${app.idx},this)" title="Upvote">👍${getUpvoteCount(app.idx)?'<span style=\"font-size:0.52rem;margin-left:2px;\">' + getUpvoteCount(app.idx) + '</span>':''}</button>
           <button class="fav-btn" onclick="event.stopPropagation();toggleFav(${app.idx})" title="${starred?'Remove from favourites':'Add to favourites'}">${starred?'⭐':'☆'}</button>
           <button class="report-btn" onclick="event.stopPropagation();reportApp('${esc(app.name)}')" title="Report broken app">🚩</button>
         </div>
@@ -1553,7 +1572,6 @@ function renderAppDir(){
       <div class="app-card-footer">
         <div class="app-card-cta">⚙ Quick Compile</div>
         <a href="${esc(app.repo)}" target="_blank" onclick="event.stopPropagation()" class="app-gh-link">⧉ Repo</a>
-        <button class="upvote-btn${getUpvoted(app.idx)?' voted':''}" onclick="event.stopPropagation();toggleUpvote(${app.idx},this)" title="Upvote">👍 ${getUpvoteCount(app.idx)||''}</button>
       </div>
     </div>`;
   }).join('');
@@ -1861,6 +1879,15 @@ async function saveJobToKV(job){
 }
 
 // ── Compiled apps list ────────────────────────────────────────────────────────
+async function loadAllJobsForCheck(){
+  // Load all jobs for already-compiled detection — separate from paginated display
+  try{
+    const res=await api('/api/jobs?page=1&per_page=500');
+    if(!res.ok) return;
+    const data=await res.json();
+    allLoadedJobs=data.jobs||[];
+  }catch(_){}
+}
 async function loadCompiledApps(page=1){
   const list=document.getElementById('compiled-list');if(!list)return;
   if(page===1) list.innerHTML='<div style="font-family:var(--mono);font-size:0.75rem;color:var(--muted);text-align:center;padding:20px;">Loading…</div>';
@@ -1869,6 +1896,8 @@ async function loadCompiledApps(page=1){
     if(!res.ok) throw new Error(`Worker returned ${res.status}`);
     const data=await res.json();
     compiledPages=data.pages||1; compiledPage=data.page||1;
+    const badge=document.getElementById('compiled-total-badge');
+    if(badge&&data.total){badge.textContent=`${data.total} total`;badge.style.display='inline';}
     const jobs=data.jobs||[];
     if(page===1){ allLoadedJobs=jobs; updateWeeklyMost(); renderStreak(jobs); }
     // check already compiled on firmware/url change
@@ -1985,9 +2014,10 @@ async function fetchPopularApps(){
         <div style="font-family:var(--mono);font-size:0.6rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(short)}</div>
         <div class="app-card-fw">✅ Best on <strong>${esc(FW_NAMES[app.topFw]||app.topFw)}</strong></div>
         ${app.lastSeen?`<div style="font-family:var(--mono);font-size:0.58rem;color:var(--muted);">🕐 Last compiled ${timeAgo(app.lastSeen)}</div>`:''}
-        <div style="display:flex;align-items:center;gap:6px;margin-top:8px;">
+        <div style="display:flex;align-items:center;gap:5px;margin-top:8px;">
           <div class="app-card-cta" style="white-space:nowrap;">⚙ Quick Compile</div>
           <a href="${esc(fullUrl)}" target="_blank" onclick="event.stopPropagation()" class="app-gh-link">⧉ Repo</a>
+          <button class="upvote-btn" onclick="event.stopPropagation();this.classList.toggle('voted');showToast('👍 Upvoted!')" title="Upvote">👍</button>
         </div>
       </div>`;
     }).join('');
@@ -2191,12 +2221,40 @@ function showAlreadyCompiledModal() {
   if (overlay) overlay.classList.add('open');
   return true;
 }
-function acGoToResult() {
+async function acGoToResult() {
   const overlay = document.getElementById('ac-modal-overlay');
   if (overlay) overlay.classList.remove('open');
-  const el = document.getElementById('compiled-list');
-  if (el) setTimeout(()=>el.scrollIntoView({behavior:'smooth',block:'start'}),100);
-  showToast('↓ Scroll down to see your compiled app');
+  if (!acMatchJob) { showToast('↓ Scroll down to see your compiled app'); return; }
+  // Find which page the job is on
+  const matchUrl = acMatchJob.repoUrl;
+  let targetPage = 1;
+  for (let p = 1; p <= compiledPages; p++) {
+    try {
+      const res = await api(`/api/jobs?page=${p}`);
+      if (!res.ok) continue;
+      const data = await res.json();
+      const found = (data.jobs||[]).some(j => j.repoUrl===matchUrl && j.createdAt===acMatchJob.createdAt);
+      if (found) { targetPage = p; break; }
+    } catch(_) {}
+  }
+  if (targetPage !== compiledPage) await loadCompiledApps(targetPage);
+  setTimeout(() => {
+    const list = document.getElementById('compiled-list');
+    if (!list) return;
+    // Find the card matching this job
+    const cards = list.querySelectorAll('.job-card');
+    for (const card of cards) {
+      const urlEl = card.querySelector('.job-url');
+      if (urlEl && urlEl.textContent.includes(matchUrl)) {
+        card.scrollIntoView({behavior:'smooth', block:'center'});
+        card.style.transition = 'box-shadow 0.3s';
+        card.style.boxShadow = '0 0 0 2px var(--green), 0 0 20px rgba(57,255,20,0.4)';
+        setTimeout(() => { card.style.boxShadow = ''; }, 3000);
+        return;
+      }
+    }
+    list.scrollIntoView({behavior:'smooth', block:'start'});
+  }, 400);
 }
 function dismissAlreadyCompiled() {
   const overlay = document.getElementById('ac-modal-overlay');
@@ -2280,7 +2338,11 @@ async function fetchFirmwareNews() {
       .filter(r => r.status==='fulfilled' && r.value.tag)
       .map(r => r.value)
       .map(fw => {
-        const notes = (fw.body||'').split('\n').filter(l=>l.trim()&&!l.startsWith('#')&&!l.startsWith('**Full')&&!l.startsWith('http')).slice(0,2).join(' ').replace(/\*\*/g,'').replace(/\[([^\]]+)\]\([^)]+\)/g,'$1').replace(/\*/g,'').replace(/#{1,3} /g,'').trim().slice(0,120);
+        // Extract meaningful bullet points — skip install instructions, links, headers
+        const noteLines = (fw.body||'').split('\n')
+          .map(l=>l.replace(/^[-•*]+\s*/,'').replace(/\*\*/g,'').replace(/\[([^\]]+)\]\([^)]+\)/g,'$1').replace(/#{1,3} /g,'').trim())
+          .filter(l=>l.length>10&&l.length<120&&!l.startsWith('http')&&!/install|update|download|click|web updater|qflipper|lab\/app/i.test(l)&&!/^>/.test(l));
+        const notes = noteLines.slice(0,4).join(' · ').slice(0,200);
         const date  = fw.date ? new Date(fw.date).toLocaleDateString() : '';
         return `<a href="${esc(fw.url)}" target="_blank" style="text-decoration:none;">
           <div class="news-card">
@@ -2325,6 +2387,7 @@ applyLang();
 updateDebugBar();
 renderRecent();
 loadCompiledApps(1);
+  loadAllJobsForCheck();
 renderAppDir();
 fetchStats();
 fetchPopularApps();
