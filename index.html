@@ -1090,7 +1090,7 @@ const FW_NAMES = { official:'Official', momentum:'Momentum', unleashed:'Unleashe
 const FW_NOTES = {
   official:  'Stable official Flipper Zero firmware.',
   momentum:  'Feature-rich fork focused on hackability & customisation.',
-  unleashed: 'Removes region locks, adds extra protocols & plugins.',
+  unleashed: 'Removes region locks, adds extra protocols & plugins. ✓ Compatible with RogueMaster.',
 };
 const FW_EST = { official:90, momentum:120, unleashed:110 };
 
@@ -1597,7 +1597,9 @@ function updateFwVerDropdown(fw,ch){
   const wrap=document.getElementById('fw-ver-override-wrap');
   const sel=document.getElementById('fw-ver-override');
   if(!wrap||!sel)return;
-  const releases=(fwAllReleases[fw]||[]).filter(r=>ch==='dev'?true:!r.pre);
+  // Momentum/Unleashed only publish release SDKs — show those for both release and dev.
+  // Official has both release and dev SDKs, so filter accordingly.
+  const releases=(fwAllReleases[fw]||[]).filter(r=>(fw==='official'&&ch==='dev')?true:!r.pre);
   if(releases.length<2){wrap.style.display='none';return;}
   sel.innerHTML=`<option value="">Latest — ${esc(releases[0]?.tag||'auto')} (recommended)</option>`
     +releases.slice(1).map(r=>`<option value="${esc(r.tag)}">📦 ${esc(r.tag)}${r.pre?' (dev)':''}</option>`).join('');
@@ -1771,7 +1773,7 @@ document.querySelectorAll('input[name="ch"]').forEach(r=>{r.addEventListener('ch
   updateFwVerDropdown(fw,r.value);
   const ov=document.getElementById('fw-ver-override');if(ov)ov.value='';
   // For Momentum/Unleashed, map the channel toggle to the correct branch
-  if(fw==='momentum'||fw==='unleashed') applyFwChannelBranch(fw);
+  if(fw==='momentum'||fw==='unleashed'){applyFwChannelBranch(fw);updateChannelForFirmware(fw);}
 });});
 const repoInputEl=document.getElementById('repo-url');
 if(repoInputEl){
@@ -2166,8 +2168,21 @@ let popularVoteCounts = {};
 async function fetchPopularApps(){
   const grid=document.getElementById('popular-grid'),card=document.getElementById('popular-apps-card');if(!grid)return;
   try{
-    const res=await api('/api/popular');if(!res.ok)throw new Error();
-    const apps=(await res.json()).apps||[];
+    // Fetch popular apps and vote counts in parallel
+    const [popRes, voteRes] = await Promise.all([
+      api('/api/popular'),
+      api('/api/votes').catch(()=>null),
+    ]);
+    if(!popRes.ok)throw new Error();
+    // Merge server vote counts — take the max so local optimistic updates are never wiped
+    if(voteRes&&voteRes.ok){
+      const d=await voteRes.json();
+      const serverVotes=d.votes||{};
+      for(const [k,v] of Object.entries(serverVotes)){
+        if((popularVoteCounts[k]||0)<v) popularVoteCounts[k]=v;
+      }
+    }
+    const apps=(await popRes.json()).apps||[];
     if(!apps.length){if(card)card.style.display='none';return;}
     if(card)card.style.display='block';
     grid.innerHTML=apps.map(app=>{
@@ -2573,7 +2588,7 @@ function updateChannelForFirmware(fw) {
   if (devInp) devInp.disabled = false;
   if (fw === 'momentum' || fw === 'unleashed') {
     const name = fw === 'momentum' ? 'Momentum' : 'Unleashed';
-    note.textContent = `ℹ ${name}: Release/Dev selects the firmware branch to compile against.`;
+    note.textContent = `ℹ ${name}: Release/Dev compiles from the matching branch. The version picker selects which SDK to compile against.`;
     note.style.display = 'block';
     // Set branch selector to match current channel selection
     applyFwChannelBranch(fw);
@@ -2953,15 +2968,7 @@ async function togglePopularVote(btn,key){
     await api('/api/vote',{method:'POST',body:JSON.stringify({appKey:key,delta})});
   }catch(_){}
 }
-// Load vote counts when fetching popular apps — patch into fetchPopularApps result
-const _origFetchPopular=fetchPopularApps;
-// Extend: after popular apps load, fetch vote counts
-(async()=>{
-  try{
-    const res=await api('/api/votes');
-    if(res.ok){const d=await res.json();Object.assign(popularVoteCounts,d.votes||{});}
-  }catch(_){}
-})();
+// Vote counts are now fetched inside fetchPopularApps with max-merge
 
 // ══════════════════════════════════════════════════════════════════════════════
 // HOOK checkRepoForApps to also trigger branch fetch + release check
