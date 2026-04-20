@@ -833,15 +833,14 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
         </div>
       </div>
 
-      <div class="form-group" id="channel-form-group">
+      <div class="form-group">
         <label data-i18n="label_channel">Build Channel</label>
-        <div class="channel-toggle" id="channel-toggle-wrap">
+        <div class="channel-toggle">
           <input type="radio" name="ch" id="ch-release" value="release" checked/>
           <label for="ch-release" data-i18n-ch="release">Release</label>
           <input type="radio" name="ch" id="ch-dev" value="dev"/>
           <label for="ch-dev" data-i18n-ch="dev_btn">Dev</label>
         </div>
-        <div id="ch-fw-note" style="display:none;font-family:var(--mono);font-size:0.68rem;color:var(--cyan);margin-top:6px;padding:6px 10px;background:rgba(0,229,255,0.06);border:1px solid rgba(0,229,255,0.2);border-radius:6px;"></div>
         <div class="channel-desc" id="ch-note">Stable release — recommended for most users.</div>
         <div class="out-box">
           <div><span class="k">firmware:</span> <span id="out-fw">Official v1.4.3</span></div>
@@ -1748,14 +1747,13 @@ function reportApp(name) {
 
 // ── UI listeners ──────────────────────────────────────────────────────────────
 document.querySelectorAll('input[name="fw"]').forEach(r=>{r.addEventListener('change',()=>{
-  acIgnore = false;
   const fn=document.getElementById('fw-note');if(fn)fn.textContent=FW_NOTES[r.value]||'';
   const ch=document.querySelector('input[name="ch"]:checked')?.value||'release';
   const of=document.getElementById('out-fw');if(of)of.textContent=fwLabelForChannel(r.value,ch);
   updateETA();renderAppDir();
   updateFwVerDropdown(r.value,ch);
+  // Reset override when firmware changes
   const ov=document.getElementById('fw-ver-override');if(ov)ov.value='';
-  updateChannelForFirmware(r.value);
 });});
 document.querySelectorAll('input[name="ch"]').forEach(r=>{r.addEventListener('change',()=>{
   acIgnore = false;
@@ -2550,32 +2548,6 @@ async function fetchWaitTime() {
   } catch(_) { bar.textContent=''; }
 }
 
-// ── Channel toggle — hide Dev for Momentum/Unleashed (no separate SDK channel) ─
-function updateChannelForFirmware(fw) {
-  const toggle = document.getElementById('channel-toggle-wrap');
-  const note   = document.getElementById('ch-fw-note');
-  const devLbl = document.querySelector('label[for="ch-dev"]');
-  const devInp = document.getElementById('ch-dev');
-  const relInp = document.getElementById('ch-release');
-  if (!toggle || !note) return;
-  if (fw === 'momentum' || fw === 'unleashed') {
-    // Hide the toggle entirely and force release
-    toggle.style.opacity = '0.35';
-    toggle.style.pointerEvents = 'none';
-    if (devInp) devInp.disabled = true;
-    if (relInp) { relInp.checked = true; relInp.dispatchEvent(new Event('change')); }
-    const name = fw === 'momentum' ? 'Momentum' : 'Unleashed';
-    note.textContent = `ℹ ${name} has no separate Dev SDK channel. Use the Branch selector above to compile from their dev or release branch.`;
-    note.style.display = 'block';
-  } else {
-    // Official — restore full toggle
-    toggle.style.opacity = '';
-    toggle.style.pointerEvents = '';
-    if (devInp) devInp.disabled = false;
-    note.style.display = 'none';
-  }
-}
-
 // ── Init ──────────────────────────────────────────────────────────────────────
 // saveToken — modal is hidden in v2 (token lives in worker secret, not browser)
 // kept as a stub so the button reference doesn't throw a JS error
@@ -2933,7 +2905,6 @@ const _origFetchPopular=fetchPopularApps;
 
 // ── Init XP on load ──────────────────────────────────────────────────────────
 renderXP();
-updateChannelForFirmware(document.querySelector('input[name="fw"]:checked')?.value||'official');
 
 
 setInterval(fetchPopularApps,  600000);
