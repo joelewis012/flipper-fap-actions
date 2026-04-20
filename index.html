@@ -1770,6 +1770,8 @@ document.querySelectorAll('input[name="ch"]').forEach(r=>{r.addEventListener('ch
   }
   updateFwVerDropdown(fw,r.value);
   const ov=document.getElementById('fw-ver-override');if(ov)ov.value='';
+  // For Momentum/Unleashed, map the channel toggle to the correct branch
+  if(fw==='momentum'||fw==='unleashed') applyFwChannelBranch(fw);
 });});
 const repoInputEl=document.getElementById('repo-url');
 if(repoInputEl){
@@ -2551,29 +2553,53 @@ async function fetchWaitTime() {
 }
 
 // ── Channel toggle — hide Dev for Momentum/Unleashed (no separate SDK channel) ─
+// ── Channel toggle — for Momentum/Unleashed, map Release/Dev to branches ──────
+// Their update servers have no separate SDK channel — dev/release are branches.
+// We keep the toggle identical but silently set the branch selector for them.
+const FW_CHANNEL_BRANCHES = {
+  momentum:  { release: 'release', dev: 'dev' },
+  unleashed: { release: 'release', dev: 'dev' },
+};
 function updateChannelForFirmware(fw) {
   const toggle = document.getElementById('channel-toggle-wrap');
   const note   = document.getElementById('ch-fw-note');
-  const devLbl = document.querySelector('label[for="ch-dev"]');
   const devInp = document.getElementById('ch-dev');
-  const relInp = document.getElementById('ch-release');
   if (!toggle || !note) return;
+  // Restore toggle fully — works the same for all firmware visually
+  toggle.style.opacity = '';
+  toggle.style.pointerEvents = '';
+  if (devInp) devInp.disabled = false;
   if (fw === 'momentum' || fw === 'unleashed') {
-    // Hide the toggle entirely and force release
-    toggle.style.opacity = '0.35';
-    toggle.style.pointerEvents = 'none';
-    if (devInp) devInp.disabled = true;
-    if (relInp) { relInp.checked = true; relInp.dispatchEvent(new Event('change')); }
     const name = fw === 'momentum' ? 'Momentum' : 'Unleashed';
-    note.textContent = `ℹ ${name} has no separate Dev SDK channel. Use the Branch selector above to compile from their dev or release branch.`;
+    note.textContent = `ℹ ${name}: Release/Dev selects the firmware branch to compile against.`;
     note.style.display = 'block';
+    // Set branch selector to match current channel selection
+    applyFwChannelBranch(fw);
   } else {
-    // Official — restore full toggle
-    toggle.style.opacity = '';
-    toggle.style.pointerEvents = '';
-    if (devInp) devInp.disabled = false;
     note.style.display = 'none';
+    // Clear any auto-set branch when switching back to Official
+    // (only clear if it was one of the known fw branches)
+    const sel = document.getElementById('branch-selector');
+    if (sel && (sel.value === 'release' || sel.value === 'dev')) sel.value = '';
   }
+}
+function applyFwChannelBranch(fw) {
+  const ch = document.querySelector('input[name="ch"]:checked')?.value || 'release';
+  const branchMap = FW_CHANNEL_BRANCHES[fw];
+  if (!branchMap) return;
+  const targetBranch = branchMap[ch] || 'release';
+  const sel = document.getElementById('branch-selector');
+  const wrap = document.getElementById('branch-wrap');
+  if (!sel) return;
+  // If branches are already loaded, just set the value
+  const opt = Array.from(sel.options).find(o => o.value === targetBranch);
+  if (opt) {
+    sel.value = targetBranch;
+  } else {
+    // Branches not loaded yet — store as pending, fetchBranches will apply it
+    sel.dataset.pendingBranch = targetBranch;
+  }
+  if (wrap) wrap.style.display = 'block';
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
@@ -2867,6 +2893,15 @@ async function fetchBranches(owner,repo){
     }
     sel.innerHTML=opts.join('');
     wrap.style.display='block';
+    // Apply any pending branch set by updateChannelForFirmware before branches loaded
+    if(sel.dataset.pendingBranch){
+      const opt=Array.from(sel.options).find(o=>o.value===sel.dataset.pendingBranch);
+      if(opt) sel.value=sel.dataset.pendingBranch;
+      delete sel.dataset.pendingBranch;
+    }
+    // If Momentum/Unleashed is selected, apply channel→branch mapping now
+    const fw=document.querySelector('input[name="fw"]:checked')?.value||'official';
+    if(fw==='momentum'||fw==='unleashed') applyFwChannelBranch(fw);
   }catch(_){}
 }
 function onBranchChange(){
