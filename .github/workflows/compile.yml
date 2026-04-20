@@ -29,6 +29,11 @@ on:
         required: false
         type: string
         default: ""
+      fw_version:
+        description: "Specific firmware version tag to compile against (leave blank for latest)"
+        required: false
+        type: string
+        default: ""
 
 jobs:
   compile:
@@ -84,6 +89,7 @@ jobs:
         run: |
           FW="${{ inputs.firmware }}"
           CH="${{ inputs.channel }}"
+          VER="${{ inputs.fw_version }}"
           if [ "$FW" = "momentum" ]; then
             echo "SDK_INDEX_URL=https://up.momentum-fw.dev/firmware/directory.json" >> $GITHUB_ENV
           elif [ "$FW" = "unleashed" ]; then
@@ -91,7 +97,11 @@ jobs:
           else
             echo "SDK_INDEX_URL=https://update.flipperzero.one/firmware/directory.json" >> $GITHUB_ENV
           fi
-          echo "SDK_CHANNEL=$CH" >> $GITHUB_ENV
+          if [ -n "$VER" ]; then
+            echo "SDK_CHANNEL=$VER" >> $GITHUB_ENV
+          else
+            echo "SDK_CHANNEL=$CH" >> $GITHUB_ENV
+          fi
 
       - name: Build with ufbt
         id: build
