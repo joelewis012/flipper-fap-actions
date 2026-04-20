@@ -833,14 +833,15 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
         </div>
       </div>
 
-      <div class="form-group">
+      <div class="form-group" id="channel-form-group">
         <label data-i18n="label_channel">Build Channel</label>
-        <div class="channel-toggle">
+        <div class="channel-toggle" id="channel-toggle-wrap">
           <input type="radio" name="ch" id="ch-release" value="release" checked/>
           <label for="ch-release" data-i18n-ch="release">Release</label>
           <input type="radio" name="ch" id="ch-dev" value="dev"/>
           <label for="ch-dev" data-i18n-ch="dev_btn">Dev</label>
         </div>
+        <div id="ch-fw-note" style="display:none;font-family:var(--mono);font-size:0.68rem;color:var(--cyan);margin-top:6px;padding:6px 10px;background:rgba(0,229,255,0.06);border:1px solid rgba(0,229,255,0.2);border-radius:6px;"></div>
         <div class="channel-desc" id="ch-note">Stable release — recommended for most users.</div>
         <div class="out-box">
           <div><span class="k">firmware:</span> <span id="out-fw">Official v1.4.3</span></div>
@@ -1747,13 +1748,14 @@ function reportApp(name) {
 
 // ── UI listeners ──────────────────────────────────────────────────────────────
 document.querySelectorAll('input[name="fw"]').forEach(r=>{r.addEventListener('change',()=>{
+  acIgnore = false;
   const fn=document.getElementById('fw-note');if(fn)fn.textContent=FW_NOTES[r.value]||'';
   const ch=document.querySelector('input[name="ch"]:checked')?.value||'release';
   const of=document.getElementById('out-fw');if(of)of.textContent=fwLabelForChannel(r.value,ch);
   updateETA();renderAppDir();
   updateFwVerDropdown(r.value,ch);
-  // Reset override when firmware changes
   const ov=document.getElementById('fw-ver-override');if(ov)ov.value='';
+  updateChannelForFirmware(r.value);
 });});
 document.querySelectorAll('input[name="ch"]').forEach(r=>{r.addEventListener('change',()=>{
   acIgnore = false;
@@ -1768,6 +1770,8 @@ document.querySelectorAll('input[name="ch"]').forEach(r=>{r.addEventListener('ch
   }
   updateFwVerDropdown(fw,r.value);
   const ov=document.getElementById('fw-ver-override');if(ov)ov.value='';
+  // For Momentum/Unleashed, map the channel toggle to the correct branch
+  if(fw==='momentum'||fw==='unleashed') applyFwChannelBranch(fw);
 });});
 const repoInputEl=document.getElementById('repo-url');
 if(repoInputEl){
@@ -2171,10 +2175,12 @@ async function fetchPopularApps(){
       const repoName=(short.split('/').pop()||short).replace(/-/g,' ').replace(/_/g,' ');
       const fullUrl=app.fullUrl||'https://'+app.url;
       return `<div class="app-card" onclick="quickCompileUrl('${esc(fullUrl)}','${esc(app.topFw||'official')}')">
-        <div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;flex-shrink:0;margin-bottom:4px;">
-          <span style="font-family:var(--mono);font-size:0.6rem;color:var(--orange);">×${app.count}</span>
-          <button class="upvote-btn pop-vote-btn${popularVoted.has(short)?' voted':''}" data-key="${esc(short)}" style="padding:1px 4px;font-size:0.62rem;" onclick="event.stopPropagation();togglePopularVote(this,'${esc(short)}')" title="Upvote">👍<span class="pop-vote-count" style="font-size:0.52rem;margin-left:2px;">${popularVoteCounts[short]||''}</span></button>
-          <button class="upvote-btn" style="padding:1px 4px;font-size:0.62rem;" onclick="event.stopPropagation();showToast('🚩 Thanks for reporting!')" title="Report broken app">🚩</button>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;flex-shrink:0;margin-bottom:4px;">
+          <span style="font-family:var(--mono);font-size:0.65rem;color:var(--orange);font-weight:700;">×${app.count}</span>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <button class="upvote-btn pop-vote-btn${popularVoted.has(short)?' voted':''}" data-key="${esc(short)}" style="padding:1px 4px;font-size:0.62rem;" onclick="event.stopPropagation();togglePopularVote(this,'${esc(short)}')" title="Upvote">👍<span class="pop-vote-count" style="font-size:0.52rem;margin-left:2px;">${popularVoteCounts[short]||''}</span></button>
+            <button class="upvote-btn" style="padding:1px 4px;font-size:0.62rem;" onclick="event.stopPropagation();showToast('🚩 Thanks for reporting!')" title="Report broken app">🚩</button>
+          </div>
         </div>
         <div class="app-card-name" style="word-break:break-word;white-space:normal;margin-bottom:4px;">${esc(repoName)}</div>
         <div style="font-family:var(--mono);font-size:0.6rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(short)}</div>
@@ -2548,6 +2554,56 @@ async function fetchWaitTime() {
   } catch(_) { bar.textContent=''; }
 }
 
+// ── Channel toggle — hide Dev for Momentum/Unleashed (no separate SDK channel) ─
+// ── Channel toggle — for Momentum/Unleashed, map Release/Dev to branches ──────
+// Their update servers have no separate SDK channel — dev/release are branches.
+// We keep the toggle identical but silently set the branch selector for them.
+const FW_CHANNEL_BRANCHES = {
+  momentum:  { release: 'release', dev: 'dev' },
+  unleashed: { release: 'release', dev: 'dev' },
+};
+function updateChannelForFirmware(fw) {
+  const toggle = document.getElementById('channel-toggle-wrap');
+  const note   = document.getElementById('ch-fw-note');
+  const devInp = document.getElementById('ch-dev');
+  if (!toggle || !note) return;
+  // Restore toggle fully — works the same for all firmware visually
+  toggle.style.opacity = '';
+  toggle.style.pointerEvents = '';
+  if (devInp) devInp.disabled = false;
+  if (fw === 'momentum' || fw === 'unleashed') {
+    const name = fw === 'momentum' ? 'Momentum' : 'Unleashed';
+    note.textContent = `ℹ ${name}: Release/Dev selects the firmware branch to compile against.`;
+    note.style.display = 'block';
+    // Set branch selector to match current channel selection
+    applyFwChannelBranch(fw);
+  } else {
+    note.style.display = 'none';
+    // Clear any auto-set branch when switching back to Official
+    // (only clear if it was one of the known fw branches)
+    const sel = document.getElementById('branch-selector');
+    if (sel && (sel.value === 'release' || sel.value === 'dev')) sel.value = '';
+  }
+}
+function applyFwChannelBranch(fw) {
+  const ch = document.querySelector('input[name="ch"]:checked')?.value || 'release';
+  const branchMap = FW_CHANNEL_BRANCHES[fw];
+  if (!branchMap) return;
+  const targetBranch = branchMap[ch] || 'release';
+  const sel = document.getElementById('branch-selector');
+  const wrap = document.getElementById('branch-wrap');
+  if (!sel) return;
+  // If branches are already loaded, just set the value
+  const opt = Array.from(sel.options).find(o => o.value === targetBranch);
+  if (opt) {
+    sel.value = targetBranch;
+  } else {
+    // Branches not loaded yet — store as pending, fetchBranches will apply it
+    sel.dataset.pendingBranch = targetBranch;
+  }
+  if (wrap) wrap.style.display = 'block';
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 // saveToken — modal is hidden in v2 (token lives in worker secret, not browser)
 // kept as a stub so the button reference doesn't throw a JS error
@@ -2839,6 +2895,15 @@ async function fetchBranches(owner,repo){
     }
     sel.innerHTML=opts.join('');
     wrap.style.display='block';
+    // Apply any pending branch set by updateChannelForFirmware before branches loaded
+    if(sel.dataset.pendingBranch){
+      const opt=Array.from(sel.options).find(o=>o.value===sel.dataset.pendingBranch);
+      if(opt) sel.value=sel.dataset.pendingBranch;
+      delete sel.dataset.pendingBranch;
+    }
+    // If Momentum/Unleashed is selected, apply channel→branch mapping now
+    const fw=document.querySelector('input[name="fw"]:checked')?.value||'official';
+    if(fw==='momentum'||fw==='unleashed') applyFwChannelBranch(fw);
   }catch(_){}
 }
 function onBranchChange(){
@@ -2905,6 +2970,7 @@ const _origFetchPopular=fetchPopularApps;
 
 // ── Init XP on load ──────────────────────────────────────────────────────────
 renderXP();
+updateChannelForFirmware(document.querySelector('input[name="fw"]:checked')?.value||'official');
 
 
 setInterval(fetchPopularApps,  600000);
