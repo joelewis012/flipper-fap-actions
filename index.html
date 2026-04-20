@@ -580,7 +580,7 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
 .xp-badge.earned { border-color:var(--orange);color:var(--orange);background:rgba(255,107,0,0.1); }
 .xp-badge.locked { border-color:var(--border);color:var(--muted);opacity:0.5; }
 .xp-toast { display:none; } /* replaced by splash overlay */
-#xp-splash-overlay.show { opacity:1!important; }
+#xp-splash-overlay.show { opacity:1!important; pointer-events:all!important; }
 #xp-splash-overlay.show > div { transform:scale(1)!important; }
 
 /* ── Branch selector ── */
@@ -883,12 +883,13 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
   </div>
 
   <!-- XP Splash overlay -->
-  <div id="xp-splash-overlay" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.82);display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity 0.3s;">
+  <div id="xp-splash-overlay" onclick="dismissSplash()" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.82);display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity 0.3s;">
     <div style="text-align:center;padding:32px 28px;background:var(--bg2);border:1px solid var(--orange);border-radius:16px;box-shadow:0 0 40px rgba(255,107,0,0.4);max-width:280px;width:90%;transform:scale(0.9);transition:transform 0.3s;">
       <div id="xp-splash-icon" style="font-size:2.8rem;margin-bottom:10px;">⚡</div>
       <div id="xp-splash-title" style="font-family:var(--mono);font-size:1.1rem;font-weight:700;color:var(--orange);margin-bottom:6px;"></div>
       <div id="xp-splash-sub" style="font-family:var(--mono);font-size:0.8rem;color:var(--muted);margin-bottom:8px;"></div>
       <div id="xp-splash-how" style="font-family:var(--mono);font-size:0.68rem;color:var(--muted);line-height:1.5;display:none;border-top:1px solid var(--border);padding-top:8px;margin-top:4px;"></div>
+      <div style="font-family:var(--mono);font-size:0.58rem;color:var(--muted);margin-top:12px;opacity:0.6;">tap to dismiss</div>
     </div>
   </div>
 
@@ -2802,8 +2803,21 @@ function renderXP(){
     }).join('');
   }
 }
+function dismissSplash(){
+  const overlay=document.getElementById('xp-splash-overlay');
+  if(!overlay||!overlay.classList.contains('show'))return;
+  clearTimeout(overlay._t);
+  overlay.classList.remove('show');
+  splashQueue=[];splashShowing=false;
+}
 function showAchievementInfo(icon,label,how,status){
-  showSplash(`${icon} ${label}`, status==='earned'?`✅ Unlocked: ${how}`:`🔒 ${how}`, status==='earned'?'var(--green)':'var(--muted)');
+  // Clear queue and show immediately — don't stack badge taps
+  splashQueue=[];
+  clearTimeout(document.getElementById('xp-splash-overlay')?._t);
+  const overlay=document.getElementById('xp-splash-overlay');
+  if(overlay)overlay.classList.remove('show');
+  splashShowing=false;
+  setTimeout(()=>showSplash(`${icon} ${label}`, status==='earned'?`✅ ${how}`:`🔒 ${how}`, status==='earned'?'var(--green)':'var(--muted)'),overlay&&overlay.classList.contains('show')?350:0);
 }
 let splashQueue=[];let splashShowing=false;
 function toggleXpPanel(){
