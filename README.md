@@ -38,6 +38,13 @@ Tap **↓ Download .fap** and transfer the file to the `apps/` folder on your Fl
 - ⚙️ **Compile any public GitHub or Gitea repo** — just paste the URL
 - 📱 **Works on iPhone and Android** — installable as a PWA (Add to Home Screen)
 - 🐬 **Dolphin compile animation** — pixel-art Flipper screen while your build runs
+- 🎲 **App Roulette** — randomly pick a successfully compiled app to try
+- 🌿 **Branch & Tag Selector** — compile from any branch or tag, not just default
+- ⬇️ **Pre-built .fap Detection** — if the repo has a release .fap, download it instantly
+- 📦 **Firmware Version Picker** — pin to a specific firmware version if needed
+- 🏆 **XP & Rank System** — earn XP by compiling, downloading and exploring. Level 1–50
+- 🏅 **Achievements** — 18 achievements including 4 hidden ones. Tap to see how to unlock
+- 📖 **Changelog Diff View** — highlights what's new since the last firmware release
 - 📚 **App Directory** — curated apps with one-tap quick compile and upvotes
 - 🔥 **Daily most compiled** — see what the community is building today
 - 🔥 **Compile streak** — tracks consecutive days the community keeps building
@@ -45,7 +52,6 @@ Tap **↓ Download .fap** and transfer the file to the `apps/` folder on your Fl
 - 🔍 **Compile history search** — search through all past compiled apps instantly
 - 📡 **Firmware news feed** — latest releases from Official, Momentum and Unleashed
 - 👍 **App upvotes** — upvote your favourite apps in the directory
-- 🔗 **Share compiled app link** — one tap to copy a pre-filled compile link
 - ⏳ **Estimated wait time** — shows queue depth before you compile
 - 🌙 **Dark & light mode**
 - 🌍 **6 languages** — English, French, German, Spanish, Russian, Chinese
@@ -82,7 +88,7 @@ Fork `flipper-fap-actions` to your own GitHub account. Make sure **GitHub Action
 - Add your GitHub token as a secret: Settings → Variables → Secrets → Name: `GH_TOKEN`, Value: your `ghp_...` token (needs `repo` + `workflow` scopes)
 
 ### 3. Update the worker URL in index.html
-Open `index.html` and update line 844:
+Open `index.html` and update line ~844:
 ```js
 const WORKER_URL = 'https://your-worker.your-subdomain.workers.dev';
 ```
@@ -116,7 +122,7 @@ flipper-fap-actions/
 1. You paste a repo URL and tap Compile
 2. The frontend calls the **Cloudflare Worker** (`/api/trigger`)
 3. The worker validates the request and calls the **GitHub Actions API** to trigger `compile.yml`
-4. `compile.yml` clones your repo, finds `application.fam`, and builds the `.fap` using [ufbt](https://github.com/flipperdevices/flipperzero-ufbt)
+4. `compile.yml` clones your repo (at the selected branch/tag if specified), finds `application.fam`, and builds the `.fap` using [ufbt](https://github.com/flipperdevices/flipperzero-ufbt)
 5. The built `.fap` is uploaded as a GitHub Actions artifact (kept for 30 days)
 6. The frontend polls the worker every 8 seconds until the build finishes
 7. When done, you tap Download — the worker proxies the artifact zip, and JSZip extracts the `.fap` in your browser

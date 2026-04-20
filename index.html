@@ -549,7 +549,7 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
 .news-fw-badge { font-family:var(--mono);font-size:0.6rem;background:rgba(255,107,0,0.12);color:var(--orange);border:1px solid rgba(255,107,0,0.3);border-radius:4px;padding:2px 7px;white-space:nowrap;flex-shrink:0;margin-top:2px; }
 .news-tag { font-weight:700;font-size:0.82rem;color:var(--text); }
 .news-date { font-family:var(--mono);font-size:0.62rem;color:var(--muted);margin-top:2px; }
-.news-body { font-family:var(--mono);font-size:0.58rem;color:var(--muted);margin-top:4px;line-height:1.5;overflow:hidden;white-space:nowrap; }
+.news-body { font-family:var(--mono);font-size:0.58rem;color:var(--muted);margin-top:4px;line-height:1.5;overflow:hidden;white-space:nowrap;max-width:100%;width:100%; }
 .news-body-inner { display:inline-block;animation:newsscroll 14s linear infinite;padding-right:40px; }
 .news-body-inner:hover { animation-play-state:paused; }
 @keyframes newsscroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
@@ -579,8 +579,9 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
 .xp-badge { display:flex;align-items:center;gap:5px;padding:4px 8px;border-radius:6px;font-family:var(--mono);font-size:0.6rem;border:1px solid; }
 .xp-badge.earned { border-color:var(--orange);color:var(--orange);background:rgba(255,107,0,0.1); }
 .xp-badge.locked { border-color:var(--border);color:var(--muted);opacity:0.5; }
-.xp-toast { position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--orange);color:#000;font-family:var(--mono);font-size:0.75rem;font-weight:700;padding:8px 16px;border-radius:8px;z-index:9999;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity 0.3s; }
-.xp-toast.show { opacity:1; }
+.xp-toast { display:none; } /* replaced by splash overlay */
+#xp-splash-overlay.show { opacity:1!important; }
+#xp-splash-overlay.show > div { transform:scale(1)!important; }
 
 /* ── Branch selector ── */
 #branch-wrap { margin-top:10px;display:none; }
@@ -612,8 +613,8 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
   </div>
 </div>
 <!-- ── Worker Offline Banner ─────────────────────────────────────────────── -->
-<div id="offline-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:repeating-linear-gradient(90deg,#1a0000,#2a0800 40px,#1a0000 80px);border-bottom:2px solid var(--red);padding:8px 16px;text-align:center;font-family:var(--mono);font-size:0.72rem;color:var(--red);letter-spacing:0.04em;box-shadow:0 0 20px rgba(255,0,0,0.3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-  ⚠ &nbsp;WORKER OFFLINE — COMPILE UNAVAILABLE — BE BACK SOON&nbsp; ⚠
+<div id="offline-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:repeating-linear-gradient(90deg,#1a0000,#2a0800 40px,#1a0000 80px);border-bottom:2px solid var(--red);padding:6px 0;font-family:var(--mono);font-size:0.72rem;color:var(--red);letter-spacing:0.04em;box-shadow:0 0 20px rgba(255,0,0,0.3);overflow:hidden;">
+  <div id="offline-banner-inner" style="display:inline-block;white-space:nowrap;animation:newsscroll 12s linear infinite;padding-right:60px;">⚠ &nbsp;WORKER OFFLINE — COMPILE UNAVAILABLE — BE BACK SOON&nbsp; ⚠ &nbsp;WORKER OFFLINE — COMPILE UNAVAILABLE — BE BACK SOON&nbsp; ⚠</div>
 </div>
 
 <!-- ── Token Setup Modal ───────────────────────────────────────────────────── -->
@@ -635,23 +636,21 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
   </div>
 </div>
 
-<!-- ── What's New v2.0 Modal ─────────────────────────────────────────────── -->
+<!-- ── What's New v3.0 Modal ─────────────────────────────────────────────── -->
 <div class="wn-overlay hidden" id="wn-overlay">
   <div class="wn-box">
     <div class="wn-badge">✨ WHAT'S NEW</div>
-    <h2>FlipperFAP <span>v2.0</span></h2>
-    <p class="wn-sub">A big update for the Flipper community 🐬</p>
+    <h2>FlipperFAP <span>v3.0</span></h2>
+    <p class="wn-sub">The biggest update yet 🐬</p>
     <div class="wn-list">
-      <div class="wn-item"><span class="wn-icon">🐬</span><div class="wn-text"><strong>Dolphin compile animation</strong><span>Pixel-art Flipper screen animates while your build runs.</span></div></div>
-      <div class="wn-item"><span class="wn-icon">🪩</span><div class="wn-text"><strong>Easter egg</strong><span>Find it yourself… hint: try tapping the logo.</span></div></div>
-      <div class="wn-item"><span class="wn-icon">✅</span><div class="wn-text"><strong>Already compiled detection</strong><span>Warns you if the same app + firmware was recently compiled.</span></div></div>
-      <div class="wn-item"><span class="wn-icon">🔍</span><div class="wn-text"><strong>Compile history search</strong><span>Search through your past compiled apps instantly.</span></div></div>
-      <div class="wn-item"><span class="wn-icon">🔥</span><div class="wn-text"><strong>Daily most compiled</strong><span>See what the community is building most today.</span></div></div>
-      <div class="wn-item"><span class="wn-icon">🔥</span><div class="wn-text"><strong>Compile streak</strong><span>Track consecutive days the community keeps building.</span></div></div>
-      <div class="wn-item"><span class="wn-icon">📡</span><div class="wn-text"><strong>Firmware news feed</strong><span>Latest releases from Official, Momentum and Unleashed.</span></div></div>
-      <div class="wn-item"><span class="wn-icon">👍</span><div class="wn-text"><strong>App upvotes</strong><span>Upvote your favourite apps in the directory.</span></div></div>
-      <div class="wn-item"><span class="wn-icon">📚</span><div class="wn-text"><strong>Updated app directory</strong><span>Stale repos replaced, 3 new apps added.</span></div></div>
-      <div class="wn-item"><span class="wn-icon">🌙</span><div class="wn-text"><strong>Cleaner UI</strong><span>2-column grids, tighter cards, better light mode.</span></div></div>
+      <div class="wn-item"><span class="wn-icon">🏆</span><div class="wn-text"><strong>XP & Rank System</strong><span>Earn XP by compiling, downloading and exploring. Level up through 50 ranks from Newbie to Legend.</span></div></div>
+      <div class="wn-item"><span class="wn-icon">🏅</span><div class="wn-text"><strong>Achievements</strong><span>18 achievements to unlock — including 4 hidden ones. Tap any achievement to see how to unlock it.</span></div></div>
+      <div class="wn-item"><span class="wn-icon">🎲</span><div class="wn-text"><strong>App Roulette</strong><span>Hit the Roulette button to load a random successfully compiled app.</span></div></div>
+      <div class="wn-item"><span class="wn-icon">🌿</span><div class="wn-text"><strong>Branch & Tag Selector</strong><span>Compile from any branch or tag — not just the default. Appears automatically when you paste a URL.</span></div></div>
+      <div class="wn-item"><span class="wn-icon">⬇</span><div class="wn-text"><strong>Pre-built .fap Detection</strong><span>If a repo has a release .fap file, you can download it instantly — no build queue needed.</span></div></div>
+      <div class="wn-item"><span class="wn-icon">📦</span><div class="wn-text"><strong>Firmware Version Picker</strong><span>Choose a specific firmware version if your Flipper isn't on the latest.</span></div></div>
+      <div class="wn-item"><span class="wn-icon">📖</span><div class="wn-text"><strong>Changelog Diff View</strong><span>Firmware changelogs now highlight what's new since the last release.</span></div></div>
+      <div class="wn-item"><span class="wn-icon">✅</span><div class="wn-text"><strong>Bug fixes</strong><span>Already-compiled detection now works on all pages. Compile Anyway no longer re-triggers the popup.</span></div></div>
     </div>
     <button class="wn-close-btn" onclick="closeWhatsNew()">Let's go! 🚀</button>
   </div>
@@ -825,6 +824,13 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
           <div class="fw-card"></div>
         </div>
         <div class="version-note" id="fw-note">Stable official Flipper Zero firmware.</div>
+        <div id="fw-ver-override-wrap" style="display:none;margin-top:8px;">
+          <span class="branch-label">📦 Firmware Version (optional)</span>
+          <select id="fw-ver-override" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:0.75rem;padding:7px 10px;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;" onchange="onFwVerOverrideChange()">
+            <option value="">Latest (recommended)</option>
+          </select>
+          <div style="font-family:var(--mono);font-size:0.6rem;color:var(--muted);margin-top:4px;">Only change if your Flipper is on an older version</div>
+        </div>
       </div>
 
       <div class="form-group">
@@ -870,11 +876,20 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
         <div class="xp-bar-wrap"><div class="xp-bar-fill" id="xp-bar" style="width:0%"></div></div>
         <div class="xp-sub" id="xp-sub">Compile your first app to earn XP ↓</div>
       </div>
-      <span style="font-family:var(--mono);font-size:0.65rem;color:var(--muted);">▾</span>
+      <span style="font-family:var(--mono);font-size:0.65rem;color:var(--muted);" id="xp-chevron">▾</span>
     </div>
     <div class="xp-achievements" id="xp-achievements-panel"></div>
   </div>
-  <div class="xp-toast" id="xp-toast"></div>
+
+  <!-- XP Splash overlay -->
+  <div id="xp-splash-overlay" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.82);display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity 0.3s;">
+    <div style="text-align:center;padding:32px 28px;background:var(--bg2);border:1px solid var(--orange);border-radius:16px;box-shadow:0 0 40px rgba(255,107,0,0.4);max-width:280px;width:90%;transform:scale(0.9);transition:transform 0.3s;">
+      <div id="xp-splash-icon" style="font-size:2.8rem;margin-bottom:10px;">⚡</div>
+      <div id="xp-splash-title" style="font-family:var(--mono);font-size:1.1rem;font-weight:700;color:var(--orange);margin-bottom:6px;"></div>
+      <div id="xp-splash-sub" style="font-family:var(--mono);font-size:0.8rem;color:var(--muted);margin-bottom:8px;"></div>
+      <div id="xp-splash-how" style="font-family:var(--mono);font-size:0.68rem;color:var(--muted);line-height:1.5;display:none;border-top:1px solid var(--border);padding-top:8px;margin-top:4px;"></div>
+    </div>
+  </div>
 
   <!-- ── Support bar ── -->
   <div class="support-bar">
@@ -1364,13 +1379,13 @@ function toggleDebugBar() {
 
 // ── What's New modal ──────────────────────────────────────────────────────────
 function checkWhatsNew() {
-  if(!lsGet('fap_v3_seen','')) {
+  if(!lsGet('fap_v4_seen','')) {
     const el=document.getElementById('wn-overlay');
     if(el) el.classList.remove('hidden');
   }
 }
 function closeWhatsNew() {
-  lsSet('fap_v3_seen','1');
+  lsSet('fap_v4_seen','1');
   const el=document.getElementById('wn-overlay');
   if(el) el.classList.add('hidden');
 }
@@ -1556,19 +1571,40 @@ async function checkRepoForApps(url) {
 }
 
 // ── Firmware versions ─────────────────────────────────────────────────────────
+const fwAllReleases = {}; // fw -> [{tag, prerelease}]
 async function fetchFirmwareVersions() {
   for (const [fw, repo] of Object.entries(FW_REPOS)) {
     try {
-      const relRes=await fetch(`https://api.github.com/repos/${repo}/releases/latest`);
-      if(relRes.ok){const d=await relRes.json();if(d.tag_name){fwVersions[fw]=d.tag_name;const el=document.getElementById('fw-ver-'+fw);if(el)el.textContent=d.tag_name;}}
-      const devRes=await fetch(`https://api.github.com/repos/${repo}/releases?per_page=10`);
-      if(devRes.ok){const releases=await devRes.json();const pre=releases.find(r=>r.prerelease)||releases.find(r=>/dev|rc|beta|alpha/i.test(r.tag_name));if(pre)fwVersionsDev[fw]=pre.tag_name;}
+      const relRes=await fetch(`https://api.github.com/repos/${repo}/releases?per_page=20`);
+      if(relRes.ok){
+        const releases=await relRes.json();
+        fwAllReleases[fw]=releases.map(r=>({tag:r.tag_name,pre:r.prerelease}));
+        const stable=releases.find(r=>!r.prerelease);
+        const dev=releases.find(r=>r.prerelease)||releases.find(r=>/dev|rc|beta|alpha/i.test(r.tag_name));
+        if(stable){fwVersions[fw]=stable.tag_name;const el=document.getElementById('fw-ver-'+fw);if(el)el.textContent=stable.tag_name;}
+        if(dev)fwVersionsDev[fw]=dev.tag_name;
+      }
     } catch(_) {}
   }
   const fw=document.querySelector('input[name="fw"]:checked')?.value||'official';
   const ch=document.querySelector('input[name="ch"]:checked')?.value||'release';
   const el=document.getElementById('out-fw');
   if(el) el.textContent=fwLabelForChannel(fw,ch);
+  updateFwVerDropdown(fw,ch);
+}
+function updateFwVerDropdown(fw,ch){
+  const wrap=document.getElementById('fw-ver-override-wrap');
+  const sel=document.getElementById('fw-ver-override');
+  if(!wrap||!sel)return;
+  const releases=(fwAllReleases[fw]||[]).filter(r=>ch==='dev'?true:!r.pre);
+  if(releases.length<2){wrap.style.display='none';return;}
+  sel.innerHTML=`<option value="">Latest — ${esc(releases[0]?.tag||'auto')} (recommended)</option>`
+    +releases.slice(1).map(r=>`<option value="${esc(r.tag)}">📦 ${esc(r.tag)}${r.pre?' (dev)':''}</option>`).join('');
+  wrap.style.display='block';
+}
+function onFwVerOverrideChange(){
+  const val=document.getElementById('fw-ver-override')?.value||'';
+  if(val)showToast(`📦 Will compile against firmware ${val}`);
 }
 function fwLabelForChannel(fw,ch) {
   if(ch==='dev'){const dv=fwVersionsDev[fw];if(dv)return`${FW_NAMES[fw]||fw} ${dv}`;const rv=fwVersions[fw];return rv?`${FW_NAMES[fw]||fw} ${rv} (dev branch)`:`${FW_NAMES[fw]||fw} dev branch`;}
@@ -1582,6 +1618,9 @@ function cleanNotes(body) {
     .filter(l=>l&&!l.startsWith('**Full')&&!l.startsWith('http')&&l.length>2);
 }
 async function showChangelog(fw) {
+  // Award changelog achievement XP
+  const s=getXpState();
+  if(!s.readChangelog){awardXP(10,'changelog');}
   const modal=document.getElementById('changelog-modal'); if(!modal) return;
   modal.style.display='flex';
   const nameEl=document.getElementById('cl-fw-name'); if(nameEl) nameEl.textContent=FW_NAMES[fw]||fw;
@@ -1682,6 +1721,7 @@ function quickCompile(idx){
   const app=APP_DIR[idx];if(!app)return;
   const el=document.getElementById('repo-url');if(el)el.value=app.repo;
   const fw=document.getElementById('fw-'+app.recommended);if(fw){fw.checked=true;fw.dispatchEvent(new Event('change'));}
+  checkRepoForApps(app.repo);
   document.getElementById('compile-btn')?.scrollIntoView({behavior:'smooth',block:'center'});
   showToast(`⚙ ${app.name} loaded — tap Compile!`);
 }
@@ -1711,6 +1751,9 @@ document.querySelectorAll('input[name="fw"]').forEach(r=>{r.addEventListener('ch
   const ch=document.querySelector('input[name="ch"]:checked')?.value||'release';
   const of=document.getElementById('out-fw');if(of)of.textContent=fwLabelForChannel(r.value,ch);
   updateETA();renderAppDir();
+  updateFwVerDropdown(r.value,ch);
+  // Reset override when firmware changes
+  const ov=document.getElementById('fw-ver-override');if(ov)ov.value='';
 });});
 document.querySelectorAll('input[name="ch"]').forEach(r=>{r.addEventListener('change',()=>{
   const cn=document.getElementById('ch-note');if(cn)cn.textContent=r.value==='release'?t('ch_stable'):t('ch_dev');
@@ -1722,6 +1765,8 @@ document.querySelectorAll('input[name="ch"]').forEach(r=>{r.addEventListener('ch
     if(r.value==='dev'&&fwVersionsDev[fwKey]) badge.textContent=fwVersionsDev[fwKey];
     else if(r.value==='release'&&fwVersions[fwKey]) badge.textContent=fwVersions[fwKey];
   }
+  updateFwVerDropdown(fw,r.value);
+  const ov=document.getElementById('fw-ver-override');if(ov)ov.value='';
 });});
 const repoInputEl=document.getElementById('repo-url');
 if(repoInputEl){
@@ -1771,6 +1816,8 @@ async function submitCompile() {
     const body={repo_url:url,firmware,channel};if(appDir)body.app_dir=appDir;
     const repoBranch=document.getElementById('branch-selector')?.value||'';
     if(repoBranch)body.repo_branch=repoBranch;
+    const fwVerOverride=document.getElementById('fw-ver-override')?.value||'';
+    if(fwVerOverride)body.fw_version=fwVerOverride;
     const tr=await api('/api/trigger',{method:'POST',body:JSON.stringify(body)});
     const td=await tr.json();if(!tr.ok)throw new Error(td.error||`Worker error ${tr.status}`);
     saveRecent(url);showNotifPrompt();btnText.textContent=t('finding');
@@ -2079,6 +2126,7 @@ function recompileJob(repoUrl,firmware,channel){
   const el=document.getElementById('repo-url');if(el)el.value=repoUrl;
   const fw=document.getElementById('fw-'+firmware);if(fw){fw.checked=true;fw.dispatchEvent(new Event('change'));}
   const ch=document.getElementById('ch-'+channel);if(ch){ch.checked=true;ch.dispatchEvent(new Event('change'));}
+  checkRepoForApps(repoUrl);
   document.getElementById('compile-btn')?.scrollIntoView({behavior:'smooth',block:'center'});
   showToast('↻ Ready to recompile — tap Compile!');
 }
@@ -2120,17 +2168,14 @@ async function fetchPopularApps(){
       const repoName=(short.split('/').pop()||short).replace(/-/g,' ').replace(/_/g,' ');
       const fullUrl=app.fullUrl||'https://'+app.url;
       return `<div class="app-card" onclick="quickCompileUrl('${esc(fullUrl)}','${esc(app.topFw||'official')}')">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:4px;min-width:0;">
-          <div class="app-card-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(repoName)}</div>
-          <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
-            <span style="font-family:var(--mono);font-size:0.6rem;color:var(--orange);">×${app.count}</span>
-            <button class="upvote-btn pop-vote-btn${popularVoted.has(short)?' voted':''}" data-key="${esc(short)}" style="padding:1px 4px;font-size:0.62rem;" onclick="event.stopPropagation();togglePopularVote(this,'${esc(short)}')" title="Upvote">👍<span class="pop-vote-count" style="font-size:0.52rem;margin-left:2px;">${popularVoteCounts[short]||''}</span></button>
-            <button class="upvote-btn" style="padding:1px 4px;font-size:0.62rem;" onclick="event.stopPropagation();showToast('🚩 Thanks for reporting!')" title="Report broken app">🚩</button>
-          </div>
+        <div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;flex-shrink:0;margin-bottom:4px;">
+          <span style="font-family:var(--mono);font-size:0.6rem;color:var(--orange);">×${app.count}</span>
+          <button class="upvote-btn pop-vote-btn${popularVoted.has(short)?' voted':''}" data-key="${esc(short)}" style="padding:1px 4px;font-size:0.62rem;" onclick="event.stopPropagation();togglePopularVote(this,'${esc(short)}')" title="Upvote">👍<span class="pop-vote-count" style="font-size:0.52rem;margin-left:2px;">${popularVoteCounts[short]||''}</span></button>
+          <button class="upvote-btn" style="padding:1px 4px;font-size:0.62rem;" onclick="event.stopPropagation();showToast('🚩 Thanks for reporting!')" title="Report broken app">🚩</button>
         </div>
+        <div class="app-card-name" style="word-break:break-word;white-space:normal;margin-bottom:4px;">${esc(repoName)}</div>
         <div style="font-family:var(--mono);font-size:0.6rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(short)}</div>
-        <div class="app-card-fw">✅ Best on <strong>${esc(FW_NAMES[app.topFw]||app.topFw)}</strong></div>
-        ${app.lastSeen?`<div style="font-family:var(--mono);font-size:0.58rem;color:var(--muted);">🕐 Last compiled ${timeAgo(app.lastSeen)}</div>`:''}
+        ${app.lastSeen?`<div style="font-family:var(--mono);font-size:0.58rem;color:var(--muted);margin-top:2px;">🕐 Last compiled ${timeAgo(app.lastSeen)}</div>`:''}
         <div style="display:flex;align-items:center;gap:5px;margin-top:8px;">
           <div class="app-card-cta" style="white-space:nowrap;">⚙ Quick Compile</div>
           <a href="${esc(fullUrl)}" target="_blank" onclick="event.stopPropagation()" class="app-gh-link">⧉ Repo</a>
@@ -2142,6 +2187,7 @@ async function fetchPopularApps(){
 function quickCompileUrl(repoUrl,firmware){
   const el=document.getElementById('repo-url');if(el)el.value=repoUrl;
   const fw=document.getElementById('fw-'+firmware);if(fw){fw.checked=true;fw.dispatchEvent(new Event('change'));}
+  checkRepoForApps(repoUrl);
   document.getElementById('compile-btn')?.scrollIntoView({behavior:'smooth',block:'center'});
   showToast('⚙ App loaded — tap Compile!');
 }
@@ -2164,18 +2210,14 @@ async function testConnection(){
 function setWorkerOffline(msg){
   const dot=document.getElementById('worker-dot'),label=document.getElementById('worker-label');
   const banner=document.getElementById('offline-banner');
+  const inner=document.getElementById('offline-banner-inner');
+  if(dot){dot.className='status-dot dot-error';}
+  if(label){label.textContent='worker offline';}
+  if(inner){const t=`⚠  ${msg.toUpperCase()}  ⚠`;inner.textContent=t+'     '+t;}
+  if(banner){banner.style.display='block';}
   if(dot)dot.className='status-dot dot-offline';
   if(label)label.textContent=msg||'worker offline';
-  if(banner){
-    // If it looks like a browser compatibility issue, show a more helpful message
-    if(msg&&msg.includes('network blocked')){
-      banner.innerHTML='⚠ &nbsp;WORKER BLOCKED BY BROWSER — PLEASE USE <strong>CHROME</strong> OR <strong>FIREFOX</strong>&nbsp; ⚠';
-    } else {
-      banner.innerHTML='⚠ &nbsp;WORKER OFFLINE — COMPILE UNAVAILABLE — BE BACK SOON&nbsp; ⚠';
-    }
-    banner.style.display='block';
-    document.body.style.paddingTop='44px';
-  }
+  document.body.style.paddingTop='44px';
 }
 function setWorkerOnline(){
   const dot=document.getElementById('worker-dot'),label=document.getElementById('worker-label');
@@ -2248,6 +2290,9 @@ function activateDisco() {
   document.body.classList.add('disco-mode');
   discoBeamTimer = setInterval(spawnBeams, 350);
   spawnBeams();
+  // Award disco easter egg XP (only first time)
+  const s=getXpState();
+  if(!s.discoFound){awardXP(10,'disco');}
 }
 function dismissDisco() {
   discoActive = false;
@@ -2375,7 +2420,7 @@ async function acGoToResult() {
 function dismissAlreadyCompiled() {
   const overlay = document.getElementById('ac-modal-overlay');
   if (overlay) overlay.classList.remove('open');
-  // Don't clear acMatchJob — let them compile anyway
+  acMatchJob = null; // cleared so pressing Compile .FAP won't re-trigger the modal
 }
 
 // ── History search ────────────────────────────────────────────────────────────
@@ -2547,28 +2592,45 @@ const XP_RANKS = [
   {min:46, max:50, name:'Legend',     emblem:'🐬'},
 ];
 const ACHIEVEMENTS = [
-  {id:'first',      label:'First Compile',    icon:'🎉', xp:1,   check:s=>s.compiles>=1},
-  {id:'five',       label:'5 Compiles',        icon:'✌️', xp:5,   check:s=>s.compiles>=5},
-  {id:'ten',        label:'10 Compiles',       icon:'🔟', xp:10,  check:s=>s.compiles>=10},
-  {id:'twentyfive', label:'25 Compiles',       icon:'💪', xp:25,  check:s=>s.compiles>=25},
-  {id:'fifty',      label:'50 Compiles',       icon:'🔥', xp:50,  check:s=>s.compiles>=50},
-  {id:'nightowl',   label:'Night Owl',         icon:'🦉', xp:5,   check:s=>s.nightOwl},
-  {id:'polyglot',   label:'All 3 Firmware',    icon:'🌐', xp:10,  check:s=>s.firmware&&Object.keys(s.firmware).length>=3},
-  {id:'explorer',   label:'Explorer',          icon:'🎲', xp:5,   check:s=>s.roulette>=1},
-  {id:'level10',    label:'Level 10',          icon:'⚡', xp:0,   check:s=>s.level>=10},
-  {id:'level25',    label:'Level 25',          icon:'🏆', xp:0,   check:s=>s.level>=25},
-  {id:'level50',    label:'Legend Status',     icon:'🐬', xp:0,   check:s=>s.level>=50},
+  // Compile milestones
+  {id:'first',      label:'First Compile',       icon:'🎉', xp:10,  how:'Compile your first app',             check:s=>s.compiles>=1},
+  {id:'five',       label:'5 Compiles',           icon:'✌️', xp:10,  how:'Compile 5 apps total',               check:s=>s.compiles>=5},
+  {id:'ten',        label:'10 Compiles',           icon:'🔟', xp:10,  how:'Compile 10 apps total',              check:s=>s.compiles>=10},
+  {id:'twentyfive', label:'25 Compiles',           icon:'💪', xp:10,  how:'Compile 25 apps total',              check:s=>s.compiles>=25},
+  {id:'fifty',      label:'50 Compiles',           icon:'🔥', xp:10,  how:'Compile 50 apps total',              check:s=>s.compiles>=50},
+  {id:'hundred',    label:'100 Compiles',          icon:'💯', xp:10,  how:'Compile 100 apps total',             check:s=>s.compiles>=100},
+  // Special compile behaviour
+  {id:'nightowl',   label:'Night Owl',             icon:'🦉', xp:10,  how:'Compile an app between midnight and 5am', check:s=>s.nightOwl},
+  {id:'polyglot',   label:'Firmware Collector',   icon:'🌐', xp:10,  how:'Compile on all 3 firmware types',   check:s=>s.firmware&&Object.keys(s.firmware).length>=3},
+  {id:'roulette',   label:'Feeling Lucky',         icon:'🎲', xp:10,  how:'Use the Roulette button to load an app', check:s=>s.rouletteUsed>=1},
+  {id:'speedrun',   label:'Speedrun',              icon:'⚡', xp:10,  how:'Compile 3 apps in one day',          check:s=>s.compilesToday>=3},
+  {id:'downloader', label:'Downloader',            icon:'⬇️', xp:10,  how:'Download a compiled .fap file',      check:s=>s.downloads>=1},
+  {id:'prebuilt',   label:'Shortcut Taker',        icon:'🏎️', xp:10,  how:'Download a pre-built .fap from a GitHub Release', check:s=>s.releaseDownloads>=1},
+  {id:'brancher',   label:'Branch Explorer',       icon:'🌿', xp:10,  how:'Compile from a non-default branch or tag', check:s=>s.branchCompiles>=1},
+  {id:'dailystreak',label:'Daily Devotion',        icon:'📅', xp:10,  how:'Compile on 3 different days',        check:s=>s.uniqueDays>=3},
+  // Level milestones
+  {id:'level5',     label:'Level 5',               icon:'🌟', xp:10,  how:'Reach Level 5',                      check:s=>s.level>=5},
+  {id:'level10',    label:'Level 10',              icon:'⚡', xp:10,  how:'Reach Level 10',                     check:s=>s.level>=10},
+  {id:'level25',    label:'Level 25',              icon:'🏆', xp:10,  how:'Reach Level 25',                     check:s=>s.level>=25},
+  {id:'level50',    label:'Legend Status',         icon:'🐬', xp:10,  how:'Reach Level 50 — maximum rank',      check:s=>s.level>=50},
+  // Hidden achievements
+  {id:'disco',      label:'???',                   icon:'🪩', xp:10,  how:'Find the secret disco ball Easter egg', hidden:true, check:s=>s.discoFound},
+  {id:'speedster',  label:'???',                   icon:'💨', xp:10,  how:'Compile an app in under 45 seconds', hidden:true, check:s=>s.fastCompile},
+  {id:'insomniac',  label:'???',                   icon:'😴', xp:10,  how:'Compile between 2am and 4am',        hidden:true, check:s=>s.insomniac},
+  {id:'changelog',  label:'???',                   icon:'📖', xp:10,  how:'Open the firmware changelog',        hidden:true, check:s=>s.readChangelog},
 ];
-function xpForLevel(n){return n*100;} // XP needed to go from level n-1 to n
-function totalXpForLevel(n){return n*(n+1)/2*100;} // cumulative XP to reach level n
+// ── FIXED level math: level 1=0XP, level 2=100XP, level 3=300XP (exponential) ──
+function totalXpForLevel(n){return n<=1?0:(n-1)*n/2*100;} // cumulative XP to reach level n
 function levelFromXp(xp){let l=1;while(l<50&&xp>=totalXpForLevel(l+1))l++;return l;}
-function getXpState(){return lsGetJson('fap_xp_state',{xp:0,level:1,compiles:0,firmware:{},roulette:0,votes:0,nightOwl:false,earned:[]});}
+function xpForNextLevel(l){return totalXpForLevel(l+1)-totalXpForLevel(l);}
+function getXpState(){return lsGetJson('fap_xp_state',{xp:0,level:1,compiles:0,firmware:{},rouletteUsed:0,nightOwl:false,insomniac:false,discoFound:false,fastCompile:false,readChangelog:false,downloads:0,releaseDownloads:0,branchCompiles:0,uniqueDays:0,compileDays:[],compilesToday:0,lastCompileDate:'',earned:[]});}
 function saveXpState(s){lsSetJson('fap_xp_state',s);}
 function getRankForLevel(l){return XP_RANKS.find(r=>l>=r.min&&l<=r.max)||XP_RANKS[0];}
 
-function awardXP(amount, reason){
+function awardXP(amount, reason, extraData){
   const s=getXpState();
   s.xp=(s.xp||0)+amount;
+  const today=new Date().toISOString().slice(0,10);
   if(reason==='compile'){
     s.compiles=(s.compiles||0)+1;
     if(!s.firmware)s.firmware={};
@@ -2576,28 +2638,52 @@ function awardXP(amount, reason){
     s.firmware[fw]=(s.firmware[fw]||0)+1;
     const h=new Date().getHours();
     if(h>=0&&h<5)s.nightOwl=true;
-    // First compile of day bonus
-    const today=new Date().toISOString().slice(0,10);
-    if(s.lastCompileDate!==today){s.xp+=50;s.lastCompileDate=today;showXpToast(`+${amount} XP  +50 XP daily bonus!`);}
-    else showXpToast(`+${amount} XP`);
+    if(h>=2&&h<4)s.insomniac=true;
+    // Track unique compile days
+    if(!s.compileDays)s.compileDays=[];
+    if(!s.compileDays.includes(today)){s.compileDays.push(today);s.uniqueDays=(s.compileDays.length);}
+    // Track compiles today for speedrun
+    if(s.lastCompileDate===today){s.compilesToday=(s.compilesToday||0)+1;}
+    else{s.compilesToday=1;}
+    s.lastCompileDate=today;
+    // Daily bonus
+    if(s.lastDailyBonus!==today){s.xp+=50;s.lastDailyBonus=today;showSplash(`+${amount} XP compile`, '+50 XP daily bonus!');}
+    else showSplash(`+${amount} XP`);
+    // Check branch compile
+    const repoBranch=document.getElementById('branch-selector')?.value||'';
+    if(repoBranch)s.branchCompiles=(s.branchCompiles||0)+1;
+    // Fast compile check
+    if(extraData&&extraData.elapsed&&extraData.elapsed<45)s.fastCompile=true;
   } else if(reason==='download'){
-    // Downloading a pre-existing compiled .fap
-    showXpToast(`+${amount} XP`);
+    s.downloads=(s.downloads||0)+1;
+    showSplash(`+${amount} XP`, 'Downloaded a .fap!');
   } else if(reason==='release_dl'){
-    // Downloading a pre-built .fap from GitHub Releases
-    showXpToast(`+${amount} XP`);
+    s.releaseDownloads=(s.releaseDownloads||0)+1;
+    showSplash(`+${amount} XP`, 'Pre-built .fap downloaded!');
+  } else if(reason==='roulette'){
+    s.rouletteUsed=(s.rouletteUsed||0)+1;
+    showSplash(`+${amount} XP`);
+  } else if(reason==='changelog'){
+    s.readChangelog=true;
+    showSplash(`+${amount} XP`);
+  } else if(reason==='disco'){
+    s.discoFound=true;
+    showSplash(`+${amount} XP`, '🪩 Easter egg found!');
   }
   const newLevel=levelFromXp(s.xp);
   const oldLevel=s.level||1;
   s.level=newLevel;
-  if(newLevel>oldLevel) showXpToast(`🎉 LEVEL UP! You are now Level ${newLevel}!`);
+  if(newLevel>oldLevel){
+    const rank=getRankForLevel(newLevel);
+    showLevelSplash(newLevel, rank);
+  }
   // Check achievement unlocks
   const prevEarned=new Set(s.earned||[]);
   ACHIEVEMENTS.forEach(a=>{
     if(!prevEarned.has(a.id)&&a.check(s)){
       s.earned=[...(s.earned||[]),a.id];
-      if(a.xp>0){s.xp+=a.xp;showXpToast(`🏅 Achievement: ${a.icon} ${a.label}  +${a.xp} XP`);}
-      else showXpToast(`🏅 Achievement: ${a.icon} ${a.label}`);
+      s.xp+=(a.xp||10);
+      showAchievementSplash(a);
     }
   });
   saveXpState(s);
@@ -2608,34 +2694,91 @@ function renderXP(){
   const s=getXpState();
   const level=s.level||1;
   const rank=getRankForLevel(level);
-  const xpThisLevel=s.xp-totalXpForLevel(level-1);
-  const xpNeeded=xpForLevel(level);
+  const xpThisLevel=s.xp-totalXpForLevel(level);
+  const xpNeeded=xpForNextLevel(level);
   const pct=Math.min(100,Math.round(xpThisLevel/xpNeeded*100));
   const el=(id)=>document.getElementById(id);
-  if(el('xp-emblem'))   el('xp-emblem').textContent=rank.emblem;
-  if(el('xp-level-label'))  el('xp-level-label').textContent=`LVL ${level}`;
-  if(el('xp-rank-name')) el('xp-rank-name').textContent=rank.name;
-  if(el('xp-count-label'))  el('xp-count-label').textContent=`${xpThisLevel} / ${xpNeeded} XP`;
-  if(el('xp-bar'))      el('xp-bar').style.width=pct+'%';
-  if(el('xp-sub'))      el('xp-sub').textContent=level>=50?'Maximum level reached — Legend status! 🐬':`${s.compiles||0} compile${s.compiles!==1?'s':''} · ${s.xp||0} total XP`;
-  // Achievements panel
+  if(el('xp-emblem'))      el('xp-emblem').textContent=rank.emblem;
+  if(el('xp-level-label')) el('xp-level-label').textContent=`LVL ${level}`;
+  if(el('xp-rank-name'))   el('xp-rank-name').textContent=rank.name;
+  if(el('xp-count-label')) el('xp-count-label').textContent=`${xpThisLevel} / ${xpNeeded} XP`;
+  if(el('xp-bar'))         el('xp-bar').style.width=pct+'%';
+  if(el('xp-sub'))         el('xp-sub').textContent=level>=50?'Maximum level reached — Legend status! 🐬':`${s.compiles||0} compile${s.compiles!==1?'s':''} · ${s.xp||0} total XP`;
   const panel=el('xp-achievements-panel');
   if(panel){
     const earned=new Set(s.earned||[]);
-    panel.innerHTML=ACHIEVEMENTS.map(a=>`<div class="xp-badge ${earned.has(a.id)?'earned':'locked'}" title="${a.label}">${a.icon} <span>${a.label}</span></div>`).join('');
+    panel.innerHTML=ACHIEVEMENTS.map(a=>{
+      const isEarned=earned.has(a.id);
+      const isHidden=a.hidden&&!isEarned;
+      const label=isHidden?'???':a.label;
+      const icon=isHidden?'🔒':a.icon;
+      const howText=isEarned?a.how:(isHidden?'Hidden achievement — keep exploring!':a.how);
+      return `<div class="xp-badge ${isEarned?'earned':'locked'}" onclick="showAchievementInfo('${esc(icon)}','${esc(label)}','${esc(howText)}','${isEarned?'earned':'locked'}')" title="${esc(label)}" style="cursor:pointer;">${icon} <span>${label}</span></div>`;
+    }).join('');
   }
 }
+function showAchievementInfo(icon,label,how,status){
+  showSplash(`${icon} ${label}`, status==='earned'?`✅ Unlocked: ${how}`:`🔒 ${how}`, status==='earned'?'var(--green)':'var(--muted)');
+}
+let splashQueue=[];let splashShowing=false;
 function toggleXpPanel(){
   const p=document.getElementById('xp-achievements-panel');
-  if(p)p.classList.toggle('open');
+  const c=document.getElementById('xp-chevron');
+  if(p){p.classList.toggle('open');if(c)c.textContent=p.classList.contains('open')?'▴':'▾';}
 }
+function showSplash(title,sub,subColor){
+  splashQueue.push({title,sub,subColor});
+  if(!splashShowing)drainSplash();
+}
+function showLevelSplash(level,rank){
+  splashQueue.push({type:'levelup',level,rank});
+  if(!splashShowing)drainSplash();
+}
+function showAchievementSplash(a){
+  splashQueue.push({type:'achievement',a});
+  if(!splashShowing)drainSplash();
+}
+function drainSplash(){
+  if(!splashQueue.length){splashShowing=false;return;}
+  splashShowing=true;
+  const item=splashQueue.shift();
+  const overlay=document.getElementById('xp-splash-overlay');
+  const icon=document.getElementById('xp-splash-icon');
+  const title=document.getElementById('xp-splash-title');
+  const sub=document.getElementById('xp-splash-sub');
+  const how=document.getElementById('xp-splash-how');
+  if(!overlay)return;
+  if(item.type==='levelup'){
+    icon.textContent=item.rank.emblem;
+    title.textContent=`LEVEL UP! LVL ${item.level}`;
+    title.style.color='var(--orange)';
+    sub.textContent=item.rank.name;
+    sub.style.color='var(--orange)';
+    how.textContent='Keep compiling to climb the ranks!';
+    how.style.display='block';
+  } else if(item.type==='achievement'){
+    icon.textContent=item.a.icon;
+    title.textContent=`Achievement Unlocked!`;
+    title.style.color='var(--green)';
+    sub.textContent=item.a.label+(item.a.xp?` · +${item.a.xp} XP`:'');
+    sub.style.color='var(--green)';
+    how.textContent=item.a.how;
+    how.style.display='block';
+  } else {
+    icon.textContent='⚡';
+    title.textContent=item.title||'';
+    title.style.color='var(--orange)';
+    sub.textContent=item.sub||'';
+    sub.style.color=item.subColor||'var(--muted)';
+    how.style.display='none';
+  }
+  overlay.classList.add('show');
+  clearTimeout(overlay._t);
+  overlay._t=setTimeout(()=>{overlay.classList.remove('show');setTimeout(drainSplash,350);},2200);
+}
+// Keep old name as alias for any remaining calls
+function showXpToast(msg){showSplash(msg);}
 let xpToastTimer=null;
-function showXpToast(msg){
-  const t=document.getElementById('xp-toast');if(!t)return;
-  t.textContent=msg;t.classList.add('show');
-  clearTimeout(xpToastTimer);
-  xpToastTimer=setTimeout(()=>t.classList.remove('show'),2800);
-}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // APP ROULETTE — pick random from already-compiled successful apps
@@ -2651,6 +2794,7 @@ function rouletteCompile(){
   const fwEl=document.getElementById('fw-'+(pick.firmware||'official'));
   if(fwEl){fwEl.checked=true;fwEl.dispatchEvent(new Event('change'));}
   showToast(`🎲 Roulette picked: ${pick.repoUrl.split('/').pop()}!`);
+  awardXP(10,'roulette');
   document.getElementById('compile-btn')?.scrollIntoView({behavior:'smooth',block:'center'});
 }
 
@@ -2664,15 +2808,17 @@ async function fetchBranches(owner,repo){
   sel.innerHTML='<option value="">Default branch</option>';
   wrap.style.display='none';
   try{
-    const [brRes,tagRes]=await Promise.all([
+    const [brRes,tagRes,repoRes]=await Promise.all([
       fetch(`https://api.github.com/repos/${owner}/${repo}/branches?per_page=30`),
       fetch(`https://api.github.com/repos/${owner}/${repo}/tags?per_page=20`),
+      fetch(`https://api.github.com/repos/${owner}/${repo}`),
     ]);
     const branches=brRes.ok?await brRes.json():[];
     const tags=tagRes.ok?await tagRes.json():[];
-    if(branches.length<=1&&!tags.length)return; // only default — no point showing
-    const opts=['<option value="">Default branch</option>'];
-    branches.forEach(b=>opts.push(`<option value="${esc(b.name)}">🌿 ${esc(b.name)}</option>`));
+    const defaultBranch=repoRes.ok?(await repoRes.json()).default_branch||'main':'main';
+    if(branches.length<=1&&!tags.length)return;
+    const opts=[`<option value="">Default branch (${esc(defaultBranch)})</option>`];
+    branches.forEach(b=>opts.push(`<option value="${esc(b.name)}">🌿 ${esc(b.name)}${b.name===defaultBranch?' (default)':''}</option>`));
     if(tags.length){
       opts.push('<option disabled>── Tags ──</option>');
       tags.forEach(t=>opts.push(`<option value="${esc(t.name)}">🏷 ${esc(t.name)}</option>`));
