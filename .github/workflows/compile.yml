@@ -30,7 +30,7 @@ on:
         type: string
         default: ""
       fw_version:
-        description: "Specific firmware version tag to compile against (leave blank for latest)"
+        description: "Specific firmware version tag (leave blank for latest)"
         required: false
         type: string
         default: ""
@@ -39,6 +39,8 @@ jobs:
   compile:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Clone target app
@@ -103,23 +105,20 @@ jobs:
             echo "SDK_CHANNEL=$CH" >> $GITHUB_ENV
           fi
 
-      - name: Remove non-source files that confuse the linker
+      - name: Remove data files that confuse the linker
         run: |
-          # ufbt/scons globs the entire app directory. Data files (.csv, .txt,
-          # .json, .log, recordings, etc.) get passed to the linker and cause
-          # "file format not recognized" errors. Remove them before building.
+          # scons/ufbt passes every file in the app dir to the linker.
+          # Only remove .csv and .tsv (tabular data files) which are never
+          # source code and reliably cause "file format not recognized" errors.
+          # We intentionally leave .json, .png, .txt etc untouched — some apps
+          # legitimately embed these as assets and need them present to compile.
           APP="$APP_DIR"
           if [ -z "$APP" ]; then APP=/tmp/app; fi
-          find "$APP" -type f \( \
-            -name "*.csv"  -o -name "*.tsv"  -o -name "*.txt"  \
-            -o -name "*.log" -o -name "*.json" -o -name "*.xml" \
-            -o -name "*.md"  -o -name "*.rst"  -o -name "*.html"\
-            -o -name "*.wav" -o -name "*.mp3"  -o -name "*.ogg" \
-            -o -name "*.png" -o -name "*.jpg"  -o -name "*.jpeg"\
-            -o -name "*.gif" -o -name "*.bmp"  -o -name "*.ico" \
-            -o -name "*.pdf" -o -name "*.zip"  -o -name "*.tar" \
-          \) ! -path "*/.git/*" -delete
-          echo "Non-source files removed from $APP"
+          find "$APP" -type f \( -name "*.csv" -o -name "*.tsv" \) \
+            ! -path "*/.git/*" -delete 2>/dev/null || true
+          # Also remove any "recordings" directories which commonly hold .csv data
+          find "$APP" -type d -name "recordings" -exec rm -rf {} + 2>/dev/null || true
+          echo "Done cleaning $APP"
 
       - name: Build with ufbt
         id: build
@@ -167,5 +166,6 @@ jobs:
           echo "## Done!" >> $GITHUB_STEP_SUMMARY
           echo "| Repo | ${{ inputs.repo_url }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Firmware | ${{ inputs.firmware }} (${{ inputs.channel }}) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Branch | ${{ inputs.repo_branch || 'default' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| App Dir | ${{ inputs.app_dir || 'auto-detected' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Method | ${BUILD_METHOD:-Unknown} |" >> $GITHUB_STEP_SUMMARY
