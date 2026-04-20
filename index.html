@@ -1000,7 +1000,7 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
     <div class="ac-modal-title">✅ Already compiled recently</div>
     <div class="ac-modal-meta" id="ac-meta-text">Loading…</div>
     <button class="ac-btn ac-btn-go" onclick="acGoToResult()">↓ Go to result</button>
-    <button class="ac-btn ac-btn-any" onclick="dismissAlreadyCompiled()">Compile anyway →</button>
+    <button class="ac-btn ac-btn-any" onclick="compileAnyway()">Compile anyway →</button>
   </div>
 </div>
 
@@ -1756,6 +1756,7 @@ document.querySelectorAll('input[name="fw"]').forEach(r=>{r.addEventListener('ch
   const ov=document.getElementById('fw-ver-override');if(ov)ov.value='';
 });});
 document.querySelectorAll('input[name="ch"]').forEach(r=>{r.addEventListener('change',()=>{
+  acIgnore = false;
   const cn=document.getElementById('ch-note');if(cn)cn.textContent=r.value==='release'?t('ch_stable'):t('ch_dev');
   const oc=document.getElementById('out-ch');if(oc)oc.textContent=r.value;
   const fw=document.querySelector('input[name="fw"]:checked')?.value||'official';
@@ -1772,6 +1773,7 @@ const repoInputEl=document.getElementById('repo-url');
 if(repoInputEl){
   repoInputEl.addEventListener('keydown',e=>{if(e.key==='Enter')submitCompile();});
   repoInputEl.addEventListener('input',()=>{
+    acIgnore = false; // new URL — allow already-compiled check again
     clearTimeout(appCheckTimer);
     const url=repoInputEl.value.trim();
     if(url.length>15) appCheckTimer=setTimeout(()=>checkRepoForApps(url),800);
@@ -1787,6 +1789,7 @@ if(repoInputEl){
 }
 // Also check when firmware changes
 document.querySelectorAll('input[name="fw"]').forEach(r=>r.addEventListener('change',()=>{
+  acIgnore = false;
   const url=(document.getElementById('repo-url')?.value||'').trim();
   if(url&&allLoadedJobs.length) checkAlreadyCompiled(url,r.value,allLoadedJobs);
 }));
@@ -2360,15 +2363,17 @@ function renderStreak(jobs) {
 
 // ── Already compiled detection ────────────────────────────────────────────────
 let acMatchJob = null;
+let acIgnore = false; // set true when user clicks "Compile anyway" — survives re-check
 function checkAlreadyCompiled(repoUrl, firmware, jobs) {
-  // Silent check — stores result but doesn't show popup yet
-  // Popup only shown when user actually presses Compile (see submitCompile)
+  if(acIgnore) return; // user already dismissed — don't re-trigger
   if (!repoUrl || !firmware || !jobs.length) { acMatchJob=null; return; }
   const short = repoUrl.replace(/^https?:\/\//,'').replace(/\.git$/,'').replace(/\/$/,'').toLowerCase();
+  const channel = document.querySelector('input[name="ch"]:checked')?.value||'release';
   const cutoff = Date.now() - 48*60*60*1000;
   const match = jobs.find(j =>
     j.status==='success' &&
     j.firmware===firmware &&
+    (j.channel||'release')===channel &&
     j.repoUrl && j.repoUrl.toLowerCase().replace(/\/$/,'').replace(/\.git$/,'')===short &&
     j.createdAt && new Date(j.createdAt).getTime() > cutoff
   );
@@ -2378,7 +2383,8 @@ function showAlreadyCompiledModal() {
   if (!acMatchJob) return false;
   const meta = document.getElementById('ac-meta-text');
   const overlay = document.getElementById('ac-modal-overlay');
-  if (meta) meta.textContent = `${acMatchJob.fwLabel||acMatchJob.firmware} · compiled ${timeAgo(new Date(acMatchJob.createdAt).getTime())}${acMatchJob.artifactId?' · download available':''}`;
+  const channel = document.querySelector('input[name="ch"]:checked')?.value||'release';
+  if (meta) meta.textContent = `${acMatchJob.fwLabel||acMatchJob.firmware} ${channel} · compiled ${timeAgo(new Date(acMatchJob.createdAt).getTime())}${acMatchJob.artifactId?' · download available':''}`;
   if (overlay) overlay.classList.add('open');
   return true;
 }
@@ -2402,7 +2408,6 @@ async function acGoToResult() {
   setTimeout(() => {
     const list = document.getElementById('compiled-list');
     if (!list) return;
-    // Find the card matching this job
     const cards = list.querySelectorAll('.job-card');
     for (const card of cards) {
       const urlEl = card.querySelector('.job-url');
@@ -2420,7 +2425,16 @@ async function acGoToResult() {
 function dismissAlreadyCompiled() {
   const overlay = document.getElementById('ac-modal-overlay');
   if (overlay) overlay.classList.remove('open');
-  acMatchJob = null; // cleared so pressing Compile .FAP won't re-trigger the modal
+  acMatchJob = null;
+  acIgnore = true; // prevent re-trigger on next compile press
+}
+async function compileAnyway() {
+  // Close modal and immediately run the compile — skip the already-compiled check
+  const overlay = document.getElementById('ac-modal-overlay');
+  if (overlay) overlay.classList.remove('open');
+  acMatchJob = null;
+  acIgnore = true;
+  await submitCompile();
 }
 
 // ── History search ────────────────────────────────────────────────────────────
