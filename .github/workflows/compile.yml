@@ -103,6 +103,24 @@ jobs:
             echo "SDK_CHANNEL=$CH" >> $GITHUB_ENV
           fi
 
+      - name: Remove non-source files that confuse the linker
+        run: |
+          # ufbt/scons globs the entire app directory. Data files (.csv, .txt,
+          # .json, .log, recordings, etc.) get passed to the linker and cause
+          # "file format not recognized" errors. Remove them before building.
+          APP="$APP_DIR"
+          if [ -z "$APP" ]; then APP=/tmp/app; fi
+          find "$APP" -type f \( \
+            -name "*.csv"  -o -name "*.tsv"  -o -name "*.txt"  \
+            -o -name "*.log" -o -name "*.json" -o -name "*.xml" \
+            -o -name "*.md"  -o -name "*.rst"  -o -name "*.html"\
+            -o -name "*.wav" -o -name "*.mp3"  -o -name "*.ogg" \
+            -o -name "*.png" -o -name "*.jpg"  -o -name "*.jpeg"\
+            -o -name "*.gif" -o -name "*.bmp"  -o -name "*.ico" \
+            -o -name "*.pdf" -o -name "*.zip"  -o -name "*.tar" \
+          \) ! -path "*/.git/*" -delete
+          echo "Non-source files removed from $APP"
+
       - name: Build with ufbt
         id: build
         continue-on-error: true
