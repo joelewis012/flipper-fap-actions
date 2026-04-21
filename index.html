@@ -1053,7 +1053,7 @@ body { padding-bottom: calc(70px + env(safe-area-inset-bottom)); }
       </select>
     </div>
     <div id="app-dir-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;min-width:0;"></div>
-    <div id="app-dir-loadmore" style="text-align:center;margin-top:12px;display:none;"><button onclick="loadMoreApps()" style="font-family:var(--mono);font-size:0.75rem;background:none;border:1px solid var(--border);border-radius:6px;padding:8px 24px;cursor:pointer;color:var(--muted);transition:all 0.15s;" onmouseover="this.style.borderColor='var(--orange)';this.style.color='var(--orange)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">Load more apps ↓</button></div>
+    <div id="app-dir-pages" style="display:flex;justify-content:center;gap:6px;margin-top:12px;flex-wrap:wrap;"></div>
   </div>
 
   </div><!-- /tab-apps -->
@@ -1814,15 +1814,14 @@ function getFilteredApps(){
   if(q) apps=apps.filter(a=>a.name.toLowerCase().includes(q)||a.desc.toLowerCase().includes(q)||a.cat.toLowerCase().includes(q));
   return apps;
 }
-function filterApps(){appDirPage=1;renderAppDir(false);}
-function renderAppDir(append=false){
-  const grid=document.getElementById('app-dir-grid'); if(!grid) return;
-  const lmEl=document.getElementById('app-dir-loadmore');
+function filterApps(){appDirPage=1;renderAppDir();}
+function renderAppDir(){
+  const grid=document.getElementById('app-dir-grid'), pages=document.getElementById('app-dir-pages'); if(!grid) return;
   const filtered=getFilteredApps(), totalPages=Math.max(1,Math.ceil(filtered.length/APP_PER_PAGE));
   const slice=filtered.slice((appDirPage-1)*APP_PER_PAGE,appDirPage*APP_PER_PAGE);
   const activeFw=document.querySelector('input[name="fw"]:checked')?.value||'';
-  if(!slice.length){grid.innerHTML=`<div style="font-family:var(--mono);font-size:0.75rem;color:var(--muted);grid-column:1/-1;text-align:center;padding:20px;">${t('no_results')}</div>`;if(lmEl)lmEl.style.display='none';return;}
-  const _appHtml=slice.map(app=>{
+  if(!slice.length){grid.innerHTML=`<div style="font-family:var(--mono);font-size:0.75rem;color:var(--muted);grid-column:1/-1;text-align:center;padding:20px;">${t('no_results')}</div>`;if(pages)pages.innerHTML='';return;}
+  grid.innerHTML=slice.map(app=>{
     const starred=isFav(app.idx),compatible=activeFw?app.compatible.includes(activeFw):true,isRec=app.recommended===activeFw;
     const badge=activeFw?(isRec?'<span class="compat-badge compat-rec">✓ Recommended</span>':compatible?'<span class="compat-badge compat-ok">✓ Compatible</span>':'<span class="compat-badge compat-warn">⚠ May not compile</span>'):'';
     const note=app.note?`<div class="app-note">⚠ ${esc(app.note)}</div>`:'';
@@ -1846,10 +1845,8 @@ function renderAppDir(append=false){
       </div>
     </div>`;
   }).join('');
-  if(append) grid.innerHTML+=_appHtml; else grid.innerHTML=_appHtml;
-  if(lmEl) lmEl.style.display=(appDirPage<totalPages)?'block':'none';
+  if(pages){if(totalPages<=1){pages.innerHTML='';return;}pages.innerHTML=Array.from({length:totalPages},(_,i)=>i+1).map(p=>`<button class="page-btn${p===appDirPage?' active':''}" onclick="appDirPage=${p};renderAppDir()">${p}</button>`).join('');}
 }
-function loadMoreApps(){appDirPage++;renderAppDir(true);}
 function quickCompile(idx){
   const app=APP_DIR[idx];if(!app)return;
   const el=document.getElementById('repo-url');if(el)el.value=app.repo;
