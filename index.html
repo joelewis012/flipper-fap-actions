@@ -381,7 +381,7 @@ input.error { border-color: var(--red) !important; }
 .wn-close-btn:hover { background:#ff8533; }
 
 /* ── Feedback FAB ── */
-.feedback-fab { position:fixed;bottom:28px;right:20px;z-index:8500;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-family:var(--mono);font-size:0.7rem;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.2s;box-shadow:0 2px 12px rgba(0,0,0,0.4);text-decoration:none; }
+.feedback-fab { position:fixed;bottom:calc(64px + env(safe-area-inset-bottom) + 10px);right:20px;z-index:8500;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-family:var(--mono);font-size:0.7rem;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.2s;box-shadow:0 2px 12px rgba(0,0,0,0.4);text-decoration:none; }
 .feedback-fab:hover { border-color:var(--orange);color:var(--orange);box-shadow:0 2px 18px rgba(255,107,0,0.2); }
 .fab-dot { width:6px;height:6px;border-radius:50%;background:var(--orange);flex-shrink:0; }
 
@@ -671,11 +671,10 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
 .nav-badge.visible { display: block; }
 
 /* Tab section visibility */
-.tab-section { display: none; }
-.tab-section.active { display: block; }
+.tab-section { display: block; scroll-margin-top: 12px; }
 
-/* Extra bottom padding to clear nav */
-.container { padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important; }
+/* Bottom padding to clear nav bar */
+body { padding-bottom: calc(70px + env(safe-area-inset-bottom)); }
 
 </style>
 </head>
@@ -3196,36 +3195,37 @@ setInterval(()=>{
   }
 }, 30000);
 // ══════════════════════════════════════════════════════════════════
-// BOTTOM NAV — TAB SWITCHING
+// BOTTOM NAV — SCROLL TO SECTION
 // ══════════════════════════════════════════════════════════════════
-let currentTab = 'compile';
-const _tabDataLoaded = { compile:true, apps:false, news:false, history:false };
-
-function switchTab(tab) {
-  document.querySelectorAll('.tab-section').forEach(el => {
-    el.classList.toggle('active', el.id === 'tab-' + tab);
-  });
+function switchTab(section) {
+  const el = document.getElementById('tab-' + section);
+  if (!el) return;
+  const navH = document.getElementById('bottom-nav')?.offsetHeight || 64;
+  const top = el.getBoundingClientRect().top + window.scrollY - navH - 8;
+  window.scrollTo({ top, behavior: 'smooth' });
+  // Update active indicator
   document.querySelectorAll('.nav-tab').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.navTab === tab);
+    btn.classList.toggle('active', btn.dataset.navTab === section);
   });
-  currentTab = tab;
-  lsSet('fap_tab', tab);
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-
-  if (tab === 'news' && !_tabDataLoaded.news) {
-    _tabDataLoaded.news = true;
-    fetchFirmwareVersions();
-  }
-  if (tab === 'apps' && !_tabDataLoaded.apps) {
-    _tabDataLoaded.apps = true;
-    renderAppDir();
-    fetchPopularApps();
-  }
-  if (tab === 'history') {
-    loadCompiledApps(1);
-    setHistoryBadge(0);
-  }
+  setTimeout(() => updateActiveNavOnScroll(), 600);
 }
+
+function updateActiveNavOnScroll() {
+  const navH = document.getElementById('bottom-nav')?.offsetHeight || 64;
+  const sections = ['compile', 'apps', 'news', 'history'];
+  let active = 'compile';
+  for (const s of sections) {
+    const el = document.getElementById('tab-' + s);
+    if (!el) continue;
+    if (el.getBoundingClientRect().top <= navH + 40) active = s;
+  }
+  document.querySelectorAll('.nav-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.navTab === active);
+  });
+}
+
+// Highlight active nav tab as user scrolls
+window.addEventListener('scroll', updateActiveNavOnScroll, { passive: true });
 
 function setHistoryBadge(n) {
   const el = document.getElementById('history-badge');
@@ -3235,18 +3235,14 @@ function setHistoryBadge(n) {
 }
 
 function notifyHistoryUpdate() {
-  if (currentTab !== 'history') {
-    const el = document.getElementById('history-badge');
-    const cur = parseInt((el && el.textContent) || '0') || 0;
-    setHistoryBadge(cur + 1);
-  }
+  const el = document.getElementById('history-badge');
+  if (!el) return;
+  const cur = parseInt(el.textContent || '0') || 0;
+  setHistoryBadge(cur + 1);
 }
 
 function initBottomNav() {
-  const saved = lsGet('fap_tab') || 'compile';
-  const valid = ['compile', 'apps', 'news', 'history'];
-  const tab = valid.includes(saved) ? saved : 'compile';
-  if (tab !== 'compile') switchTab(tab);
+  updateActiveNavOnScroll();
 }
 
 
