@@ -1852,7 +1852,9 @@ async function submitCompile() {
     await sleep(4000);
     const runId=await findLatestRunId();
     const appName=url.replace(/\/$/,'').replace(/\.git$/,'').split('/').pop().replace(/-/g,' ').replace(/_/g,' ');
-    activeJob={runId,repoUrl:url,firmware,fwLabel:fwLabel(firmware),channel,status:'queued',message:'Queued — waiting for runner…',artifactId:null,artifactName:null,createdAt:new Date().toISOString(),startedAt:Date.now()};lsSetJson('fap_active_job',activeJob);
+    const savedBranch=document.getElementById('branch-selector')?.value||'';
+    const savedFwVer=document.getElementById('fw-ver-override')?.value||'';
+    activeJob={runId,repoUrl:url,firmware,fwLabel:fwLabel(firmware),channel,repoBranch:savedBranch,fwVersion:savedFwVer,status:'queued',message:'Queued — waiting for runner…',artifactId:null,artifactName:null,createdAt:new Date().toISOString(),startedAt:Date.now()};lsSetJson('fap_active_job',activeJob);
     showActiveCompile(activeJob);
     startDolphinAnimation(appName, firmware, activeJob.startedAt);
     startPolling(activeJob);
@@ -2053,6 +2055,7 @@ async function saveJobToKV(job){
   try{
     const res=await api('/api/jobs/complete',{method:'POST',body:JSON.stringify({
       repoUrl:job.repoUrl,firmware:job.firmware,fwLabel:job.fwLabel,channel:job.channel,
+      repoBranch:job.repoBranch||'',fwVersion:job.fwVersion||'',
       status:job.status,createdAt:job.createdAt,
       runId:job.runId?String(job.runId):null,
       artifactId:job.artifactId?String(job.artifactId):null,
@@ -2504,6 +2507,8 @@ function renderJobCards(jobs) {
     const ts=job.createdAt?timeAgo(new Date(job.createdAt).getTime()):'';
     const fw=esc(job.fwLabel||job.firmware||'?');
     const ch=esc(job.channel||'release');
+    const branch=job.repoBranch?`🌿 ${esc(job.repoBranch)}`:'';
+    const fwVer=job.fwVersion?`📦 ${esc(job.fwVersion)}`:'';
     const ghUrl=job.runId?`https://github.com/joelewis012/flipper-fap-actions/actions/runs/${job.runId}`:null;
     const dlBtn=job.artifactId?`<button class="download-btn" onclick="downloadArtifact('${esc(String(job.artifactId))}','${esc(appName)}',this)">↓ Download .fap</button>`:'';
     const ghBtn=(ghUrl&&debugMode)?`<a class="gh-link" href="${ghUrl}" target="_blank">Actions</a>`:'';
@@ -2514,6 +2519,8 @@ function renderJobCards(jobs) {
         <div class="job-meta-row" style="margin-top:3px;">
           <span class="job-meta-chip">⚡ ${fw}</span>
           <span class="job-meta-chip">📦 ${ch}</span>
+          ${branch?`<span class="job-meta-chip">${branch}</span>`:''}
+          ${fwVer?`<span class="job-meta-chip" style="color:var(--orange);">🔖 ${esc(job.fwVersion)}</span>`:''}
           <span class="job-meta-chip">🕐 ${ts}</span>
         </div>
         <div class="job-url" title="https://${esc(repoUrl)}">${esc(repoUrl)}</div>
