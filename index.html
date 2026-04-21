@@ -600,6 +600,83 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
 .cl-diff-old  { color:var(--muted);text-decoration:line-through;display:block;padding:1px 4px; }
 .cl-diff-same { color:var(--muted);display:block;padding:1px 4px; }
 
+/* ── Skeleton loaders ─────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--bg3) 25%, var(--border) 50%, var(--bg3) 75%);
+  background-size: 600px 100%;
+  animation: shimmer 1.4s infinite linear;
+  border-radius: 4px;
+  display: block;
+}
+.skel-card  { height: 70px; border-radius: 6px; margin-bottom: 8px; }
+.skel-tall  { height: 90px; border-radius: 6px; margin-bottom: 8px; }
+.skel-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+/* ── Bottom navigation bar ────────────────────────────────────── */
+.bottom-nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  display: flex;
+  z-index: 500;
+  padding-bottom: env(safe-area-inset-bottom);
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
+}
+.nav-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--muted);
+  padding: 10px 4px 12px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  transition: color 0.15s;
+  font-family: var(--sans);
+  position: relative;
+}
+.nav-tab::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 20%; right: 20%;
+  height: 2px;
+  background: var(--orange);
+  border-radius: 0 0 2px 2px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.nav-tab.active { color: var(--orange); }
+.nav-tab.active::before { opacity: 1; }
+.nav-tab:hover:not(.active) { color: var(--text); }
+.nav-icon  { font-size: 1.1rem; line-height: 1; }
+.nav-label { font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.08em; font-family: var(--mono); }
+.nav-badge {
+  position: absolute;
+  top: 6px; right: calc(50% - 14px);
+  background: var(--orange);
+  color: #000;
+  font-size: 0.5rem; font-weight: 700; font-family: var(--mono);
+  padding: 1px 4px;
+  border-radius: 8px;
+  min-width: 14px; text-align: center;
+  display: none;
+}
+.nav-badge.visible { display: block; }
+
+/* Tab section visibility */
+.tab-section { display: none; }
+.tab-section.active { display: block; }
+
+/* Extra bottom padding to clear nav */
+.container { padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important; }
+
 </style>
 </head>
 <body>
@@ -710,6 +787,9 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
   </header>
 
   <div class="divider"></div>
+
+  <!-- ════ TAB: COMPILE ════ -->
+  <div class="tab-section active" id="tab-compile">
 
   <!-- How to Use -->
   <div class="card" style="margin-bottom:20px;">
@@ -902,6 +982,11 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
     <a class="kofi-btn" href="https://ko-fi.com/joelewis012" target="_blank">❤ Ko-fi</a>
   </div>
 
+  </div><!-- /tab-compile -->
+
+  <!-- ════ TAB: NEWS ════ -->
+  <div class="tab-section" id="tab-news">
+
   <!-- ── Weekly Most Compiled ── -->
   <div id="weekly-wrap" style="display:none;">
     <div class="weekly-banner">
@@ -920,7 +1005,7 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
       <span style="font-family:var(--mono);font-size:0.65rem;color:var(--muted);">Latest from each</span>
     </div>
     <div id="fw-release-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
-      <div style="font-family:var(--mono);font-size:0.75rem;color:var(--muted);grid-column:1/-1;text-align:center;padding:10px;">Loading…</div>
+      <div class="skel-grid"><span class="skeleton skel-card"></span><span class="skeleton skel-card"></span><span class="skeleton skel-card"></span></div>
     </div>
   </div>
 
@@ -931,9 +1016,14 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
       <span style="font-family:var(--mono);font-size:0.65rem;color:var(--muted);">Community &amp; releases</span>
     </div>
     <div id="flipper-news-list" style="display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto;">
-      <div style="font-family:var(--mono);font-size:0.75rem;color:var(--muted);text-align:center;padding:10px;">Loading…</div>
+      <div><span class="skeleton skel-card"></span><span class="skeleton skel-card"></span><span class="skeleton skel-card"></span></div>
     </div>
   </div>
+
+  </div><!-- /tab-news -->
+
+  <!-- ════ TAB: APPS ════ -->
+  <div class="tab-section" id="tab-apps">
 
   <!-- ── Popular Apps ── -->
   <div class="card" style="margin-bottom:20px;" id="popular-apps-card">
@@ -942,7 +1032,7 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
       <span style="font-family:var(--mono);font-size:0.65rem;color:var(--muted);" data-i18n="community_compiled">All-time community compiled</span>
     </div>
     <div id="popular-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;min-width:0;">
-      <div style="font-family:var(--mono);font-size:0.75rem;color:var(--muted);grid-column:1/-1;text-align:center;padding:14px;">Loading…</div>
+      <div class="skel-grid"><span class="skeleton skel-tall"></span><span class="skeleton skel-tall"></span><span class="skeleton skel-tall"></span><span class="skeleton skel-tall"></span></div>
     </div>
   </div>
 
@@ -964,8 +1054,13 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
       </select>
     </div>
     <div id="app-dir-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;min-width:0;"></div>
-    <div id="app-dir-pages" style="display:flex;justify-content:center;gap:6px;margin-top:12px;flex-wrap:wrap;"></div>
+    <div id="app-dir-loadmore" style="text-align:center;margin-top:12px;display:none;"><button onclick="loadMoreApps()" style="font-family:var(--mono);font-size:0.75rem;background:none;border:1px solid var(--border);border-radius:6px;padding:8px 24px;cursor:pointer;color:var(--muted);transition:all 0.15s;" onmouseover="this.style.borderColor='var(--orange)';this.style.color='var(--orange)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">Load more apps ↓</button></div>
   </div>
+
+  </div><!-- /tab-apps -->
+
+  <!-- ════ TAB: HISTORY ════ -->
+  <div class="tab-section" id="tab-history">
 
   <!-- ── Compiled Applications ── -->
   <div class="jobs-section">
@@ -987,7 +1082,7 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
     </div>
     <div id="history-search-wrap"><input id="history-search" placeholder="🔍 Search compiled apps…" oninput="filterCompiledApps()" autocomplete="off"/></div>
     <div id="compiled-list">
-      <div class="empty-state"><div class="big">📦</div>Loading…</div>
+      <div><span class="skeleton skel-tall"></span><span class="skeleton skel-tall"></span><span class="skeleton skel-tall"></span></div>
     </div>
     <div id="jobs-pages" style="display:flex;justify-content:center;gap:6px;margin:12px 0;flex-wrap:wrap;"></div>
     <div class="legend">
@@ -997,7 +1092,8 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
       <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>failed</div>
     </div>
   </div>
-</div>
+  </div><!-- /tab-history -->
+</div><!-- /container -->
 
 <!-- ── Footer ── -->
 <footer>
@@ -1178,6 +1274,20 @@ const APP_DIR = [
 ];
 
 // ── Safe localStorage ─────────────────────────────────────────────────────────
+// ── Unified app state helper ─────────────────────────────────────────────────
+// Complements existing lsGet/lsSet — use saveAppState() for batched writes.
+const _stateCache = {};
+function getAppState() {
+  if (!Object.keys(_stateCache).length) {
+    try { Object.assign(_stateCache, JSON.parse(localStorage.getItem('fap_appstate')||'{}')); } catch(_) {}
+  }
+  return _stateCache;
+}
+function saveAppState(patch) {
+  Object.assign(_stateCache, patch);
+  try { localStorage.setItem('fap_appstate', JSON.stringify(_stateCache)); } catch(_) {}
+}
+
 function lsGet(key, fallback) {
   try { const v = localStorage.getItem(key); return v !== null ? v : fallback; } catch(_) { return fallback; }
 }
@@ -1538,7 +1648,7 @@ async function checkRepoForApps(url) {
     if(!owner||!repo) return;
     if(u.hostname!=='github.com'){showBar('📦 Gitea repo — will validate on compile','warn');return;}
     showBar('🔍 Checking repo…','warn');
-    const refRes=await fetch(`https://api.github.com/repos/${owner}/${repo}`);
+    const refRes=await api(`/api/github/repo/${owner}/${repo}`);
     if(!refRes.ok){
       if(refRes.status===404) showBar('❌ Repo not found — check the URL','error');
       else showBar(`⚠️ Could not reach GitHub (${refRes.status})`,'warn');
@@ -1547,12 +1657,12 @@ async function checkRepoForApps(url) {
     const repoData=await refRes.json();
     if(repoData.private){showBar('❌ Repo is private — must be public','error');return;}
     const branch=repoData.default_branch||'main';
-    const treeRes=await fetch(`https://api.github.com/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`);
+    const treeRes=await api(`/api/github/tree/${owner}/${repo}/${branch}`);
     if(!treeRes.ok){showBar(`⚠️ ${repoData.name} — could not scan files`,'warn');return;}
     const files=((await treeRes.json()).tree||[]).filter(f=>f.path.endsWith('application.fam'));
     if(!files.length){showBar(`⚠️ ${repoData.name} — no application.fam found. May not compile`,'warn');return;}
     for(const file of files.slice(0,8)){
-      const raw=await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${file.path}`);
+      const raw=await api(`/api/github/raw/${owner}/${repo}/${branch}/${file.path}`);
       if(!raw.ok) continue;
       const text=await raw.text(); const nm=text.match(/name\s*=\s*["']([^"']+)["']/);
       detectedApps.push({name:nm?nm[1]:file.path.split('/').slice(-2)[0],path:file.path,dir:file.path.replace('/application.fam','')});
@@ -1588,9 +1698,11 @@ async function checkRepoForApps(url) {
 // ── Firmware versions ─────────────────────────────────────────────────────────
 const fwAllReleases = {}; // fw -> [{tag, prerelease}]
 async function fetchFirmwareVersions() {
+  try {
   for (const [fw, repo] of Object.entries(FW_REPOS)) {
     try {
-      const relRes=await fetch(`https://api.github.com/repos/${repo}/releases?per_page=20`);
+      const [_fwOw,_fwRp]=repo.split('/');
+      const relRes=await api(`/api/github/releases/${_fwOw}/${_fwRp}?per_page=20`);
       if(relRes.ok){
         const releases=await relRes.json();
         fwAllReleases[fw]=releases.map(r=>({tag:r.tag_name,pre:r.prerelease}));
@@ -1606,6 +1718,7 @@ async function fetchFirmwareVersions() {
   const el=document.getElementById('out-fw');
   if(el) el.textContent=fwLabelForChannel(fw,ch);
   updateFwVerDropdown(fw,ch);
+  } catch(e) { console.error('fetchFirmwareVersions:', e); }
 }
 function updateFwVerDropdown(fw,ch){
   const wrap=document.getElementById('fw-ver-override-wrap');
@@ -1644,7 +1757,8 @@ async function showChangelog(fw) {
   const body=document.getElementById('cl-body');
   if(body) body.innerHTML='<div style="text-align:center;padding:20px;font-family:var(--mono);color:var(--muted)">Loading…</div>';
   try {
-    const res=await fetch(`https://api.github.com/repos/${FW_REPOS[fw]}/releases?per_page=10`);
+    const [_clOw,_clRp]=FW_REPOS[fw].split('/');
+    const res=await api(`/api/github/releases/${_clOw}/${_clRp}?per_page=10`);
     if(!res.ok) throw new Error(`GitHub returned ${res.status}`);
     const releases=await res.json(); if(!releases.length) throw new Error('No releases found');
     // Get up to 3 releases to show diffs
@@ -1701,14 +1815,15 @@ function getFilteredApps(){
   if(q) apps=apps.filter(a=>a.name.toLowerCase().includes(q)||a.desc.toLowerCase().includes(q)||a.cat.toLowerCase().includes(q));
   return apps;
 }
-function filterApps(){appDirPage=1;renderAppDir();}
-function renderAppDir(){
-  const grid=document.getElementById('app-dir-grid'), pages=document.getElementById('app-dir-pages'); if(!grid) return;
+function filterApps(){appDirPage=1;renderAppDir(false);}
+function renderAppDir(append=false){
+  const grid=document.getElementById('app-dir-grid'); if(!grid) return;
+  const lmEl=document.getElementById('app-dir-loadmore');
   const filtered=getFilteredApps(), totalPages=Math.max(1,Math.ceil(filtered.length/APP_PER_PAGE));
   const slice=filtered.slice((appDirPage-1)*APP_PER_PAGE,appDirPage*APP_PER_PAGE);
   const activeFw=document.querySelector('input[name="fw"]:checked')?.value||'';
-  if(!slice.length){grid.innerHTML=`<div style="font-family:var(--mono);font-size:0.75rem;color:var(--muted);grid-column:1/-1;text-align:center;padding:20px;">${t('no_results')}</div>`;if(pages)pages.innerHTML='';return;}
-  grid.innerHTML=slice.map(app=>{
+  if(!slice.length){grid.innerHTML=`<div style="font-family:var(--mono);font-size:0.75rem;color:var(--muted);grid-column:1/-1;text-align:center;padding:20px;">${t('no_results')}</div>`;if(lmEl)lmEl.style.display='none';return;}
+  const _appHtml=slice.map(app=>{
     const starred=isFav(app.idx),compatible=activeFw?app.compatible.includes(activeFw):true,isRec=app.recommended===activeFw;
     const badge=activeFw?(isRec?'<span class="compat-badge compat-rec">✓ Recommended</span>':compatible?'<span class="compat-badge compat-ok">✓ Compatible</span>':'<span class="compat-badge compat-warn">⚠ May not compile</span>'):'';
     const note=app.note?`<div class="app-note">⚠ ${esc(app.note)}</div>`:'';
@@ -1732,8 +1847,10 @@ function renderAppDir(){
       </div>
     </div>`;
   }).join('');
-  if(pages){if(totalPages<=1){pages.innerHTML='';return;}pages.innerHTML=Array.from({length:totalPages},(_,i)=>i+1).map(p=>`<button class="page-btn${p===appDirPage?' active':''}" onclick="appDirPage=${p};renderAppDir()">${p}</button>`).join('');}
+  if(append) grid.innerHTML+=_appHtml; else grid.innerHTML=_appHtml;
+  if(lmEl) lmEl.style.display=(appDirPage<totalPages)?'block':'none';
 }
+function loadMoreApps(){appDirPage++;renderAppDir(true);}
 function quickCompile(idx){
   const app=APP_DIR[idx];if(!app)return;
   const el=document.getElementById('repo-url');if(el)el.value=app.repo;
@@ -2025,7 +2142,19 @@ function drawDolphin(ctx, cx, cy, tick) {
 }
 
 // ── Polling ───────────────────────────────────────────────────────────────────
-function startPolling(job){if(!job.runId||polls[job.runId])return;polls[job.runId]=setInterval(()=>pollJob(job),8000);}
+function startPolling(job){
+  if(!job.runId||polls[job.runId])return;
+  let _delay=8000;
+  const _MAX=60000;
+  function _next(){
+    polls[job.runId]=setTimeout(async()=>{
+      if(!polls[job.runId])return;
+      await pollJob(job);
+      if(polls[job.runId]){_delay=Math.min(_delay*1.5,_MAX);_next();}
+    },_delay);
+  }
+  _next();
+}
 async function pollJob(job){
   try{
     const res=await api(`/api/run/${job.runId}`);if(!res.ok)return;
@@ -2037,13 +2166,13 @@ async function pollJob(job){
     job.message=run.status==='queued'?'Waiting for a runner…':run.status==='in_progress'?`Compiling… ${pct}% (${elapsed}s elapsed)`:run.conclusion==='success'?'✅ Done! Saving to list…':run.conclusion==='failure'?'❌ Compilation failed':run.conclusion==='cancelled'?'Cancelled':run.status;
     showActiveCompile(job);
     if(run.status==='completed'){
-      clearInterval(polls[job.runId]);delete polls[job.runId];
+      clearTimeout(polls[job.runId]);delete polls[job.runId];
       if(run.conclusion==='success'){const ar=await api(`/api/artifacts/${job.runId}`);if(ar.ok){const d=await ar.json();const a=d.artifacts?.[0];if(a){job.artifactId=a.id;job.artifactName=a.name;}}}
       await saveJobToKV(job);
       hideActiveCompile();
       activeJob=null;
       lsSetJson('fap_active_job', null);
-      if(job.status==='success') awardXP(100,'compile');
+      if(job.status==='success'){ awardXP(100,'compile'); notifyHistoryUpdate(); }
       fetchStats();
       sendPushNotification(job);
     }
@@ -2971,9 +3100,9 @@ async function fetchBranches(owner,repo){
   wrap.style.display='none';
   try{
     const [brRes,tagRes,repoRes]=await Promise.all([
-      fetch(`https://api.github.com/repos/${owner}/${repo}/branches?per_page=30`),
-      fetch(`https://api.github.com/repos/${owner}/${repo}/tags?per_page=20`),
-      fetch(`https://api.github.com/repos/${owner}/${repo}`),
+      api(`/api/github/branches/${owner}/${repo}`),
+      api(`/api/github/tags/${owner}/${repo}`),
+      api(`/api/github/repo/${owner}/${repo}`),
     ]);
     const branches=brRes.ok?await brRes.json():[];
     const tags=tagRes.ok?await tagRes.json():[];
@@ -3013,7 +3142,7 @@ async function checkGitHubRelease(owner,repo){
   if(!banner)return;
   banner.style.display='none';
   try{
-    const res=await fetch(`https://api.github.com/repos/${owner}/${repo}/releases?per_page=5`);
+    const res=await api(`/api/github/releases/${owner}/${repo}?per_page=5`);
     if(!res.ok)return;
     const releases=await res.json();
     for(const rel of releases){
@@ -3054,6 +3183,7 @@ async function togglePopularVote(btn,key){
 
 // ── Init XP on load ──────────────────────────────────────────────────────────
 renderXP();
+initBottomNav();
 updateChannelForFirmware(document.querySelector('input[name="fw"]:checked')?.value||'official');
 
 
@@ -3065,6 +3195,83 @@ setInterval(()=>{
     loadCompiledApps(compiledPage);
   }
 }, 30000);
+// ══════════════════════════════════════════════════════════════════
+// BOTTOM NAV — TAB SWITCHING
+// ══════════════════════════════════════════════════════════════════
+let currentTab = 'compile';
+const _tabDataLoaded = { compile:true, apps:false, news:false, history:false };
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-section').forEach(el => {
+    el.classList.toggle('active', el.id === 'tab-' + tab);
+  });
+  document.querySelectorAll('.nav-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.navTab === tab);
+  });
+  currentTab = tab;
+  lsSet('fap_tab', tab);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  if (tab === 'news' && !_tabDataLoaded.news) {
+    _tabDataLoaded.news = true;
+    fetchFirmwareVersions();
+  }
+  if (tab === 'apps' && !_tabDataLoaded.apps) {
+    _tabDataLoaded.apps = true;
+    renderAppDir();
+    fetchPopularApps();
+  }
+  if (tab === 'history') {
+    loadCompiledApps(1);
+    setHistoryBadge(0);
+  }
+}
+
+function setHistoryBadge(n) {
+  const el = document.getElementById('history-badge');
+  if (!el) return;
+  if (n > 0) { el.textContent = n > 9 ? '9+' : String(n); el.classList.add('visible'); }
+  else { el.classList.remove('visible'); }
+}
+
+function notifyHistoryUpdate() {
+  if (currentTab !== 'history') {
+    const el = document.getElementById('history-badge');
+    const cur = parseInt((el && el.textContent) || '0') || 0;
+    setHistoryBadge(cur + 1);
+  }
+}
+
+function initBottomNav() {
+  const saved = lsGet('fap_tab') || 'compile';
+  const valid = ['compile', 'apps', 'news', 'history'];
+  const tab = valid.includes(saved) ? saved : 'compile';
+  if (tab !== 'compile') switchTab(tab);
+}
+
+
 </script>
+
+<!-- ── Bottom Navigation Bar ──────────────────────────────────────────── -->
+<nav class="bottom-nav" id="bottom-nav">
+  <button class="nav-tab active" data-nav-tab="compile" onclick="switchTab('compile')">
+    <span class="nav-icon">⚙</span>
+    <span class="nav-label">Compile</span>
+  </button>
+  <button class="nav-tab" data-nav-tab="apps" onclick="switchTab('apps')">
+    <span class="nav-icon">📚</span>
+    <span class="nav-label">Apps</span>
+  </button>
+  <button class="nav-tab" data-nav-tab="news" onclick="switchTab('news')">
+    <span class="nav-icon">📡</span>
+    <span class="nav-label">News</span>
+  </button>
+  <button class="nav-tab" data-nav-tab="history" onclick="switchTab('history')">
+    <span class="nav-icon">📋</span>
+    <span class="nav-label">History</span>
+    <span class="nav-badge" id="history-badge"></span>
+  </button>
+</nav>
+
 </body>
 </html>
