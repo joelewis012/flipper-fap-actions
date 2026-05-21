@@ -43,22 +43,74 @@ jobs:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
+      # ── Step 1: Validate and sanitise all inputs ─────────────────────────────
+      # IMPORTANT: inputs are passed via env: not shell substitution.
+      # ${{ inputs.x }} inside a run: script is substituted BEFORE the shell
+      # executes, so an attacker can break out of quotes. Using env: is safe
+      # because the value is passed as an environment variable, never evaluated.
+      - name: Validate inputs
+        env:
+          RAW_REPO_URL:    ${{ inputs.repo_url }}
+          RAW_APP_DIR:     ${{ inputs.app_dir }}
+          RAW_REPO_BRANCH: ${{ inputs.repo_branch }}
+          RAW_FW_VERSION:  ${{ inputs.fw_version }}
+        run: |
+          # Validate repo URL — must be https:// with clean path characters only
+          # This regex allows all legitimate GitHub/Gitea URLs including subpaths
+          if ! echo "$RAW_REPO_URL" | grep -qP '^https://[a-zA-Z0-9][a-zA-Z0-9._-]*\.[a-zA-Z]{2,}/[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+(/[a-zA-Z0-9._/-]*)?$'; then
+            echo "::error::Invalid repo_url — must be a valid https:// URL with no special characters"
+            exit 1
+          fi
+
+          # Validate optional app_dir — alphanumeric, hyphens, underscores, slashes, dots only
+          if [ -n "$RAW_APP_DIR" ]; then
+            if ! echo "$RAW_APP_DIR" | grep -qE '^[a-zA-Z0-9._/ -]+$'; then
+              echo "::error::Invalid app_dir — must contain only safe path characters"
+              exit 1
+            fi
+          fi
+
+          # Validate optional branch — alphanumeric, hyphens, underscores, dots, slashes only
+          if [ -n "$RAW_REPO_BRANCH" ]; then
+            if ! echo "$RAW_REPO_BRANCH" | grep -qE '^[a-zA-Z0-9._/-]+$'; then
+              echo "::error::Invalid repo_branch — must contain only safe characters"
+              exit 1
+            fi
+          fi
+
+          # Validate optional fw_version — alphanumeric, hyphens, dots only
+          if [ -n "$RAW_FW_VERSION" ]; then
+            if ! echo "$RAW_FW_VERSION" | grep -qE '^[a-zA-Z0-9._-]+$'; then
+              echo "::error::Invalid fw_version — must contain only safe characters"
+              exit 1
+            fi
+          fi
+
+          # Export validated values as env vars for all subsequent steps
+          # From here on, all steps use these vars — never ${{ inputs.x }} in shell
+          echo "REPO_URL=$RAW_REPO_URL"       >> $GITHUB_ENV
+          echo "APP_DIR_INPUT=$RAW_APP_DIR"   >> $GITHUB_ENV
+          echo "REPO_BRANCH=$RAW_REPO_BRANCH" >> $GITHUB_ENV
+          echo "FW_VERSION=$RAW_FW_VERSION"   >> $GITHUB_ENV
+          echo "✅ All inputs validated"
+
+      # ── Step 2: Clone ─────────────────────────────────────────────────────────
       - name: Clone target app
         run: |
-          BRANCH="${{ inputs.repo_branch }}"
-          if [ -n "$BRANCH" ]; then
-            git clone --depth 1 --branch "$BRANCH" --recurse-submodules "${{ inputs.repo_url }}" /tmp/app
-            echo "Cloned ${{ inputs.repo_url }} @ $BRANCH"
+          if [ -n "$REPO_BRANCH" ]; then
+            git clone --depth 1 --branch "$REPO_BRANCH" --recurse-submodules "$REPO_URL" /tmp/app
+            echo "Cloned $REPO_URL @ $REPO_BRANCH"
           else
-            git clone --depth 1 --recurse-submodules "${{ inputs.repo_url }}" /tmp/app
-            echo "Cloned ${{ inputs.repo_url }}"
+            git clone --depth 1 --recurse-submodules "$REPO_URL" /tmp/app
+            echo "Cloned $REPO_URL"
           fi
           touch /tmp/clone_done
 
+      # ── Step 3: Find application.fam ─────────────────────────────────────────
       - name: Find application.fam
         run: |
-          if [ -n "${{ inputs.app_dir }}" ]; then
-            REL_DIR=$(echo "${{ inputs.app_dir }}" | sed 's|^/||')
+          if [ -n "$APP_DIR_INPUT" ]; then
+            REL_DIR=$(echo "$APP_DIR_INPUT" | sed 's|^/||')
             APP_DIR="/tmp/app/${REL_DIR}"
             if [ ! -f "$APP_DIR/application.fam" ]; then
               FAM=$(find "$APP_DIR" -name "application.fam" 2>/dev/null | head -1)
@@ -80,6 +132,7 @@ jobs:
           fi
           echo "APP_DIR=$APP_DIR" >> $GITHUB_ENV
 
+      # ── Step 4: Check for pre-built .fap ─────────────────────────────────────
       - name: Check for pre-built .fap
         run: |
           PREBUILT=$(find /tmp/app -name "*.fap" ! -path "*/debug/*" ! -path "*/.git/*" 2>/dev/null | head -1)
@@ -87,11 +140,11 @@ jobs:
             echo "PREBUILT_FAP=$PREBUILT" >> $GITHUB_ENV
           fi
 
+      # ── Step 5: Set SDK URL ───────────────────────────────────────────────────
       - name: Set SDK index URL
         run: |
           FW="${{ inputs.firmware }}"
           CH="${{ inputs.channel }}"
-          VER="${{ inputs.fw_version }}"
           if [ "$FW" = "momentum" ]; then
             echo "SDK_INDEX_URL=https://up.momentum-fw.dev/firmware/directory.json" >> $GITHUB_ENV
           elif [ "$FW" = "unleashed" ]; then
@@ -99,27 +152,23 @@ jobs:
           else
             echo "SDK_INDEX_URL=https://update.flipperzero.one/firmware/directory.json" >> $GITHUB_ENV
           fi
-          if [ -n "$VER" ]; then
-            echo "SDK_CHANNEL=$VER" >> $GITHUB_ENV
+          if [ -n "$FW_VERSION" ]; then
+            echo "SDK_CHANNEL=$FW_VERSION" >> $GITHUB_ENV
           else
             echo "SDK_CHANNEL=$CH" >> $GITHUB_ENV
           fi
 
+      # ── Step 6: Clean data files that confuse the linker ─────────────────────
       - name: Remove data files that confuse the linker
         run: |
-          # scons/ufbt passes every file in the app dir to the linker.
-          # Only remove .csv and .tsv (tabular data files) which are never
-          # source code and reliably cause "file format not recognized" errors.
-          # We intentionally leave .json, .png, .txt etc untouched — some apps
-          # legitimately embed these as assets and need them present to compile.
           APP="$APP_DIR"
           if [ -z "$APP" ]; then APP=/tmp/app; fi
           find "$APP" -type f \( -name "*.csv" -o -name "*.tsv" \) \
             ! -path "*/.git/*" -delete 2>/dev/null || true
-          # Also remove any "recordings" directories which commonly hold .csv data
           find "$APP" -type d -name "recordings" -exec rm -rf {} + 2>/dev/null || true
           echo "Done cleaning $APP"
 
+      # ── Step 7: Build ─────────────────────────────────────────────────────────
       - name: Build with ufbt
         id: build
         continue-on-error: true
@@ -129,11 +178,12 @@ jobs:
           sdk-index-url: ${{ env.SDK_INDEX_URL }}
           sdk-channel: ${{ env.SDK_CHANNEL }}
 
+      # ── Step 8: Collect .fap ──────────────────────────────────────────────────
       - name: Collect .fap file
         if: always()
         run: |
           mkdir -p /tmp/output
-          REPO_NAME=$(basename "${{ inputs.repo_url }}" .git)
+          REPO_NAME=$(basename "$REPO_URL" .git)
           FAP=""
           if [ "${{ steps.build.outcome }}" = "success" ]; then
             FAP=$(find /tmp/app -name "*.fap" -newer /tmp/clone_done ! -path "*/debug/*" 2>/dev/null | head -1)
@@ -152,6 +202,7 @@ jobs:
           cp "$FAP" "/tmp/output/${REPO_NAME}.fap"
           echo "FAP_NAME=${REPO_NAME}.fap" >> $GITHUB_ENV
 
+      # ── Step 9: Upload artifact ───────────────────────────────────────────────
       - name: Upload artifact
         if: always() && env.FAP_NAME != ''
         uses: actions/upload-artifact@v4
@@ -160,12 +211,13 @@ jobs:
           path: /tmp/output/*.fap
           retention-days: 30
 
+      # ── Step 10: Summary ──────────────────────────────────────────────────────
       - name: Summary
         if: always()
         run: |
           echo "## Done!" >> $GITHUB_STEP_SUMMARY
-          echo "| Repo | ${{ inputs.repo_url }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Repo | $REPO_URL |" >> $GITHUB_STEP_SUMMARY
           echo "| Firmware | ${{ inputs.firmware }} (${{ inputs.channel }}) |" >> $GITHUB_STEP_SUMMARY
-          echo "| Branch | ${{ inputs.repo_branch || 'default' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| App Dir | ${{ inputs.app_dir || 'auto-detected' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Branch | ${REPO_BRANCH:-default} |" >> $GITHUB_STEP_SUMMARY
+          echo "| App Dir | ${APP_DIR_INPUT:-auto-detected} |" >> $GITHUB_STEP_SUMMARY
           echo "| Method | ${BUILD_METHOD:-Unknown} |" >> $GITHUB_STEP_SUMMARY
