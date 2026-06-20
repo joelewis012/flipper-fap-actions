@@ -616,50 +616,75 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
 .skel-tall  { height: 90px; border-radius: 6px; margin-bottom: 8px; }
 .skel-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
-/* ── Bottom navigation bar ────────────────────────────────────── */
+/* ── Bottom navigation bar — Liquid Glass ─────────────────────── */
 .bottom-nav {
   position: fixed;
   bottom: 0; left: 0; right: 0;
-  background: var(--bg2);
-  border-top: 1px solid var(--border);
   display: flex;
   z-index: 500;
   padding-bottom: env(safe-area-inset-bottom);
-  box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.02) 18%, rgba(255,255,255,0) 40%),
+    rgba(14,14,17,0.55);
+  backdrop-filter: blur(26px) saturate(180%);
+  -webkit-backdrop-filter: blur(26px) saturate(180%);
+  border-top: 1px solid rgba(255,255,255,0.14);
+  box-shadow:
+    0 -10px 30px rgba(0,0,0,0.45),
+    0 1px 0 rgba(255,255,255,0.08) inset;
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .bottom-nav { background: rgba(17,17,20,0.96); }
+}
+body.light .bottom-nav {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0.3) 18%, rgba(255,255,255,0) 40%),
+    rgba(255,255,255,0.55);
+  border-top: 1px solid rgba(255,255,255,0.6);
+  box-shadow: 0 -10px 30px rgba(0,0,0,0.12), 0 1px 0 rgba(255,255,255,0.5) inset;
 }
 .nav-tab {
   flex: 1;
   background: none;
   border: none;
   color: var(--muted);
-  padding: 10px 4px 12px;
+  padding: 8px 4px 12px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
-  transition: color 0.15s;
+  gap: 2px;
+  transition: color 0.2s;
   font-family: var(--sans);
   position: relative;
 }
-.nav-tab::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 20%; right: 20%;
-  height: 2px;
-  background: var(--orange);
-  border-radius: 0 0 2px 2px;
-  opacity: 0;
-  transition: opacity 0.15s;
+.nav-icon-glow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 28px;
+  border-radius: 14px;
+  background: transparent;
+  box-shadow: none;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+.nav-tab.active .nav-icon-glow {
+  background:
+    radial-gradient(circle at 50% 30%, rgba(255,170,90,0.65), rgba(255,107,0,0.22) 65%, transparent 100%);
+  box-shadow:
+    0 0 16px rgba(255,107,0,0.55),
+    0 1px 0 rgba(255,255,255,0.3) inset,
+    0 -1px 4px rgba(0,0,0,0.2) inset;
 }
 .nav-tab.active { color: var(--orange); }
-.nav-tab.active::before { opacity: 1; }
+.nav-tab.active .nav-icon { filter: drop-shadow(0 0 6px rgba(255,150,60,0.85)); }
 .nav-tab:hover:not(.active) { color: var(--text); }
 .nav-icon  { font-size: 1.1rem; line-height: 1; }
 .nav-label { font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.08em; font-family: var(--mono); }
 .nav-badge {
   position: absolute;
-  top: 6px; right: calc(50% - 14px);
+  top: 2px; right: calc(50% - 22px);
   background: var(--orange);
   color: #000;
   font-size: 0.5rem; font-weight: 700; font-family: var(--mono);
@@ -667,6 +692,7 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
   border-radius: 8px;
   min-width: 14px; text-align: center;
   display: none;
+  box-shadow: 0 0 6px rgba(255,107,0,0.6);
 }
 .nav-badge.visible { display: block; }
 
@@ -3213,12 +3239,25 @@ function switchTab(section) {
 function updateActiveNavOnScroll() {
   const navH = document.getElementById('bottom-nav')?.offsetHeight || 64;
   const sections = ['compile', 'apps', 'news', 'history'];
+  // Pick whichever section's top is closest to (but still above) the nav
+  // threshold, instead of just taking the last match in array order.
+  // This stays correct regardless of the sections' actual order in the DOM.
   let active = 'compile';
+  let bestTop = -Infinity;
   for (const s of sections) {
     const el = document.getElementById('tab-' + s);
     if (!el) continue;
-    if (el.getBoundingClientRect().top <= navH + 40) active = s;
+    const top = el.getBoundingClientRect().top;
+    if (top <= navH + 40 && top > bestTop) {
+      bestTop = top;
+      active = s;
+    }
   }
+  // The last section (History) may not have enough content below it to ever
+  // scroll its heading up past the threshold — so once we've hit the bottom
+  // of the page, force it active rather than leaving the previous tab lit.
+  const atBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 4);
+  if (atBottom) active = 'history';
   document.querySelectorAll('.nav-tab').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.navTab === active);
   });
@@ -3251,19 +3290,19 @@ function initBottomNav() {
 <!-- ── Bottom Navigation Bar ──────────────────────────────────────────── -->
 <nav class="bottom-nav" id="bottom-nav">
   <button class="nav-tab active" data-nav-tab="compile" onclick="switchTab('compile')">
-    <span class="nav-icon">⚙</span>
+    <span class="nav-icon-glow"><span class="nav-icon">⚙</span></span>
     <span class="nav-label">Compile</span>
   </button>
   <button class="nav-tab" data-nav-tab="apps" onclick="switchTab('apps')">
-    <span class="nav-icon">📚</span>
+    <span class="nav-icon-glow"><span class="nav-icon">📚</span></span>
     <span class="nav-label">Apps</span>
   </button>
   <button class="nav-tab" data-nav-tab="news" onclick="switchTab('news')">
-    <span class="nav-icon">📡</span>
+    <span class="nav-icon-glow"><span class="nav-icon">📡</span></span>
     <span class="nav-label">News</span>
   </button>
   <button class="nav-tab" data-nav-tab="history" onclick="switchTab('history')">
-    <span class="nav-icon">📋</span>
+    <span class="nav-icon-glow"><span class="nav-icon">📋</span></span>
     <span class="nav-label">History</span>
     <span class="nav-badge" id="history-badge"></span>
   </button>
