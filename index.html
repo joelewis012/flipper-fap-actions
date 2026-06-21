@@ -616,38 +616,23 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
 .skel-tall  { height: 90px; border-radius: 6px; margin-bottom: 8px; }
 .skel-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
-/* ── Bottom navigation bar — Liquid Glass ─────────────────────── */
+/* ── Bottom navigation bar ────────────────────────────────────── */
 .bottom-nav {
   position: fixed;
   bottom: 0; left: 0; right: 0;
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
   display: flex;
   z-index: 500;
   padding-bottom: env(safe-area-inset-bottom);
-  background: rgba(17,17,20,0.78);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  border-top: 1px solid rgba(255,255,255,0.1);
-  /* Force its own compositing layer — without this, iOS Safari can glitch/
-     ghost a backdrop-filter on a fixed element while its own toolbar
-     animates, and re-painting the blur on every scroll tick gets heavy
-     enough to make scrolling feel stuck. */
-  transform: translateZ(0);
-  will-change: transform;
-  isolation: isolate;
-}
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .bottom-nav { background: rgba(17,17,20,0.96); }
-}
-body.light .bottom-nav {
-  background: rgba(248,248,250,0.78);
-  border-top: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
 }
 .nav-tab {
   flex: 1;
   background: none;
   border: none;
   color: var(--muted);
-  padding: 8px 4px 12px;
+  padding: 10px 4px 12px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
@@ -657,13 +642,24 @@ body.light .bottom-nav {
   font-family: var(--sans);
   position: relative;
 }
+.nav-tab::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 20%; right: 20%;
+  height: 2px;
+  background: var(--orange);
+  border-radius: 0 0 2px 2px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
 .nav-tab.active { color: var(--orange); }
+.nav-tab.active::before { opacity: 1; }
 .nav-tab:hover:not(.active) { color: var(--text); }
 .nav-icon  { font-size: 1.1rem; line-height: 1; }
 .nav-label { font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.08em; font-family: var(--mono); }
 .nav-badge {
   position: absolute;
-  top: 2px; right: calc(50% - 18px);
+  top: 6px; right: calc(50% - 14px);
   background: var(--orange);
   color: #000;
   font-size: 0.5rem; font-weight: 700; font-family: var(--mono);
@@ -673,52 +669,6 @@ body.light .bottom-nav {
   display: none;
 }
 .nav-badge.visible { display: block; }
-
-/* ── Liquid Glass blob indicator ──────────────────────────────── */
-/* Two blobs (settled + drag) blurred and contrast-boosted together
-   visually fuse into one elastic shape — the classic SVG "goo" trick.
-   This is a plain CSS filter (not backdrop-filter), so unlike real
-   refraction it renders identically in Safari. */
-.nav-blob-layer {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  filter: url(#nav-goo);
-}
-.nav-blob {
-  position: absolute;
-  top: 6px;
-  height: 30px;
-  width: 44px;
-  border-radius: 16px;
-  background: linear-gradient(155deg, rgba(255,221,180,0.95), rgba(255,140,51,0.65) 45%, rgba(255,107,0,0.4));
-  transition: left 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
-  will-change: left, width;
-}
-.nav-blob.drag {
-  transition: none;
-  opacity: 0;
-}
-.bottom-nav.dragging .nav-blob.drag { opacity: 1; }
-.bottom-nav.dragging .nav-blob.settled { transition: none; }
-/* Specular sheen riding on top of the blob, nudged by drag direction via --tilt */
-.nav-blob-sheen {
-  position: absolute;
-  top: 6px;
-  height: 30px;
-  width: 44px;
-  border-radius: 16px;
-  background: radial-gradient(circle at calc(50% + var(--tilt, 0px)) 28%, rgba(255,255,255,0.8), transparent 60%);
-  transition: left 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
-  z-index: 1;
-  pointer-events: none;
-  mix-blend-mode: screen;
-}
-.bottom-nav.dragging .nav-blob-sheen { transition: none; }
-.nav-tab { position: relative; z-index: 2; }
-.nav-tab.active .nav-icon { filter: drop-shadow(0 0 4px rgba(255,180,110,0.7)); }
-body.light .nav-blob { background: linear-gradient(155deg, rgba(255,255,255,0.95), rgba(255,170,100,0.55) 45%, rgba(255,107,0,0.3)); }
 
 /* Tab section visibility */
 .tab-section { display: block; scroll-margin-top: 12px; }
@@ -3261,7 +3211,6 @@ function switchTab(section) {
   document.querySelectorAll('.nav-tab').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.navTab === section);
   });
-  moveBlobToTab(section);
   setTimeout(() => updateActiveNavOnScroll(), 600);
 }
 
@@ -3290,9 +3239,6 @@ function updateActiveNavOnScroll() {
   document.querySelectorAll('.nav-tab').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.navTab === active);
   });
-  if (!document.getElementById('bottom-nav')?.classList.contains('dragging')) {
-    moveBlobToTab(active);
-  }
 }
 
 // Highlight active nav tab as user scrolls
@@ -3322,133 +3268,13 @@ function notifyHistoryUpdate() {
 
 function initBottomNav() {
   updateActiveNavOnScroll();
-  moveBlobToTab(document.querySelector('.nav-tab.active')?.dataset.navTab || 'compile', true);
-  initLiquidBlobDrag();
-  window.addEventListener('resize', () => {
-    const active = document.querySelector('.nav-tab.active')?.dataset.navTab;
-    if (active) moveBlobToTab(active, true);
-  });
-}
-
-// ══════════════════════════════════════════════════════════════════
-// LIQUID GLASS BLOB — slides/morphs the highlight behind nav icons
-// ══════════════════════════════════════════════════════════════════
-function moveBlobToTab(tabName, instant) {
-  const nav = document.getElementById('bottom-nav');
-  const btn = nav?.querySelector(`.nav-tab[data-nav-tab="${tabName}"]`);
-  const icon = btn?.querySelector('.nav-icon');
-  const settled = document.getElementById('nav-blob-settled');
-  const sheen = document.getElementById('nav-blob-sheen');
-  if (!nav || !icon || !settled || !sheen) return;
-  const navRect = nav.getBoundingClientRect();
-  const iconRect = icon.getBoundingClientRect();
-  const w = 44;
-  const left = (iconRect.left - navRect.left) + iconRect.width / 2 - w / 2;
-  [settled, sheen].forEach(elm => {
-    if (instant) elm.style.transition = 'none';
-    elm.style.left = left + 'px';
-    elm.style.width = w + 'px';
-    if (instant) {
-      void elm.offsetWidth; // force reflow before re-enabling transition
-      elm.style.transition = '';
-    }
-  });
-}
-
-function initLiquidBlobDrag() {
-  const nav = document.getElementById('bottom-nav');
-  const dragBlob = document.getElementById('nav-blob-drag');
-  const sheen = document.getElementById('nav-blob-sheen');
-  if (!nav || !dragBlob) return;
-
-  let pointerDownX = null;
-  let dragging = false;
-  const DRAG_THRESHOLD = 10; // px of finger movement before we treat it as a drag, not a tap
-
-  function tabAtX(x) {
-    const tabs = Array.from(nav.querySelectorAll('.nav-tab'));
-    let closest = null, min = Infinity;
-    for (const t of tabs) {
-      const r = t.getBoundingClientRect();
-      const c = r.left + r.width / 2;
-      const d = Math.abs(c - x);
-      if (d < min) { min = d; closest = t; }
-    }
-    return closest;
-  }
-
-  function setDragBlobX(clientX) {
-    const navRect = nav.getBoundingClientRect();
-    const w = 44;
-    let left = clientX - navRect.left - w / 2;
-    left = Math.max(0, Math.min(left, navRect.width - w));
-    dragBlob.style.left = left + 'px';
-    dragBlob.style.width = w + 'px';
-  }
-
-  function beginDrag(clientX) {
-    dragging = true;
-    nav.classList.add('dragging');
-    setDragBlobX(clientX);
-  }
-
-  function onMove(clientX) {
-    if (pointerDownX === null) return;
-    if (!dragging) {
-      if (Math.abs(clientX - pointerDownX) < DRAG_THRESHOLD) return;
-      beginDrag(clientX);
-    }
-    setDragBlobX(clientX);
-    // subtle specular tilt that leans with the drag direction
-    const tilt = Math.max(-10, Math.min(10, (clientX - pointerDownX) * 0.15));
-    sheen.style.setProperty('--tilt', tilt.toFixed(1) + 'px');
-    const tab = tabAtX(clientX);
-    if (tab) {
-      nav.querySelectorAll('.nav-tab').forEach(b => b.classList.toggle('active', b === tab));
-    }
-  }
-
-  function endDrag(clientX) {
-    const wasDragging = dragging;
-    nav.classList.remove('dragging');
-    dragging = false;
-    pointerDownX = null;
-    sheen.style.setProperty('--tilt', '0px');
-    if (!wasDragging) return; // simple tap — the button's own onclick already handled it
-    const tab = clientX !== null ? tabAtX(clientX) : null;
-    if (tab) switchTab(tab.dataset.navTab);
-  }
-
-  nav.addEventListener('pointerdown', (e) => {
-    if (!e.target.closest('.nav-tab')) return;
-    pointerDownX = e.clientX;
-  });
-  window.addEventListener('pointermove', (e) => {
-    if (pointerDownX === null) return;
-    onMove(e.clientX);
-  });
-  window.addEventListener('pointerup', (e) => endDrag(e.clientX));
-  window.addEventListener('pointercancel', () => endDrag(null));
 }
 
 
 </script>
 
 <!-- ── Bottom Navigation Bar ──────────────────────────────────────────── -->
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <filter id="nav-goo">
-    <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur" />
-    <feColorMatrix in="blur" mode="matrix"
-      values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 24 -10" result="goo" />
-    <feComposite in="SourceGraphic" in2="goo" operator="atop" />
-  </filter>
-</svg>
 <nav class="bottom-nav" id="bottom-nav">
-  <div class="nav-blob-layer">
-    <div class="nav-blob settled" id="nav-blob-settled"></div>
-    <div class="nav-blob drag" id="nav-blob-drag"></div>
-  </div>
-  <div class="nav-blob-sheen" id="nav-blob-sheen"></div>
   <button class="nav-tab active" data-nav-tab="compile" onclick="switchTab('compile')">
     <span class="nav-icon">⚙</span>
     <span class="nav-label">Compile</span>
