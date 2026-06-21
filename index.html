@@ -3216,7 +3216,7 @@ function switchTab(section) {
 
 function updateActiveNavOnScroll() {
   const navH = document.getElementById('bottom-nav')?.offsetHeight || 64;
-  const sections = ['compile', 'apps', 'news', 'history'];
+  const sections = ['compile', 'news', 'apps', 'history'];
   // Pick whichever section's top is closest to (but still above) the nav
   // threshold, instead of just taking the last match in array order.
   // This stays correct regardless of the sections' actual order in the DOM.
@@ -3279,13 +3279,13 @@ function initBottomNav() {
     <span class="nav-icon">⚙</span>
     <span class="nav-label">Compile</span>
   </button>
-  <button class="nav-tab" data-nav-tab="apps" onclick="switchTab('apps')">
-    <span class="nav-icon">📚</span>
-    <span class="nav-label">Apps</span>
-  </button>
   <button class="nav-tab" data-nav-tab="news" onclick="switchTab('news')">
     <span class="nav-icon">📡</span>
     <span class="nav-label">News</span>
+  </button>
+  <button class="nav-tab" data-nav-tab="apps" onclick="switchTab('apps')">
+    <span class="nav-icon">📚</span>
+    <span class="nav-label">Apps</span>
   </button>
   <button class="nav-tab" data-nav-tab="history" onclick="switchTab('history')">
     <span class="nav-icon">📋</span>
