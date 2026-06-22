@@ -670,6 +670,40 @@ body.disco-mode { animation:discoflash 0.6s linear infinite; }
 }
 .nav-badge.visible { display: block; }
 
+/* ── Pull-to-refresh indicator ────────────────────────────────── */
+#ptr-indicator {
+  position: fixed;
+  top: 0; left: 50%;
+  transform: translateY(-60px) translateX(-50%);
+  opacity: 0;
+  z-index: 600;
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+  pointer-events: none;
+}
+#ptr-indicator.ptr-ready { color: var(--orange); border-color: var(--orange); }
+#ptr-indicator.ptr-spinning { animation: ptr-spin 0.7s linear infinite; }
+@keyframes ptr-spin { to { transform: translateY(50px) translateX(-50%) rotate(360deg); } }
+
+/* ── Offline compile queue ────────────────────────────────────── */
+#offline-queue-bar {
+  display: none;
+  background: var(--bg3);
+  border: 1px solid var(--yellow);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-top: 10px;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+}
+#offline-queue-bar .oq-row { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:4px 0; }
+#offline-queue-bar .oq-row + .oq-row { border-top: 1px solid var(--border); }
+
 /* Tab section visibility */
 .tab-section { display: block; scroll-margin-top: 12px; }
 
@@ -679,6 +713,8 @@ body { padding-bottom: calc(70px + env(safe-area-inset-bottom)); }
 </style>
 </head>
 <body>
+
+<div id="ptr-indicator">↻</div>
 
 
 <!-- ── Disco Easter egg overlay ──────────────────────────────────────────── -->
@@ -943,6 +979,7 @@ body { padding-bottom: calc(70px + env(safe-area-inset-bottom)); }
         <span id="btn-text" data-i18n="compile_fap">⚙ Compile .FAP</span>
       </div>
     </button>
+    <div id="offline-queue-bar"></div>
   </div>
 
   <!-- ── XP Rank Widget ── -->
@@ -1078,6 +1115,10 @@ body { padding-bottom: calc(70px + env(safe-area-inset-bottom)); }
         <span id="active-compile-status" style="color:var(--muted);font-size:0.68rem;"></span>
       </div>
       <div id="active-compile-msg" style="color:var(--muted);font-size:0.68rem;margin-top:4px;"></div>
+      <div id="active-compile-stuck" style="display:none;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+        <span style="color:var(--yellow);font-size:0.68rem;">⏱️ Taking longer than usual</span>
+        <button class="job-action-btn" onclick="giveUpActiveCompile()">✕ Give up &amp; reset</button>
+      </div>
     </div>
     <div id="history-search-wrap"><input id="history-search" placeholder="🔍 Search compiled apps…" oninput="filterCompiledApps()" autocomplete="off"/></div>
     <div id="compiled-list">
@@ -1953,24 +1994,19 @@ async function submitCompile() {
   let appDir=null;
   const selDiv=document.getElementById('app-selector');
   if(selDiv&&selDiv.style.display!=='none'&&detectedApps.length>1){const idx=parseInt(document.getElementById('app-select')?.value||'0');if(detectedApps[idx])appDir=detectedApps[idx].dir;}
+  const repoBranch=document.getElementById('branch-selector')?.value||'';
+  const fwVerOverride=document.getElementById('fw-ver-override')?.value||'';
+  const params={url,firmware,channel,appDir,repoBranch,fwVerOverride};
+  // No connection at all — don't even try, just queue it for when we're back online
+  if(!navigator.onLine){
+    queueOfflineCompile(params);
+    urlInput.value='';
+    btn.disabled=false;spinner.style.display='none';btnText.textContent=t('compile_fap');
+    return;
+  }
   try{
-    const body={repo_url:url,firmware,channel};if(appDir)body.app_dir=appDir;
-    const repoBranch=document.getElementById('branch-selector')?.value||'';
-    if(repoBranch)body.repo_branch=repoBranch;
-    const fwVerOverride=document.getElementById('fw-ver-override')?.value||'';
-    if(fwVerOverride)body.fw_version=fwVerOverride;
-    const tr=await api('/api/trigger',{method:'POST',body:JSON.stringify(body)});
-    const td=await tr.json();if(!tr.ok)throw new Error(td.error||`Worker error ${tr.status}`);
-    saveRecent(url);showNotifPrompt();btnText.textContent=t('finding');
-    await sleep(4000);
-    const runId=await findLatestRunId();
-    const appName=url.replace(/\/$/,'').replace(/\.git$/,'').split('/').pop().replace(/-/g,' ').replace(/_/g,' ');
-    const savedBranch=document.getElementById('branch-selector')?.value||'';
-    const savedFwVer=document.getElementById('fw-ver-override')?.value||'';
-    activeJob={runId,repoUrl:url,firmware,fwLabel:fwLabel(firmware),channel,repoBranch:savedBranch,fwVersion:savedFwVer,status:'queued',message:'Queued — waiting for runner…',artifactId:null,artifactName:null,createdAt:new Date().toISOString(),startedAt:Date.now()};lsSetJson('fap_active_job',activeJob);
-    showActiveCompile(activeJob);
-    startDolphinAnimation(appName, firmware, activeJob.startedAt);
-    startPolling(activeJob);
+    btnText.textContent=t('finding');
+    await triggerCompileRequest(params);
     urlInput.value='';
     const nb=document.getElementById('app-name-bar');if(nb)nb.style.display='none';
     const bw=document.getElementById('branch-wrap');if(bw)bw.style.display='none';
@@ -1979,10 +2015,15 @@ async function submitCompile() {
   }catch(e){
     let msg = e?.message || String(e) || 'Unknown error';
     // TypeError with no message = network/CORS block
-    if(!msg || msg === '{}' || msg === 'TypeError' || msg.includes('Failed to fetch') || msg.includes('Load failed') || msg.includes('NetworkError')) {
-      msg = 'Network error — could not reach the worker. Check your connection and try again. If on Android, try Chrome browser.';
+    const isNetworkErr = !msg || msg === '{}' || msg === 'TypeError' || msg.includes('Failed to fetch') || msg.includes('Load failed') || msg.includes('NetworkError');
+    if(isNetworkErr){
+      // The browser thought it was online but the request still couldn't reach the
+      // worker (flaky connection) — queue it instead of just failing outright.
+      queueOfflineCompile(params);
+      urlInput.value='';
+    }else{
+      showError('Compile failed', msg);
     }
-    showError('Compile failed', msg);
   }
   finally{btn.disabled=false;spinner.style.display='none';btnText.textContent=t('compile_fap');}
 }
@@ -2009,6 +2050,7 @@ function showActiveCompile(job){
 }
 function hideActiveCompile(){
   const bar=document.getElementById('active-compile-bar');if(bar)bar.style.display='none';
+  const stuckEl=document.getElementById('active-compile-stuck'); if(stuckEl) stuckEl.style.display='none';
   stopDolphinAnimation();
 }
 
@@ -2161,6 +2203,8 @@ async function pollJob(job){
     const pct=Math.min(95,Math.round((elapsed/(FW_EST[job.firmware]||100))*100));
     job.message=run.status==='queued'?'Waiting for a runner…':run.status==='in_progress'?`Compiling… ${pct}% (${elapsed}s elapsed)`:run.conclusion==='success'?'✅ Done! Saving to list…':run.conclusion==='failure'?'❌ Compilation failed':run.conclusion==='cancelled'?'Cancelled':run.status;
     showActiveCompile(job);
+    const stuckEl=document.getElementById('active-compile-stuck');
+    if(stuckEl) stuckEl.style.display = (run.status!=='completed' && elapsed>STUCK_THRESHOLD_S) ? 'flex' : 'none';
     if(run.status==='completed'){
       clearTimeout(polls[job.runId]);delete polls[job.runId];
       if(run.conclusion==='success'){const ar=await api(`/api/artifacts/${job.runId}`);if(ar.ok){const d=await ar.json();const a=d.artifacts?.[0];if(a){job.artifactId=a.id;job.artifactName=a.name;}}}
@@ -2168,11 +2212,29 @@ async function pollJob(job){
       hideActiveCompile();
       activeJob=null;
       lsSetJson('fap_active_job', null);
-      if(job.status==='success'){ awardXP(100,'compile'); notifyHistoryUpdate(); }
+      if(job.status==='success'){ awardXP(100,'compile',{firmware:job.firmware,elapsed}); notifyHistoryUpdate(); }
       fetchStats();
       sendPushNotification(job);
     }
   }catch(e){console.error('pollJob error:',e);}
+}
+
+// ── Give up on a stuck compile ──────────────────────────────────────────────────
+const STUCK_THRESHOLD_S = 360; // 6 minutes — GitHub runners are usually picked up in seconds
+async function giveUpActiveCompile(){
+  if(!activeJob) return;
+  const runId=activeJob.runId;
+  if(polls[runId]){clearTimeout(polls[runId]);delete polls[runId];}
+  // Best-effort: ask the worker to cancel the underlying GitHub Actions run.
+  // Needs a matching `POST /api/run/:id/cancel` route on the Worker — if that
+  // route doesn't exist yet this just fails quietly and we still stop watching
+  // locally, so the UI never gets stuck even if the backend can't cancel it.
+  try{ await api(`/api/run/${runId}/cancel`,{method:'POST'}); }catch(_){}
+  activeJob=null;
+  lsSetJson('fap_active_job', null);
+  hideActiveCompile();
+  const stuckEl=document.getElementById('active-compile-stuck'); if(stuckEl) stuckEl.style.display='none';
+  showToast('Stopped watching that compile — start a new one anytime.');
 }
 
 // ── Save to KV ────────────────────────────────────────────────────────────────
@@ -2271,6 +2333,40 @@ async function downloadArtifact(artifactId,artifactName,btnEl){
   }catch(e){if(btnEl){btnEl.textContent='❌ Error';btnEl.disabled=false;}setTimeout(()=>{if(btnEl)btnEl.textContent=orig;},3000);showError('Download failed',e.message||String(e));}
 }
 
+// ── Share compiled .fap via the OS share sheet ──────────────────────────────────
+async function shareArtifact(artifactId,artifactName,btnEl){
+  const orig=btnEl?btnEl.textContent:'⤴ Share';
+  if(btnEl){btnEl.textContent='⏳ Preparing…';btnEl.disabled=true;}
+  try{
+    const res=await api(`/api/download/${artifactId}`);
+    if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error||`HTTP ${res.status}`);}
+    const ab=await res.arrayBuffer();const zip=await JSZip.loadAsync(ab);
+    const fe=Object.values(zip.files).find(f=>f.name.endsWith('.fap')&&!f.dir);
+    if(!fe)throw new Error('No .fap found in artifact.');
+    const name=fe.name.split('/').pop();const blob=await fe.async('blob');
+    const file=new File([blob],name,{type:'application/octet-stream'});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({files:[file],title:name,text:`${artifactName} compiled with FlipperFAP`});
+      if(btnEl)btnEl.textContent='✅ Shared!';
+    }else{
+      // File sharing isn't supported here (e.g. desktop browsers) — fall back to a normal download
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');a.href=url;a.download=name;a.style.display='none';
+      document.body.appendChild(a);a.click();document.body.removeChild(a);
+      setTimeout(()=>URL.revokeObjectURL(url),60000);
+      showToast("Sharing files isn't supported here — downloaded instead.");
+      if(btnEl)btnEl.textContent='✅ Downloaded';
+    }
+    if(btnEl)btnEl.disabled=false;
+    setTimeout(()=>{if(btnEl)btnEl.textContent=orig;},4000);
+  }catch(e){
+    if(e?.name==='AbortError'){ if(btnEl){btnEl.textContent=orig;btnEl.disabled=false;} return; } // user dismissed the share sheet
+    if(btnEl){btnEl.textContent='❌ Error';btnEl.disabled=false;}
+    setTimeout(()=>{if(btnEl)btnEl.textContent=orig;},3000);
+    showError('Share failed',e.message||String(e));
+  }
+}
+
 // ── Copy URL ──────────────────────────────────────────────────────────────────
 async function copyJobUrl(url,btnEl){
   try{await navigator.clipboard.writeText(url);if(btnEl){btnEl.textContent=t('copied');btnEl.classList.add('copied');}setTimeout(()=>{if(btnEl){btnEl.textContent=t('copy_url');btnEl.classList.remove('copied');}},2000);}
@@ -2313,7 +2409,7 @@ async function fetchStats(){
 }
 
 // ── Popular apps ──────────────────────────────────────────────────────────────
-let popularVoted = new Set(JSON.parse(localStorage.getItem('fap_pop_voted')||'[]'));
+let popularVoted = new Set(lsGetJson('fap_pop_voted', []));
 let popularVoteCounts = {};
 async function fetchPopularApps(){
   const grid=document.getElementById('popular-grid'),card=document.getElementById('popular-apps-card');if(!grid)return;
@@ -2639,6 +2735,7 @@ function renderJobCards(jobs) {
     const fwVer=job.fwVersion?`📦 ${esc(job.fwVersion)}`:'';
     const ghUrl=job.runId?`https://github.com/joelewis012/flipper-fap-actions/actions/runs/${job.runId}`:null;
     const dlBtn=job.artifactId?`<button class="download-btn" onclick="downloadArtifact('${esc(String(job.artifactId))}','${esc(appName)}',this)">↓ Download .fap</button>`:'';
+    const shareBtn=job.artifactId?`<button class="download-btn" style="background:var(--cyan);" onclick="shareArtifact('${esc(String(job.artifactId))}','${esc(appName)}',this)">⤴ Share</button>`:'';
     const ghBtn=(ghUrl&&debugMode)?`<a class="gh-link" href="${ghUrl}" target="_blank">Actions</a>`:'';
     const copyLink=`https://joelewis012.github.io/flipper-fap-actions/?repo=https://${esc(repoUrl)}&fw=${esc(job.firmware||'official')}&ch=${esc(job.channel||'release')}`;
     return `<div class="job-card status-${ds}">
@@ -2656,6 +2753,7 @@ function renderJobCards(jobs) {
       <div class="job-status">
         <span class="status-badge badge-${ds}">${ds.toUpperCase()}</span>
         ${dlBtn}
+        ${shareBtn}
         <a class="gh-link" href="https://${esc(repoUrl)}" target="_blank">⧉ View Repo</a>
         ${ghBtn}
       </div>
@@ -2911,7 +3009,7 @@ function awardXP(amount, reason, extraData){
   if(reason==='compile'){
     s.compiles=(s.compiles||0)+1;
     if(!s.firmware)s.firmware={};
-    const fw=document.querySelector('input[name="fw"]:checked')?.value||'official';
+    const fw=(extraData&&extraData.firmware)||document.querySelector('input[name="fw"]:checked')?.value||'official';
     s.firmware[fw]=(s.firmware[fw]||0)+1;
     const h=new Date().getHours();
     if(h>=0&&h<5)s.nightOwl=true;
@@ -3168,7 +3266,7 @@ async function togglePopularVote(btn,key){
   btn.classList.toggle('voted',!isVoted);
   const countEl=btn.querySelector('.pop-vote-count');
   if(countEl)countEl.textContent=popularVoteCounts[key]||'';
-  localStorage.setItem('fap_pop_voted',JSON.stringify([...popularVoted]));
+  lsSetJson('fap_pop_voted', [...popularVoted]);
   try{
     await api('/api/vote',{method:'POST',body:JSON.stringify({appKey:key,delta})});
   }catch(_){}
@@ -3268,7 +3366,130 @@ function notifyHistoryUpdate() {
 
 function initBottomNav() {
   updateActiveNavOnScroll();
+  initPullToRefresh();
+  renderOfflineQueue();
+  flushOfflineQueue();
 }
+
+// ══════════════════════════════════════════════════════════════════
+// PULL TO REFRESH — only engages when already at the very top of the page
+// ══════════════════════════════════════════════════════════════════
+async function doRefresh(){
+  const active=document.querySelector('.nav-tab.active')?.dataset.navTab||'compile';
+  try{
+    if(active==='history') await loadCompiledApps(compiledPage||1);
+    else if(active==='news') await fetchFirmwareNews();
+    else if(active==='apps') await fetchPopularApps();
+    else { await fetchFirmwareVersions(); await fetchStats(); }
+  }catch(_){}
+}
+function initPullToRefresh(){
+  const indicator=document.getElementById('ptr-indicator');
+  if(!indicator)return;
+  let startY=null,pulling=false,refreshing=false;
+  const THRESHOLD=70;
+  // Deliberately passive (no preventDefault) — we don't want to fight iOS
+  // Safari's own scroll/rubber-band handling, which is what caused the
+  // backdrop-filter glitching earlier. The indicator just rides along.
+  document.addEventListener('touchstart',(e)=>{
+    if(window.scrollY>0||refreshing){startY=null;return;}
+    startY=e.touches[0].clientY;pulling=false;
+  },{passive:true});
+  document.addEventListener('touchmove',(e)=>{
+    if(startY===null||refreshing)return;
+    const dy=e.touches[0].clientY-startY;
+    if(dy>0&&window.scrollY<=0){
+      pulling=true;
+      const dist=Math.min(dy*0.5,90);
+      indicator.style.transform=`translateY(${dist}px) translateX(-50%)`;
+      indicator.style.opacity=String(Math.min(dist/THRESHOLD,1));
+      indicator.classList.toggle('ptr-ready',dist>=THRESHOLD*0.7);
+    }
+  },{passive:true});
+  document.addEventListener('touchend',async()=>{
+    if(!pulling||refreshing){startY=null;pulling=false;return;}
+    const ready=indicator.classList.contains('ptr-ready');
+    pulling=false;startY=null;
+    if(ready){
+      refreshing=true;
+      indicator.classList.add('ptr-spinning');
+      indicator.style.transform='translateY(50px) translateX(-50%)';
+      indicator.style.opacity='1';
+      await doRefresh();
+      setTimeout(()=>{
+        indicator.classList.remove('ptr-spinning','ptr-ready');
+        indicator.style.transform='translateY(-60px) translateX(-50%)';
+        indicator.style.opacity='0';
+        refreshing=false;
+      },400);
+    }else{
+      indicator.style.transform='translateY(-60px) translateX(-50%)';
+      indicator.style.opacity='0';
+    }
+  },{passive:true});
+}
+
+// ══════════════════════════════════════════════════════════════════
+// OFFLINE COMPILE QUEUE — queues a compile request when there's no
+// connection, and auto-submits once the browser reports back online
+// ══════════════════════════════════════════════════════════════════
+let _flushingQueue=false;
+function queueOfflineCompile(params){
+  const queue=lsGetJson('fap_offline_queue',[]);
+  queue.push({...params,queuedAt:Date.now()});
+  lsSetJson('fap_offline_queue',queue);
+  renderOfflineQueue();
+  showToast("📡 Offline — queued. We'll compile it automatically once you're back online.");
+}
+function renderOfflineQueue(){
+  const bar=document.getElementById('offline-queue-bar');if(!bar)return;
+  const queue=lsGetJson('fap_offline_queue',[]);
+  if(!queue.length){bar.style.display='none';bar.innerHTML='';return;}
+  bar.style.display='block';
+  bar.innerHTML=`<div style="color:var(--yellow);font-weight:700;margin-bottom:4px;">📡 ${queue.length} compile${queue.length>1?'s':''} queued offline</div>`+
+    queue.map(item=>{
+      const name=(item.url||'').replace(/^https?:\/\//,'').replace(/\.git$/,'').replace(/\/$/,'');
+      return `<div class="oq-row"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:75%;">${esc(name)}</span><span style="color:var(--muted);">${esc(item.firmware||'')}</span></div>`;
+    }).join('')+
+    `<div style="margin-top:8px;"><button class="job-action-btn" onclick="flushOfflineQueue()">↻ Retry now</button></div>`;
+}
+async function triggerCompileRequest(params){
+  const {url,firmware,channel,appDir,repoBranch,fwVerOverride}=params;
+  const body={repo_url:url,firmware,channel};
+  if(appDir)body.app_dir=appDir;
+  if(repoBranch)body.repo_branch=repoBranch;
+  if(fwVerOverride)body.fw_version=fwVerOverride;
+  const tr=await api('/api/trigger',{method:'POST',body:JSON.stringify(body)});
+  const td=await tr.json();if(!tr.ok)throw new Error(td.error||`Worker error ${tr.status}`);
+  saveRecent(url);showNotifPrompt();
+  await sleep(4000);
+  const runId=await findLatestRunId();
+  const appName=url.replace(/\/$/,'').replace(/\.git$/,'').split('/').pop().replace(/-/g,' ').replace(/_/g,' ');
+  activeJob={runId,repoUrl:url,firmware,fwLabel:fwLabel(firmware),channel,repoBranch:repoBranch||'',fwVersion:fwVerOverride||'',status:'queued',message:'Queued — waiting for runner…',artifactId:null,artifactName:null,createdAt:new Date().toISOString(),startedAt:Date.now()};
+  lsSetJson('fap_active_job',activeJob);
+  showActiveCompile(activeJob);
+  startDolphinAnimation(appName,firmware,activeJob.startedAt);
+  startPolling(activeJob);
+  return activeJob;
+}
+async function flushOfflineQueue(){
+  if(_flushingQueue)return;
+  const queue=lsGetJson('fap_offline_queue',[]);
+  if(!queue.length||!navigator.onLine)return;
+  _flushingQueue=true;
+  showToast(`📡 Back online — submitting ${queue.length} queued compile${queue.length>1?'s':''}…`);
+  const remaining=[];
+  for(const item of queue){
+    try{ await triggerCompileRequest(item); await sleep(1500); }
+    catch(_){ remaining.push(item); }
+  }
+  lsSetJson('fap_offline_queue',remaining);
+  renderOfflineQueue();
+  _flushingQueue=false;
+  if(remaining.length) showToast(`⚠️ ${remaining.length} queued compile(s) still couldn't be submitted.`);
+  else if(queue.length) showToast('✅ All queued compiles submitted!');
+}
+window.addEventListener('online',flushOfflineQueue);
 
 
 </script>

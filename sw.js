@@ -1,6 +1,6 @@
 // FlipperFAP Service Worker
-self.addEventListener('install', e => {});
-self.addEventListener('activate', e => { e.waitUntil(Promise.resolve()); });
+self.addEventListener('install', e => { self.skipWaiting(); });
+self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
 self.addEventListener('push', e => {
   const data = e.data ? e.data.json() : {};
   e.waitUntil(self.registration.showNotification(data.title || 'FlipperFAP', {
